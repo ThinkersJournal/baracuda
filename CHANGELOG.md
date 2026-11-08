@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.103 - 2026-11-08
+
+- **Fix: `scripts/gpu-run.ps1` creates `Global\gpu-run` open to every authenticated account (gpu-run v4).** The mutex was created with the default ACL (SYSTEM, Administrators and the creating account only), so the runner accounts (ghr-baracuda, ghr-fuel, interactive lanes) locked each other out of the machine-wide GPU lock: device-tests run 42386434774 spent 2h35m building `baracuda-kernels`, then `gpu-run.ps1:119` failed with `Access to the path 'Global\gpu-run' is denied` and the step ran 0 tests. The new `scripts/gpu-run-mutex.ps1` (`New-GpuRunMutex`, dot-sourced) grants Authenticated Users Synchronize|Modify, under both pwsh 7 (`MutexAcl.Create`) and Windows PowerShell 5.1; the mutex name is unchanged. `scripts/test-gpu-run-mutex-acl.ps1` runs the real script under a unique test mutex name and reads the ACL back (red before: SYSTEM, Administrators, creator only; green after, both editions) and runs in CI on Windows. Verified: the ACL read-back on both editions. Not verified: a second real account opening the mutex, and the first creator wins, so every copy of `gpu-run` (Fuel, Vulkane) must carry this change before the next shared run; a mutex still alive from an older `gpu-run` keeps its old ACL until its holder exits.
+
 ## 0.1.0-alpha.102 - 2026-11-07
 
 - **CI: a failed device-tests step no longer skips the steps after it.** Each of the 34 `cargo gpu-test` steps in `device-tests.yml` now has `if: ${{ !cancelled() }}`. Run 42366907753 failed one kernels test and skipped the 33 later steps, so cutlass and the rest never reported. The job still concludes failure if any step fails, so the Device tests detector stays red until a full pass exists. A job timeout counts as cancelled, so later steps do not run then; the 720-minute limit is unchanged. Workflow only; no code or test change. Not verified: the workflow has not run with this change yet.

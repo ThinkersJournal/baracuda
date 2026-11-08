@@ -74,7 +74,7 @@ $ErrorActionPreference = 'Stop'
 # once, the exact failure this prevents (same trap as Local\ vs Global\). Version
 # skew is surfaced by $GpuRunVersion (logged, not enforced), never by the name.
 $MutexName     = 'Global\gpu-run'                   # MUST be Global\ (machine-wide), not Local\ — DO NOT VERSION
-$GpuRunVersion = 3                                  # bump on behavioral change; written to the log + lockfile so drift is visible
+$GpuRunVersion = 4                                  # bump on behavioral change; written to the log + lockfile so drift is visible
 $LockPath  = Join-Path $env:TEMP 'gpu-run.lock'     # metadata only, cleared on reboot (a lock must not survive one)
 $LogPath   = Join-Path $env:TEMP 'gpu-run.log'
 
@@ -116,7 +116,8 @@ if ($env:GPU_RUN_HELD -eq '1') {
 }
 
 # --- Acquire the machine-wide mutex (the real mutual exclusion) ----------------
-$mutex        = New-Object System.Threading.Mutex($false, $MutexName)
+. (Join-Path $PSScriptRoot 'gpu-run-mutex.ps1')
+$mutex        = New-GpuRunMutex $MutexName   # ACL open to Authenticated Users (v4); see gpu-run-mutex.ps1
 $acquired     = $false
 $t0           = Get-Date
 $holderBefore = if (Test-Path -LiteralPath $LockPath) {

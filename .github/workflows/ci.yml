@@ -101,6 +101,18 @@ jobs:
       - name: device-run-invocation guard
         shell: bash
         run: bash scripts/check-device-run-invocations.sh
+      # gpu-run mutex ACL: Global\gpu-run was created with the default ACL, so the account that
+      # created it first locked the other runner accounts out ("Access to the path
+      # 'Global\gpu-run' is denied", device-tests run 42386434774). Windows only: named kernel
+      # mutexes with ACLs; both PowerShell editions, since gpu-run.ps1 runs under either.
+      - name: gpu-run mutex ACL test
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File scripts/test-gpu-run-mutex-acl.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          powershell -NoProfile -File scripts/test-gpu-run-mutex-acl.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
       # Crate-licence guard: `MIT OR Apache-2.0` requires the licence text to
       # travel with every copy, and a published crate contains only files from its
       # own directory. alpha.79 shipped 69 crates with no licence text (the
