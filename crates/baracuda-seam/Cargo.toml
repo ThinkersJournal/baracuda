@@ -1,7 +1,7 @@
 [package]
 name = "baracuda-seam"
-version = "0.1.0-alpha.105"
-description = "Profile v1 kernel-seam handshake: the frozen SeamHello negotiation envelope (§3.1) + the baracuda_seam_hello() provider entry point Fuel reads to negotiate a seam profile + capabilities."
+version = "0.1.0-alpha.106"
+description = "Profile v1 kernel-seam handshake, provider side: Baracuda's advertised SeamHello (over fireline-announce) + the baracuda_seam_hello() entry point a consumer reads to negotiate a seam profile + capabilities."
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
@@ -10,6 +10,11 @@ readme = "README.md"
 homepage.workspace = true
 keywords = ["cuda", "ffi", "interop", "dlpack"]
 categories = ["api-bindings"]
+
+[dependencies]
+# The shared envelope, validation, negotiation and wire codec. `~0.1`, never `^`: FireLine's rule
+# (each crate's version follows its interface; a 0.x minor is breaking). Dependency-free itself.
+fireline-announce = "~0.1"
 
 [lints]
 workspace = true
