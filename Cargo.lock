@@ -141,8 +141,8 @@ name = "baracuda-cuda-seam"
 version = "0.1.0-alpha.103"
 dependencies = [
  "baracuda-cuda-emit",
- "fuel-kernel-seam",
- "fuel-kernel-seam-types",
+ "fireline-grammar",
+ "fireline-synth",
  "unpopped",
  "unpopped-vocab",
 ]
@@ -1135,6 +1135,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48"
 
 [[package]]
+name = "fireline-grammar"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85fdf8d89779343f120374a8626298d2dfd26c7641d224a6837b8c648a50b6f0"
+
+[[package]]
+name = "fireline-synth"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e12efcb226c6793f3aa2152063d21e640c1d4e0ec3ffc66d46fba3dd0c3fda91"
+dependencies = [
+ "fireline-grammar",
+ "unpopped-vocab",
+]
+
+[[package]]
 name = "float8"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1158,22 +1174,6 @@ dependencies = [
  "libc",
  "winapi",
 ]
-
-[[package]]
-name = "fuel-kernel-seam"
-version = "0.43.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d756619ad6d98c0bbfe824a62c3bb966a81812904997853c337d42829a6ff3b"
-dependencies = [
- "fuel-kernel-seam-types",
- "unpopped-vocab",
-]
-
-[[package]]
-name = "fuel-kernel-seam-types"
-version = "0.43.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "559b22e88d9634f6a72dea87177f5e7ad4e84b4e64b20349697d572464dc1e59"
 
 [[package]]
 name = "futures-core"

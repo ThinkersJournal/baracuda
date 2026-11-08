@@ -1,10 +1,10 @@
 [package]
 name = "baracuda-cuda-seam"
 version = "0.1.0-alpha.103"
-description = "The Fuel kernel-seam `Synthesizer` implementation (`BaracudaSynthesizer`) over the CUDA backend in `baracuda-cuda-emit`."
+description = "FireLine's kernel-seam `Synthesizer` implementation (`BaracudaSynthesizer`) over the CUDA backend in `baracuda-cuda-emit`, as Fuel calls it."
 edition.workspace = true
 # No `rust-version.workspace = true`: no MSRV CI job builds this crate under 1.88
-# (fuel's seam crates' own floor is unmeasured), so declaring it would be an
+# (the seam crates' own floor is unmeasured), so declaring it would be an
 # untested floor -- see the workspace note.
 license.workspace = true
 authors.workspace = true
@@ -28,14 +28,14 @@ device-tests = []
 baracuda-cuda-emit = { workspace = true }
 unpopped = { workspace = true }
 unpopped-vocab = { workspace = true }
-# The §5 shared wire grammar + live-call envelope Fuel calls: registry versions
-# (standing rule: no git deps). 0.22 added `JitRequest::target` and
-# `OpAttrs::region_key()`; 0.43.0 is the current release (on unpopped-vocab 0.43.x). Both crates must be the SAME
-# line so the graph holds one copy of `fuel-kernel-seam-types`. Caret, not `=`: Fuel's own
-# workspace carries newer 0.26 patch releases of the same crates, and an exact pin cannot
-# unify with them (two copies, E0308 at lib.rs:275,283).
-fuel-kernel-seam-types = "^0.43"
-fuel-kernel-seam = "^0.43"
+# The §5 shared wire grammar + live-call envelope: FireLine's published crates (registry versions;
+# standing rule: no git deps). `fireline-grammar` carries the region grammar (what was
+# `fuel-kernel-seam-types`), `fireline-synth` the `Synthesizer` trait and its request/response
+# envelope (what was `fuel-kernel-seam`). `~0.1`, never `^`: each FireLine crate's version follows its
+# interface and a 0.x minor is a breaking change. Both crates must resolve to ONE copy each in the
+# graph (Fuel's `jit-synth` feature implements the same `fireline_synth::Synthesizer`).
+fireline-grammar = "~0.1"
+fireline-synth = "~0.1"
 
 [lints]
 workspace = true
