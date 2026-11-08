@@ -418,9 +418,9 @@ fn region_op_id(region: &SeamNode, operands: &[OperandDesc]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use fireline_synth::JitBudget;
     use fireline_grammar::OpAttrs;
     use fireline_grammar::OpTag;
+    use fireline_synth::JitBudget;
     use unpopped::{JitError, StubCompiler};
     use unpopped_vocab::{ArchSku, ElementKind};
 
