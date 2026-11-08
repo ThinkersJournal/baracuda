@@ -455,8 +455,9 @@ plugs into the neutral core from outside:
   the best kernel for the Fuel-chosen region and returns the kernel, its FKC
   contract, a recipe and a link row. It never scans a graph for fusion
   opportunities.
-- [`baracuda-seam`](crates/baracuda-seam) — the frozen `SeamHello`
-  negotiation envelope (Profile v1) Fuel reads to negotiate a seam profile.
+- [`baracuda-seam`](crates/baracuda-seam) — Baracuda's side of the Profile v1
+  handshake: the `SeamHello` it advertises (envelope and negotiation come from
+  `fireline-announce`) and the `baracuda_seam_hello` entry point a consumer reads.
 
 Earlier revisions of this document (and the dated records under `docs/design/`
 and `docs/superpowers/`) describe the pre-split `baracuda-kernelgen` layout;
