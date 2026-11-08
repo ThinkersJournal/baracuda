@@ -389,7 +389,7 @@ jobs:
           echo "crates declaring rust-version=1.88: [$names]"
           [ -n "$names" ] || { echo "GUARD BROKEN: no crate declares rust-version=1.88 — this job would build nothing."; exit 2; }
           [ "$names" = "$exp" ] || { echo "MSRV DRIFT: {declares 1.88}=[$names] != {expected}=[$exp]. A crate gained or lost its 1.88 floor, or the 'expected' list was edited — reconcile the Cargo.toml declarations with the list in this step."; exit 1; }
-          # name@version: a graph that holds a registry copy of a lockstep crate (via fuel-kernel-seam)
+          # name@version: a graph that holds a registry copy of a lockstep crate (via fireline-synth)
           # makes a bare `-p NAME` ambiguous, so qualify every member with its own workspace version.
           args=(); for n in $names; do
             v=$(printf '%s' "$meta" | python3 -c "import json,sys; print(next(p['version'] for p in json.load(sys.stdin)['packages'] if p['name']=='$n'))")

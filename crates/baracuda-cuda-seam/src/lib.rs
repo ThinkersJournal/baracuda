@@ -1,15 +1,17 @@
 //! # baracuda-cuda-seam
 //!
-//! Baracuda's live JIT synthesizer for the Fuel kernel seam — the
-//! `fuel_kernel_seam::Synthesizer` implementation (`BaracudaSynthesizer`) Fuel
+//! Baracuda's live JIT synthesizer for the FireLine kernel seam — the
+//! `fireline_synth::Synthesizer` implementation (`BaracudaSynthesizer`) Fuel
 //! calls (§5). Carved out of `baracuda-kernelgen`'s `jit.rs` (carve step 2) and
 //! then out of `baracuda-cuda-emit`'s former `seam` feature: it wires the CUDA
 //! backend ([`baracuda_cuda_emit::Cuda`]) + the NVRTC compiler into the neutral
 //! generator's native [`unpopped::synthesize`].
 //!
 //! **Published** on crates.io (read 2026-11-07: `baracuda-cuda-seam` has 9 versions, newest
-//! `0.1.0-alpha.95`). It depends on `fuel-kernel-seam{,-types}` by registry
-//! version (`^0.43`, see `Cargo.toml` and `tests/seam_pin.rs`); it used to depend on them by
+//! `0.1.0-alpha.95`). It depends on `fireline-synth` and `fireline-grammar` (FireLine's
+//! crates; the same interfaces Fuel published as `fuel-kernel-seam{,-types}` up to 0.43) by
+//! registry version (`~0.1`, see `Cargo.toml` and `tests/seam_pin.rs`); up to alpha.104 it
+//! required `fuel-kernel-seam{,-types}` `^0.43`, and before that it depended on them by
 //! git rev, which crates.io rejects even for an optional dependency, and that is why it was
 //! split from `baracuda-cuda-emit`.
 //!
@@ -20,10 +22,10 @@
 //! deleted (Unpopped#18, "dissolve the fuel-kernel-seam-types diamond, don't
 //! just realign it") — the PM's ruling on the two-repo E0308 this module's own
 //! doc used to describe (see the old §-header below, kept as history in git
-//! blame, not restated here): a semver-incompatible `fuel-kernel-seam-types`
+//! blame, not restated here): a semver-incompatible grammar-crate
 //! bump could produce two incompatible `PatternNode` types in ONE consumer's
 //! graph, because `unpopped` was a SECOND place that type appeared. Moving the
-//! conversion here — this crate already depends on `fuel-kernel-seam-types`
+//! conversion here — this crate already depends on `fireline-grammar`
 //! directly, so nothing new is added — makes `baracuda-cuda-emit` the ONLY
 //! consumer of that crate in the graph: one version, nothing left to disagree
 //! with. `to_internal`/`to_internal_at`/`optag_name` below are relocated
@@ -41,7 +43,7 @@
 
 #[cfg(feature = "nvrtc")]
 use baracuda_cuda_emit::NvrtcCompiler;
-use fuel_kernel_seam_types::{OpTag, PatternNode as SeamNode};
+use fireline_grammar::{OpTag, PatternNode as SeamNode};
 use unpopped::{ArtifactKind, JitBudget, JitError, JitRequest, PatternNode};
 use unpopped_vocab::{OpCategory, OperandDesc, TargetId};
 
@@ -158,7 +160,7 @@ fn optag_name(op: OpTag) -> Option<&'static str> {
     })
 }
 
-/// Synthesize for a region in Fuel's frozen grammar (`fuel_kernel_seam_types`).
+/// Synthesize for a region in Fuel's frozen grammar (`fireline_grammar`).
 /// Fuel owns the region grammar (`PatternNode`/`OpTag`); Baracuda owns the
 /// classifier input (`OperandDesc`). Converts Fuel's node to
 /// [`unpopped::PatternNode`] ([`to_internal`]) and calls
@@ -195,13 +197,13 @@ fn synthesize(
     unpopped::synthesize(&req, backend, compiler)
 }
 
-// ===== The live §5 call — the `fuel_kernel_seam::Synthesizer` Fuel invokes =====
+// ===== The live §5 call — the `fireline_synth::Synthesizer` Fuel invokes =====
 
 use baracuda_cuda_emit::Cuda;
 // Alias the envelope types: their bare `JitRequest`/`JitResponse` names would
 // shadow our own internal `jit::{JitRequest, JitResponse}` (glob-imported via
 // `super::*`) across this whole module and silently retype the native core.
-use fuel_kernel_seam::{
+use fireline_synth::{
     ArtifactKind as SeamArtifactKind, JitRequest as SeamRequest, JitResponse as SeamResponse,
     LinkEntry as SeamLinkEntry, SynthArtifact as SeamArtifact, Synthesizer,
 };
@@ -209,7 +211,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 
 // The retained artifact IS the envelope [`SeamArtifact`]
-// (`fuel_kernel_seam::SynthArtifact`) — Fuel stays type-decoupled (its own Q1
+// (`fireline_synth::SynthArtifact`) — Fuel stays type-decoupled (its own Q1
 // invariant), so `take_kernel` hands back Fuel's type, not a Baracuda one. Built
 // at the trait boundary in `synthesize` from the native response; the debug-only
 // `.cu` source and the `recipe` are dropped (the re-fuse `pattern:` rides in the
@@ -416,9 +418,9 @@ fn region_op_id(region: &SeamNode, operands: &[OperandDesc]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use fuel_kernel_seam::JitBudget;
-    use fuel_kernel_seam_types::OpAttrs;
-    use fuel_kernel_seam_types::OpTag;
+    use fireline_grammar::OpAttrs;
+    use fireline_grammar::OpTag;
+    use fireline_synth::JitBudget;
     use unpopped::{JitError, StubCompiler};
     use unpopped_vocab::{ArchSku, ElementKind};
 
@@ -1099,15 +1101,15 @@ mod tests {
         keepdim.keepdim = Some(true);
         let mut target_shape_rel = base.clone();
         target_shape_rel.target_shape_rel =
-            Some(fuel_kernel_seam_types::shape_expr::ShapeExpr::SameAs { operand: 0 });
+            Some(fireline_grammar::shape_expr::ShapeExpr::SameAs { operand: 0 });
         let mut slice_start_rel = base.clone();
-        slice_start_rel.slice_start_rel = Some(fuel_kernel_seam_types::shape_expr::Dim::Const(3));
+        slice_start_rel.slice_start_rel = Some(fireline_grammar::shape_expr::Dim::Const(3));
         let mut slice_len_rel = base.clone();
-        slice_len_rel.slice_len_rel = Some(fuel_kernel_seam_types::shape_expr::Dim::Const(5));
+        slice_len_rel.slice_len_rel = Some(fireline_grammar::shape_expr::Dim::Const(5));
         let mut axis_last = base.clone();
         axis_last.axis_last = true;
         let mut scalar_rel = base.clone();
-        scalar_rel.scalar_rel = Some(fuel_kernel_seam_types::shape_expr::Dim::Const(7));
+        scalar_rel.scalar_rel = Some(fireline_grammar::shape_expr::Dim::Const(7));
         let mut lhs_roles = base.clone();
         lhs_roles.lhs_roles = vec![0, 1];
         let mut rhs_roles = base.clone();
