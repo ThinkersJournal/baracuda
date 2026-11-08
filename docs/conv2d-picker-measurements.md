@@ -174,3 +174,74 @@ The GPU clock was **not** sampled during these runs, so nothing below is attribu
 | 3x3 s1 depthwise 128ch 28x28 | 0.125 / 0.130 | 0.158 / 0.161 | **0.79x** / 0.81x |
 | 3x3 s1 d2 128ch 28x28 | 0.339 / 0.332 | 1.158 / 1.109 | **0.29x** / **0.30x** |
 | 3x3 s1 d4 64ch 56x56 | 0.633 / 0.618 | 1.188 / 1.185 | **0.53x** / **0.52x** |
+
+## Clock-sampled release re-run (SA-49, the sampled counterpart of the section above)
+
+Measured 2026-11-08 09:50Z to 09:55Z, **release profile**, with the SM clock sampled out of process. Same exe as the section above (built 2026-11-06 08:42 from `main` 78469749:
+`conv2d_picker_measure`, release, features `cudnn,device-tests`; not rebuilt), same device and drivers (RTX 4070 Laptop, sm_89, cuDNN 9.23 / CUDA 13.3), under `scripts/gpu-run.ps1` (v4).
+Run twice back to back with `--nocapture`: 1 ran, 1 passed, 0 failed both times (129.8 s and 128.5 s). Each cell is `run 1 / run 2`; times are the median over 3 samples of 20 runs
+after the 500 ms warm-up; speedup = pinned median / picker median (bold = below 0.8x). A separate `nvidia-smi --query-gpu=timestamp,clocks.sm,clocks.max.sm,pstate,power.draw,temperature.gpu,utilization.gpu -l 1`
+process wrote one row per second (133 and 129 rows; 127 and 126 with GPU utilization above 0).
+
+- **The clock was mostly held this time.** Of the rows with the GPU busy, the SM clock read 2550 MHz in 87 of 127 (run 1) and 91 of 126 (run 2), at or above 2400 MHz in 93 and 98, and below 1500 MHz in 13 and 13 (where in the run they fall was not examined; the
+  first 15 busy rows of run 1 are all 2550). The maximum clock the driver reports is 3105 MHz, so "held" means held at 2550, not at the maximum. P-state P0 in 121 and 116 of the rows; power median 59.9 W and 57.9 W; temperature at most 81 C.
+- **The conclusion does not change: the picker stays opt-in and nothing here supports a default flip.** Rows at or above 1.0x: f32 7 and 8 of 13, f16 1 and 2 of 13, bf16 0 and 1 of 13 (run 1 and run 2). f16 and bf16 lose on the 1x1 shapes (0.3x to 0.6x for f16 and for bf16) and on the dilated shapes.
+- **Compared with the release section above (clock not sampled): the f32 wins shrink and the pinned time halves.** There the f32 3x3 shapes read 2.0x to 3.0x with pinned 0.47 to 0.52 ms; here 1.2x to 1.9x with pinned 0.26 to 0.28 ms, while the picker time is similar (0.17 to 0.21 ms there, 0.14 to 0.23 ms here).
+  That is what a pinned measurement taken at a low clock would look like, and it is consistent with the earlier sections' explanation, but the earlier release run had no clock sample, so this does not prove that run was at a low clock.
+- **Run to run, 34 of 39 rows agree within 25%** (run 2 speedup / run 1 speedup between 0.8 and 1.25), up from 29 of 39. The five that do not: f32 1x1 256->64 (0.21x / 0.16x, a loss in both), f16 g32 (0.91x / 0.69x), bf16 g32 (0.80x / 1.07x), bf16 1x1 64->256 (0.62x / 0.46x) and bf16 1x1 512->128 (0.46x / 0.32x).
+  The three f32 1x1 rows that did not reproduce in the earlier section now read 0.83x / 1.03x (64->256), 0.83x / 0.84x (512->128) and 0.97x / 0.83x (1024->256): all three agree within 25% and sit around 0.8x to 1.0x.
+- **Not controlled:** other lanes' nvcc builds ran during both runs (host CPU mean 28.9% and 34.2%, maximum 35.3% and 40.4%, sampled every 5 s), so host launch overhead was not isolated; one device, one driver; the exe is the 2026-11-06 build, not a rebuild at `c33e701e`. Still open under SA-49: backward (no picker), other GPUs and the pre-filled-buffer variant. A guard or timed-pick experiment is untested.
+
+### f32 (clock-sampled, run 1 / run 2)
+
+| shape | pinned ms (med) | picker ms (med) | speedup (med) |
+| --- | --- | --- | --- |
+| 3x3 s1 64ch 56x56 | 0.257 / 0.259 | 0.137 / 0.137 | 1.88x / 1.89x |
+| 3x3 s1 128ch 28x28 | 0.261 / 0.259 | 0.202 / 0.213 | 1.29x / 1.21x |
+| 3x3 s1 256ch 14x14 | 0.279 / 0.281 | 0.226 / 0.214 | 1.24x / 1.31x |
+| 1x1 s1 256->64 56x56 | 0.202 / 0.192 | 0.943 / 1.193 | **0.21x** / **0.16x** |
+| 7x7 s2 3->64 224x224 | 0.275 / 0.272 | 0.185 / 0.185 | 1.49x / 1.47x |
+| 1x1 s1 64->256 56x56 | 0.181 / 0.204 | 0.219 / 0.198 | 0.83x / 1.03x |
+| 1x1 s1 512->128 28x28 | 0.213 / 0.204 | 0.257 / 0.242 | 0.83x / 0.84x |
+| 1x1 s1 1024->256 14x14 | 0.239 / 0.203 | 0.247 / 0.246 | 0.97x / 0.83x |
+| 1x1 s2 256->512 56x56 | 0.226 / 0.226 | 0.160 / 0.177 | 1.41x / 1.27x |
+| 3x3 s1 g32 256ch 14x14 | 0.927 / 0.856 | 1.009 / 0.902 | 0.92x / 0.95x |
+| 3x3 s1 depthwise 128ch 28x28 | 0.109 / 0.126 | 0.143 / 0.168 | **0.76x** / **0.75x** |
+| 3x3 s1 d2 128ch 28x28 | 0.262 / 0.261 | 0.226 / 0.182 | 1.16x / 1.43x |
+| 3x3 s1 d4 64ch 56x56 | 0.255 / 0.257 | 0.212 / 0.186 | 1.21x / 1.38x |
+
+### f16 (clock-sampled, run 1 / run 2)
+
+| shape | pinned ms (med) | picker ms (med) | speedup (med) |
+| --- | --- | --- | --- |
+| 3x3 s1 64ch 56x56 | 0.375 / 0.369 | 0.418 / 0.375 | 0.90x / 0.99x |
+| 3x3 s1 128ch 28x28 | 0.234 / 0.226 | 0.415 / 0.404 | **0.56x** / **0.56x** |
+| 3x3 s1 256ch 14x14 | 0.307 / 0.307 | 0.375 / 0.423 | 0.82x / **0.72x** |
+| 1x1 s1 256->64 56x56 | 0.201 / 0.178 | 0.345 / 0.313 | **0.58x** / **0.57x** |
+| 7x7 s2 3->64 224x224 | 0.279 / 0.278 | 0.228 / 0.232 | 1.23x / 1.20x |
+| 1x1 s1 64->256 56x56 | 0.195 / 0.187 | 0.358 / 0.327 | **0.54x** / **0.57x** |
+| 1x1 s1 512->128 28x28 | 0.192 / 0.196 | 0.590 / 0.581 | **0.33x** / **0.34x** |
+| 1x1 s1 1024->256 14x14 | 0.208 / 0.156 | 0.561 / 0.426 | **0.37x** / **0.37x** |
+| 1x1 s2 256->512 56x56 | 0.206 / 0.202 | 0.211 / 0.198 | 0.98x / 1.02x |
+| 3x3 s1 g32 256ch 14x14 | 0.892 / 0.884 | 0.975 / 1.276 | 0.91x / **0.69x** |
+| 3x3 s1 depthwise 128ch 28x28 | 0.134 / 0.137 | 0.161 / 0.171 | 0.83x / 0.80x |
+| 3x3 s1 d2 128ch 28x28 | 0.230 / 0.237 | 0.459 / 0.437 | **0.50x** / **0.54x** |
+| 3x3 s1 d4 64ch 56x56 | 0.374 / 0.369 | 0.413 / 0.373 | 0.91x / 0.99x |
+
+### bf16 (clock-sampled, run 1 / run 2)
+
+| shape | pinned ms (med) | picker ms (med) | speedup (med) |
+| --- | --- | --- | --- |
+| 3x3 s1 64ch 56x56 | 0.374 / 0.372 | 0.501 / 0.529 | **0.75x** / **0.70x** |
+| 3x3 s1 128ch 28x28 | 0.231 / 0.226 | 0.555 / 0.513 | **0.42x** / **0.44x** |
+| 3x3 s1 256ch 14x14 | 0.309 / 0.308 | 0.495 / 0.430 | **0.62x** / **0.72x** |
+| 1x1 s1 256->64 56x56 | 0.196 / 0.175 | 0.369 / 0.341 | **0.53x** / **0.51x** |
+| 7x7 s2 3->64 224x224 | 0.282 / 0.277 | 0.386 / 0.379 | **0.73x** / **0.73x** |
+| 1x1 s1 64->256 56x56 | 0.239 / 0.195 | 0.387 / 0.428 | **0.62x** / **0.46x** |
+| 1x1 s1 512->128 28x28 | 0.261 / 0.209 | 0.561 / 0.645 | **0.46x** / **0.32x** |
+| 1x1 s1 1024->256 14x14 | 0.205 / 0.180 | 0.746 / 0.628 | **0.27x** / **0.29x** |
+| 1x1 s2 256->512 56x56 | 0.253 / 0.206 | 0.545 / 0.455 | **0.46x** / **0.45x** |
+| 3x3 s1 g32 256ch 14x14 | 0.912 / 0.930 | 1.144 / 0.872 | 0.80x / 1.07x |
+| 3x3 s1 depthwise 128ch 28x28 | 0.163 / 0.111 | 0.209 / 0.122 | **0.78x** / 0.91x |
+| 3x3 s1 d2 128ch 28x28 | 0.234 / 0.228 | 1.166 / 0.961 | **0.20x** / **0.24x** |
+| 3x3 s1 d4 64ch 56x56 | 0.373 / 0.373 | 1.115 / 1.145 | **0.33x** / **0.33x** |

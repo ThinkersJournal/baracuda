@@ -1,7 +1,8 @@
 [package]
 name = "baracuda-cuda-seam"
-version = "0.1.0-alpha.103"
+version = "0.1.0-alpha.105"
 description = "FireLine's kernel-seam `Synthesizer` implementation (`BaracudaSynthesizer`) over the CUDA backend in `baracuda-cuda-emit`, as Fuel calls it."
+
 edition.workspace = true
 # No `rust-version.workspace = true`: no MSRV CI job builds this crate under 1.88
 # (the seam crates' own floor is unmeasured), so declaring it would be an
