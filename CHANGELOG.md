@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.114 - 2026-11-11
+
+- **Docs: R6 review of the `baracuda-kernels` `reduce` family (`docs/planning/api-freeze/r6/reduce.md`).** 126 of 126 items stable. One doc finding, not fixed here: the `reduce/mod.rs` doc says `ArgReducePlan` returns `i64` indices while the plan is generic over `i64`/`u32`. Version proposed by the lane (PM allocates at gate time).
+
 ## 0.1.0-alpha.113 - 2026-11-11
 
 - **Docs: R6 review of the `baracuda-kernels` `embedding` family (`docs/planning/api-freeze/r6/embedding.md`).** 125 of 125 items stable. Findings, none fixed here: the `embedding/mod.rs` module doc says the index dtype is `i32` only while five of six plans are generic over `i32`/`i64`; sizes are `i32`. Version proposed by the lane (PM allocates at gate time).
