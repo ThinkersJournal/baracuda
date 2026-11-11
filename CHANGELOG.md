@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.117 - 2026-11-11
+
+- **Docs: R6 review of the `baracuda-kernels` `random` family (`docs/planning/api-freeze/r6/random.md`).** 146 of 146 items stable. Findings, none fixed here: three of seven plans (`DropoutPlan`, `DropoutBackwardPlan`, `RandomPlan`) have no `can_implement` and a per-dtype `run`; the `random/mod.rs` doc lists only three of the seven plans and cites a local path; three sampling plans' `run` depends on the `flashinfer` feature. Version proposed by the lane (PM allocates at gate time).
+
 ## 0.1.0-alpha.116 - 2026-11-11
 
 - **Docs: R6 review of the `baracuda-kernels` `fft` family (`docs/planning/api-freeze/r6/fft.md`).** 139 of 139 items stable. Findings, none fixed here: only `FftShiftNdPlan` has `can_implement` (the other seven plans validate inside `run`); `run` is per-dtype rather than generic; the ND plans take flat `DeviceSlice` args while the 1-D plans take shaped tensors; the `!Send` thread-safety doc looks wrong (`Cell<c_int>` is `Send`). Version proposed by the lane (PM allocates at gate time).
