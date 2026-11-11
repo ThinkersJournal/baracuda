@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.111 - 2026-11-10
+
+- **Docs: R6 review of the `baracuda-kernels` `causal_conv1d` family (`docs/planning/api-freeze/r6/causal_conv1d.md`).** 40 of 40 items stable (behind the `mamba` feature). One finding: `CausalConv1dBackwardPlan` has no `can_implement` and its `run` checks no argument (the forward plan and the other backward plans compared do); `instance_norm_backward` has the same gap. Not fixed here. No code change.
+
 ## 0.1.0-alpha.110 - 2026-11-10
 
 - **CI: `scripts/publish.ps1` is deleted.** ReleaseAnt R5 (adopted for baracuda) publishes; `scripts/preflight.ps1` (alpha.107) keeps the two baracuda checks. Comments in `ci.yml` and `check-crate-licences.py` that named the old script now name `preflight.ps1` / `releaseant publish`. The release tag's stream comes from the tool's `--tag-version`. No library code changes.
