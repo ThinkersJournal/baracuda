@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.116 - 2026-11-11
+
+- **Docs: R6 review of the `baracuda-kernels` `fft` family (`docs/planning/api-freeze/r6/fft.md`).** 139 of 139 items stable. Findings, none fixed here: only `FftShiftNdPlan` has `can_implement` (the other seven plans validate inside `run`); `run` is per-dtype rather than generic; the ND plans take flat `DeviceSlice` args while the 1-D plans take shaped tensors; the `!Send` thread-safety doc looks wrong (`Cell<c_int>` is `Send`). Version proposed by the lane (PM allocates at gate time).
+
 ## 0.1.0-alpha.115 - 2026-11-11
 
 - **Docs: R6 review of the `baracuda-kernels` crate root (`docs/planning/api-freeze/r6/lib.md`).** 71 of 71 items stable. Findings, none fixed here: the root's `Error`/`Result` and about 67 vocabulary names are re-exported from `baracuda-cutlass` and `baracuda-kernels-types`, so those two crates must be frozen in the same pass; 16 rows are feature-gated; three facade modules rename `Error`/`Result` on re-export. Version proposed by the lane (PM allocates at gate time).
