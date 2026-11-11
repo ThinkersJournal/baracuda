@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.115 - 2026-11-11
+
+- **Docs: R6 review of the `baracuda-kernels` crate root (`docs/planning/api-freeze/r6/lib.md`).** 71 of 71 items stable. Findings, none fixed here: the root's `Error`/`Result` and about 67 vocabulary names are re-exported from `baracuda-cutlass` and `baracuda-kernels-types`, so those two crates must be frozen in the same pass; 16 rows are feature-gated; three facade modules rename `Error`/`Result` on re-export. Version proposed by the lane (PM allocates at gate time).
+
 ## 0.1.0-alpha.114 - 2026-11-11
 
 - **Docs: R6 review of the `baracuda-kernels` `reduce` family (`docs/planning/api-freeze/r6/reduce.md`).** 126 of 126 items stable. One doc finding, not fixed here: the `reduce/mod.rs` doc says `ArgReducePlan` returns `i64` indices while the plan is generic over `i64`/`u32`. Version proposed by the lane (PM allocates at gate time).
