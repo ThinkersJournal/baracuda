@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.111 - 2026-11-10
+
+- **Docs: R6 review of the `baracuda-kernels` `causal_conv1d` family (`docs/planning/api-freeze/r6/causal_conv1d.md`).** 40 of 40 items stable (behind the `mamba` feature). One finding: `CausalConv1dBackwardPlan` has no `can_implement` and its `run` checks no argument (the forward plan and the other backward plans compared do); `instance_norm_backward` has the same gap. Not fixed here. No code change.
+
 ## 0.1.0-alpha.109 - 2026-11-10
 
 - **Docs: R6 review of the `baracuda-kernels` `scan` family (`docs/planning/api-freeze/r6/scan.md`).** 38 of 38 items stable; none proposed for `doc(hidden)` or removal. One cross-family finding for the `indexing` review: axis fields are `u8` in `scan`/`softmax`/`reduce` and `i32` in six `indexing` files. No code change.
