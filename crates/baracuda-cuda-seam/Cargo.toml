@@ -1,6 +1,6 @@
 [package]
 name = "baracuda-cuda-seam"
-version = "0.1.0-alpha.115"
+version = "0.1.0-alpha.116"
 description = "FireLine's kernel-seam `Synthesizer` implementation (`BaracudaSynthesizer`) over the CUDA backend in `baracuda-cuda-emit`, as Fuel calls it."
 
 edition.workspace = true
