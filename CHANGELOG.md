@@ -16,9 +16,9 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
-## 0.1.0-alpha.118 - 2026-11-11
+## 0.1.0-alpha.117 - 2026-11-11
 
-- **Docs: R6 review of the `baracuda-kernels` `indexing` family (`docs/planning/api-freeze/r6/indexing.md`).** 196 of 196 items stable. Findings, none fixed here: the `indexing/mod.rs` module doc says the index dtype is `i32` only while nine of eleven plans are generic over `i32`/`i64`, and its dtype list is off (`index_add`/`scatter` also take `f16`/`bf16`; `scatter_add` and `index_select_backward` are `f32`/`f64`); axis and extent fields are `i32` in seven descriptors (`u8` in `scan`/`softmax`/`reduce`); every `sku()` reports `aux_element: I32` even for an `i64` index; `MaskedFillDescriptor` carries both `T` and an `element` field. Version proposed by the lane (PM allocates at gate time). No code change.
+- **Docs: R6 review of the `baracuda-kernels` `random` family (`docs/planning/api-freeze/r6/random.md`).** 146 of 146 items stable. Findings, none fixed here: three of seven plans (`DropoutPlan`, `DropoutBackwardPlan`, `RandomPlan`) have no `can_implement` and a per-dtype `run`; the `random/mod.rs` doc lists only three of the seven plans and cites a local path; three sampling plans' `run` depends on the `flashinfer` feature. Version proposed by the lane (PM allocates at gate time).
 
 ## 0.1.0-alpha.116 - 2026-11-11
 
