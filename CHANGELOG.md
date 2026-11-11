@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.109 - 2026-11-10
+
+- **Docs: R6 review of the `baracuda-kernels` `scan` family (`docs/planning/api-freeze/r6/scan.md`).** 38 of 38 items stable; none proposed for `doc(hidden)` or removal. One cross-family finding for the `indexing` review: axis fields are `u8` in `scan`/`softmax`/`reduce` and `i32` in six `indexing` files. No code change.
+
 ## 0.1.0-alpha.107 - 2026-11-10
 
 - **CI: `scripts/preflight.ps1` (ReleaseAnt R5 adoption).** The two baracuda-specific publish checks (every publishable crate's licence files identical to the root copies; `baracuda-cuda-emit` / `baracuda-cuda-parse` MAJOR.MINOR equal to their `unpopped` requirement) now run as a standalone script before `releaseant publish`. It uploads nothing. `scripts/publish.ps1` is deleted in a follow-up. No library code changes.
