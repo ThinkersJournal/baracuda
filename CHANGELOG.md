@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.113 - 2026-11-11
+
+- **Docs: R6 review of the `baracuda-kernels` `embedding` family (`docs/planning/api-freeze/r6/embedding.md`).** 125 of 125 items stable. Findings, none fixed here: the `embedding/mod.rs` module doc says the index dtype is `i32` only while five of six plans are generic over `i32`/`i64`; sizes are `i32`. Version proposed by the lane (PM allocates at gate time).
+
 ## 0.1.0-alpha.112 - 2026-11-11
 
 - **Docs: R6 review of the `baracuda-kernels` `softmax` family (`docs/planning/api-freeze/r6/softmax.md`).** 106 of 106 items stable. Findings, none fixed here: the `softmax/mod.rs` module doc still says sparsemax row extent is limited to 64 (it is 1024, `SPARSEMAX_MAX_EXTENT`); `GumbelSoftmaxPlan` is `!Sync` (a `Cell` cuRAND generator), which freezing the type freezes; `SoftmaxKind` belongs to `unpopped_vocab`. No code change.
