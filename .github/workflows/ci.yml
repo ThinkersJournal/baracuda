@@ -118,7 +118,7 @@ jobs:
       # own directory. alpha.79 shipped 69 crates with no licence text (the
       # per-crate copies came after it, #18), and `baracuda-cuda-vocab` was created
       # after that sweep and missed it, which held the alpha.80 publish.
-      # `scripts/publish.ps1` runs the same script and refuses to publish on failure.
+      # `scripts/preflight.ps1` runs the same script before `releaseant publish` and fails the release on it.
       - name: crate-licence guard
         shell: bash
         run: |

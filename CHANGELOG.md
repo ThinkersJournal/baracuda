@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.110 - 2026-11-10
+
+- **CI: `scripts/publish.ps1` is deleted.** ReleaseAnt R5 (adopted for baracuda) publishes; `scripts/preflight.ps1` (alpha.107) keeps the two baracuda checks. Comments in `ci.yml` and `check-crate-licences.py` that named the old script now name `preflight.ps1` / `releaseant publish`. The release tag's stream comes from the tool's `--tag-version`. No library code changes.
+
 ## 0.1.0-alpha.109 - 2026-11-10
 
 - **Docs: R6 review of the `baracuda-kernels` `scan` family (`docs/planning/api-freeze/r6/scan.md`).** 38 of 38 items stable; none proposed for `doc(hidden)` or removal. One cross-family finding for the `indexing` review: axis fields are `u8` in `scan`/`softmax`/`reduce` and `i32` in six `indexing` files. No code change.
