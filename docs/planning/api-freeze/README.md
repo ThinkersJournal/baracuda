@@ -330,6 +330,35 @@ anything that grew before that is invisible; a struct moved between files reads 
 that adds several fields counts once; a renamed field reads as one addition. "Has not grown" is a statement about
 this history, not a prediction.
 
+### 7.4 Census re-run at `316bb006` (2026-11-10, alpha.106)
+
+Method as §1 (tool built from `tool/`, `pubinv` then `classify.py`) over a tree at `316bb006`; **20 172** `pub`
+items across 75 crates with items (the committed TSVs: 20 076 across 74). Control: the classifier's plumbing rule still
+matches the same 30 already-hidden trait members. The committed TSVs are **not** rewritten here (this is a delta
+record, and `items.tsv` would churn on line numbers alone, per the note under §7.2); the next re-run diffs against
+this table.
+
+| class | committed (§2) | `316bb006` |
+|---|---:|---:|
+| `stable` | 9 905 | **9 995** |
+| `stable-c-abi` | 5 809 | 5 724 |
+| `vendor-mirror` | 4 271 | 4 363 |
+| `doc-hidden` | 62 | 67 |
+| `sealed-trait-pattern` | 21 | 21 |
+| `narrow-visibility-candidate` | 0 | **2** |
+| `candidate-for-removal` | 8 | 0 |
+
+Crates whose item count moved: `baracuda-tensorrt-sys` 94 to 212, `baracuda-tensorrt` 46 to 79, `baracuda-tensorrt-builder`
+(new, 99), `baracuda-kernels-types` 43 to 76, `baracuda-cuda-emit` 21 to 32, `baracuda-seam` 34 to 5 (cause not investigated), `baracuda-kernels` 6 185 to 6 145, `baracuda-kernels-sys` 5 798 to 5 737,
+`baracuda-runtime` 431 to 394, `baracuda-cuda-sys` 1 742 to 1 721, `baracuda-cutlass` 118 to 110, and one item each
+off `baracuda-nccl` and `baracuda-npp` (the last two were `candidate-for-removal`; no `#[deprecated]` remains).
+**R6's denominator is now 9 995 `stable` items, not 9 905.**
+
+**Two new `narrow-visibility-candidate` rows, the first that are not `Sealed` traits (§2 recorded 0):** `baracuda-kernels`
+`linalg/handle_init.rs` `create_cublas_handle` (line 10) and `create_cusolver_dn_handle` (line 15) are `pub` in a private
+module and not re-exported, so they are not reachable from outside the crate. `pub(crate)` would state what is
+already true. Not changed in this PR (a code edit in a crate that needs the CUDA environment to build).
+
 ## 8. What this slice does not decide
 
 Per-item stable/hidden/removal verdicts for the 9 905 `stable` items; whether beta.0 happens at all.
