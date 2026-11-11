@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.112 - 2026-11-11
+
+- **Docs: R6 review of the `baracuda-kernels` `softmax` family (`docs/planning/api-freeze/r6/softmax.md`).** 106 of 106 items stable. Findings, none fixed here: the `softmax/mod.rs` module doc still says sparsemax row extent is limited to 64 (it is 1024, `SPARSEMAX_MAX_EXTENT`); `GumbelSoftmaxPlan` is `!Sync` (a `Cell` cuRAND generator), which freezing the type freezes; `SoftmaxKind` belongs to `unpopped_vocab`. No code change.
+
 ## 0.1.0-alpha.111 - 2026-11-10
 
 - **Docs: R6 review of the `baracuda-kernels` `causal_conv1d` family (`docs/planning/api-freeze/r6/causal_conv1d.md`).** 40 of 40 items stable (behind the `mamba` feature). One finding: `CausalConv1dBackwardPlan` has no `can_implement` and its `run` checks no argument (the forward plan and the other backward plans compared do); `instance_norm_backward` has the same gap. Not fixed here. No code change.
