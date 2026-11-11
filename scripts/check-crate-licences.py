@@ -15,8 +15,8 @@ This guard fails when a publishable crate directory lacks either file, or holds
 a copy whose git blob differs from the root file's.
 
 - The crate set comes from `cargo metadata`, filtered exactly as
-  `scripts/publish.ps1` filters it (`publish` absent, or a non-empty
-  allowlist), so the guard and the publisher see the same population.
+  `scripts/preflight.ps1` / `releaseant publish` filter it (`publish` absent, or a
+  non-empty allowlist), so the guard and the publisher see the same population.
 - File identity comes from the git tree of REV (default `HEAD`), not from the
   disk, so an untracked or locally edited copy cannot satisfy it.
 
@@ -42,7 +42,7 @@ def same_path(a: str, b: str) -> bool:
 
 
 def publishable_crates(meta: dict) -> list:
-    """The crates `scripts/publish.ps1` uploads: `publish` absent, or a non-empty allowlist."""
+    """The crates `releaseant publish` uploads: `publish` absent, or a non-empty allowlist."""
     crates = [p for p in meta["packages"] if p["publish"] is None or len(p["publish"]) > 0]
     return sorted(crates, key=lambda p: p["name"])
 
