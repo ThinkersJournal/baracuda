@@ -1,3 +1,0 @@
-kind: Chore: drop the UTF-8 BOM from the three pure-ASCII gpu-run scripts
----
-- **`scripts/gpu-run-mutex.ps1`, `scripts/test-gpu-run-interleave.ps1` and `scripts/test-gpu-run-mutex-acl.ps1` no longer start with a UTF-8 BOM** (PM 2026-11-12, from Fuel's repo guard: a BOM only where Windows PowerShell 5.1 needs it, i.e. for non-ASCII text). Checked per file: 0 non-ASCII bytes in each. `scripts/gpu-run.ps1` keeps its BOM (72 non-ASCII bytes). Verified: the interleave test (per-binary order `ABABABAB`, whole-run control `AAAABBBB`) and the mutex ACL test pass under pwsh 7.7 and Windows PowerShell 5.1.26100. No behaviour change.
