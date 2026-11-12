@@ -192,6 +192,13 @@ try {
     # pid means the holder died without cleanup. Pid reuse can mask it (an
     # unrelated live process now owning that pid keeps us quiet) — a
     # false-NEGATIVE, never a false alarm.
+    # Re-read the lockfile NOW. $holderBefore was read before we waited: a holder that finished cleanly
+    # while we waited deletes its lockfile and is no longer running, which looked exactly like a crashed
+    # holder ("RECLAIMED stale GPU lock from DEAD pid") on every contended acquire. Only a lockfile that is
+    # STILL there after we own the mutex was left behind by a holder that died without cleanup.
+    $holderBefore = if (Test-Path -LiteralPath $LockPath) {
+                        (Get-Content -Raw -LiteralPath $LockPath -ErrorAction SilentlyContinue)
+                    } else { $null }
     if ($holderBefore) {
         $stalePid = $null
         try { $stalePid = ([regex]::Match($holderBefore, '"pid"\s*:\s*(\d+)')).Groups[1].Value } catch {}
