@@ -21,12 +21,16 @@
 //       * `v_data`        : same layout as `k_data`
 //       * `indices`       : `[total_used_pages]` i32 page-id array
 //       * `indptr`        : `[batch_size + 1]` i32 prefix sum into indices
-//       * `last_page_len` : `[batch_size]` i32 in `[0, page_size]`
+//       * `last_page_len` : `[batch_size]` i32 in `[1, page_size]`, COUNTING the token being
+//                           appended (the kernel writes slot `last_page_len - 1`)
 //   - `key`              : `[batch_size, num_heads, head_dim]` new K
 //   - `value`            : same layout as `key`
 //
-// After the call, `last_page_len[b]` should be incremented by 1
-// (caller's responsibility — this launcher does not touch it).
+// The page table must already include the new token: `indices` / `indptr` hold a page for
+// it and `last_page_len[b]` counts it (upstream FlashInfer's contract; the kernel computes
+// `seq_len = (pages - 1) * page_size + last_page_len` and appends at `seq_len - 1`). This
+// launcher does not touch `last_page_len`. (An earlier version of this comment said to
+// increment it after the call, which is one slot off.)
 //
 // Scope (Phase 46 Tier 1):
 //   - f16 + bf16 + f32 K/V dtypes; i32 index dtype.

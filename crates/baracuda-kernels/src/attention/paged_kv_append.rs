@@ -7,12 +7,20 @@
 //! Decode-time variant (1 token per request). The launcher routes to
 //! FlashInfer's `AppendPagedKVCacheDecode<DType, IdType>` kernel.
 //!
-//! Caller contract:
-//! - Increment `last_page_len[b]` by 1 *after* the call returns (this
-//!   plan does NOT mutate the page table).
-//! - If `last_page_len[b] == page_size`, the caller's `BlockManager`
-//!   must allocate a new page and extend `indices` / `indptr` BEFORE
-//!   the next call.
+//! Caller contract (FlashInfer's: `AppendPagedKVCacheDecodeKernel` in `page.cuh`, and the Note of upstream's
+//! `append_paged_kv_cache`, "`kv_indices`, `kv_indptr`, `kv_last_page_len` has incorporated appended k/v"):
+//! - The page table must **already include the new token** when this is called: `indices` / `indptr` hold a page for
+//!   it, and `last_page_len[b]` **counts it**, so it is in `[1, page_size]`. The kernel writes slot
+//!   `last_page_len[b] - 1` of request `b`'s last page (`(seq_len - 1) % page_size` of page `(seq_len - 1) / page_size`,
+//!   `seq_len = (pages - 1) * page_size + last_page_len`). `0` is not valid (the slot index would underflow).
+//! - This plan does NOT mutate the page table and never touches `last_page_len`.
+//! - If the last page is full before the new token, the caller's `BlockManager` allocates a new page, extends
+//!   `indices` / `indptr` and sets `last_page_len[b] = 1` BEFORE calling.
+//! - [`crate::BatchPagedDecodePlan`] reads the same metadata: append, then decode with the unchanged page table.
+//!
+//! This header used to say the opposite ("increment `last_page_len[b]` by 1 *after* the call"), which is one slot off:
+//! a caller following it overwrote its last existing token and never wrote the new one. The kernel is upstream's and was
+//! not changed; the doc, the launcher comment and the smoke test were wrong.
 
 #[cfg(feature = "flashinfer")]
 use super::map_status;
@@ -54,8 +62,8 @@ pub struct PagedKvAppendArgs<'a, T: Element> {
     pub indices: TensorRef<'a, i32, 1>,
     /// Page indptr `[batch + 1]` i32.
     pub indptr: TensorRef<'a, i32, 1>,
-    /// Last-page-len `[batch]` i32 (values in `[0, page_size]`).
-    /// **Read-only** in this plan — caller increments after the call.
+    /// Last-page-len `[batch]` i32, in `[1, page_size]`, **counting the token being appended** (the new token goes to
+    /// slot `last_page_len[b] - 1`). **Read-only** in this plan.
     pub last_page_len: TensorRef<'a, i32, 1>,
 }
 
