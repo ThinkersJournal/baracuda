@@ -227,7 +227,11 @@ def changelog_change(root, version, frags):
     m = re.search(r"(?m)^## (\[?)`?\d+\.\d+\.\d+", t)
     if not m:
         die("CHANGELOG.md has no version heading to put the entry above")
-    if m.group(1) == "[":
+    dated = re.match(r"^## \[?`?\d+\.\d+\.\d+[^\n]*? - \d{4}-\d{2}-\d{2}\b", t[m.start():])
+    if dated:
+        import datetime
+        heading = f"## {version} - {datetime.date.today().isoformat()}"
+    elif m.group(1) == "[":
         heading = f"## [{version}] {EM} {kind}"
     elif t[m.start():].startswith("## `"):
         heading = f"## `{version}` {EM} {kind}"
