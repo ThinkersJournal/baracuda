@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.126 - 2026-11-12
+
+Adds `docs/planning/api-freeze/r6/norm.md`: the R6 public-shape review of the 235 `norm` census rows at origin/main 3713ab29. Findings: `InstanceNorm*` has no public `can_implement` and its `select` (and the public `num_channels()` of four descriptors) can index out of bounds on `channel_axis >= N`, `channel_axis` accepts only 1, rank bounds 2..=8 vs 1..=8, three spellings of the saved statistics, differing affine flags, instance-norm `sku()` reports GroupNorm. No code change. Verified by reading the sources and grepping each `run` for `can_implement`; the panic was read, not executed.
+
 ## 0.1.0-alpha.124 - 2026-11-12
 
 - **Fix: the `last_page_len` contract of `PagedKvAppendPlan` / `baracuda_kernels_flashinfer_paged_kv_append_decode_*` is now documented as upstream FlashInfer defines it, and the smoke tests check it.** Upstream (`flashinfer-ai/flashinfer` `eee0d75f`, `flashinfer/page.py` `append_paged_kv_cache`, Note: "`kv_indices`, `kv_indptr`, `kv_last_page_len` has incorporated appended k/v") and the vendored `AppendPagedKVCacheDecodeKernel` (`page.cuh`, byte-identical to upstream) take `last_page_len[b]` **counting the new token**, in `[1, page_size]`: the token goes to slot `last_page_len[b] - 1` of the request's last page (`seq_len = (pages - 1) * page_size + last_page_len`; `0` would underflow). Our `paged_kv_append.rs` header, the `last_page_len` field doc and the launcher comment said the opposite ("increment `last_page_len` by 1 *after* the call"), so a caller following them overwrote its last existing token and never wrote the new one. **The wrong side was ours; the kernel was not touched.**

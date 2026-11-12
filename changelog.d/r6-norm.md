@@ -1,3 +1,0 @@
-kind: docs: R6 review of the kernels norm family (235 rows, 8 findings)
----
-Adds `docs/planning/api-freeze/r6/norm.md`: the R6 public-shape review of the 235 `norm` census rows at origin/main 3713ab29. Findings: `InstanceNorm*` has no public `can_implement` and its `select` (and the public `num_channels()` of four descriptors) can index out of bounds on `channel_axis >= N`, `channel_axis` accepts only 1, rank bounds 2..=8 vs 1..=8, three spellings of the saved statistics, differing affine flags, instance-norm `sku()` reports GroupNorm. No code change. Verified by reading the sources and grepping each `run` for `can_implement`; the panic was read, not executed.
