@@ -566,4 +566,4 @@ jobs:
     name: Portfolio checks (advisory)
     permissions:
       contents: read
-    uses: ciresnave/coderipper/.github/workflows/portfolio.yml@33cc3b7e4ab9305b5244092842fc7f6f6b686983 # coderipper main, ciresnave/coderipper#307 (installs 0.43.49); same pin as the other repos
+    uses: ciresnave/coderipper/.github/workflows/portfolio.yml@33cc3b7e4ab9305b5244092842fc7f6f6b686983 # coderipper main, ciresnave/coderipper#307 (installs 0.43.49); the pin the PM named
