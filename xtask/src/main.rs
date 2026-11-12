@@ -63,10 +63,16 @@ fn print_usage() {
 /// Runs on-device tests (`device-tests` feature / legacy `#[ignore]`) under the machine-wide `Global\gpu-run`
 /// mutex so lock acquisition is STRUCTURAL, not a convention someone must
 /// remember (the failure the postmortem indicts). Two phases:
-/// 1. compile UNLOCKED — `cargo test <args> --no-run` (the lock wrapper
-///    explicitly forbids serializing compile-only work);
-/// 2. device-run LOCKED — `scripts/gpu-run.ps1 -Project baracuda -- cargo test
-///    <args> -- --include-ignored <extra>`, which holds the mutex across the run.
+/// 1. compile UNLOCKED — `cargo test <args> --no-run --message-format=json-render-diagnostics` (the lock
+///    wrapper explicitly forbids serializing compile-only work); the JSON artifact lines name every test
+///    executable;
+/// 2. device-run LOCKED **per test binary** — for each executable,
+///    `scripts/gpu-run.ps1 -Project baracuda -- <exe> --include-ignored <extra>`, which takes the mutex,
+///    runs that one binary and releases it. The lock used to be held across the whole `cargo test`, so a
+///    7-12 h CI job starved every other lane's short GPU run (Fuel waited from ~01:43Z until the run ended,
+///    2026-11-12); now nobody waits longer than one binary. Doc tests are not run (`cargo test --doc` fails
+///    on a package with no library and cannot be selected per crate here); no doc test in this workspace is
+///    gated on a device, but that is not enforced.
 ///
 /// Writes a machine-readable run record (pass/fail/skip counts, skips by reason,
 /// commit, host, exit code) to `$BARACUDA_RESULTS_FILE` or
@@ -93,24 +99,28 @@ fn test_gpu(args: &[String]) -> ExitCode {
     if !scoped {
         eprintln!(
             "xtask test-gpu: no -p/--test filter — this builds AND launches the whole device \
-             suite under one lock. Prefer `-p <crate>` / `--test <name>`."
+             suite (the lock is taken per test binary). Prefer `-p <crate>` / `--test <name>`."
         );
     }
 
-    // Phase 1 — compile UNLOCKED (never hold the GPU mutex during a build).
-    match std::process::Command::new("cargo")
+    // Phase 1 — compile UNLOCKED (never hold the GPU mutex during a build). `json-render-diagnostics`
+    // keeps cargo's rendered warnings and errors on stderr and puts one JSON line per artifact on
+    // stdout, which is how phase 2 learns the test executables.
+    let test_bins = match std::process::Command::new("cargo")
         .arg("test")
         .args(cargo_args)
         .arg("--no-run")
-        .status()
+        .arg("--message-format=json-render-diagnostics")
+        .stderr(std::process::Stdio::inherit())
+        .output()
     {
-        Ok(s) if s.success() => {}
-        Ok(s) => return ExitCode::from(s.code().unwrap_or(1) as u8),
+        Ok(o) if o.status.success() => parse_test_bins(&String::from_utf8_lossy(&o.stdout)),
+        Ok(o) => return ExitCode::from(o.status.code().unwrap_or(1) as u8),
         Err(e) => {
             eprintln!("xtask test-gpu: could not spawn `cargo test --no-run`: {e}");
             return ExitCode::from(1);
         }
-    }
+    };
 
     // On-device declare-and-report wiring (baracuda-driver `test-support`): FAIL
     // LOUD if a `require!`d resource is absent here — this is the box where the
@@ -151,7 +161,7 @@ fn test_gpu(args: &[String]) -> ExitCode {
             }
         }
     } else {
-        // Phase 2 — device-run LOCKED via scripts/gpu-run.ps1.
+        // Phase 2 — device-run LOCKED via scripts/gpu-run.ps1, ONE test binary at a time.
         let Some(root) = find_workspace_root() else {
             eprintln!("xtask test-gpu: could not locate workspace root");
             return ExitCode::from(1);
@@ -165,34 +175,48 @@ fn test_gpu(args: &[String]) -> ExitCode {
             return ExitCode::from(1);
         }
         // Prefer PowerShell 7+ (`pwsh`); fall back to Windows `powershell`.
-        let mut result = None;
-        for (i, shell) in ["pwsh", "powershell"].iter().enumerate() {
+        let shell = match std::process::Command::new("pwsh")
+            .args(["-NoProfile", "-Command", "exit 0"])
+            .status()
+        {
+            Ok(_) => "pwsh",
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => "powershell",
+            Err(e) => {
+                eprintln!("xtask test-gpu: could not spawn pwsh: {e}");
+                return ExitCode::from(1);
+            }
+        };
+        let keep_going = cargo_args.iter().any(|a| a == "--no-fail-fast");
+        eprintln!(
+            "xtask test-gpu: {} test binaries, the gpu-run lock is taken for ONE at a time.",
+            test_bins.len()
+        );
+        // A waiter aborts (exit 75) after GPU_RUN_TIMEOUT_MIN (default 45); the longest legitimate
+        // wait is another lane's whole suite, so give this run more unless the caller chose.
+        let timeout_unset = std::env::var_os("GPU_RUN_TIMEOUT_MIN").is_none();
+        match run_each(&test_bins, keep_going, |bin| {
             let mut cmd = std::process::Command::new(shell);
-            cmd.arg("-File")
+            cmd.arg("-NoProfile")
+                .arg("-File")
                 .arg(&script)
                 .arg("-Project")
                 .arg("baracuda")
                 .arg("--")
-                .arg("cargo");
-            test_args(&mut cmd);
-            set_env(&mut cmd);
-            match run_tee(&mut cmd) {
-                Ok(r) => {
-                    result = Some(r);
-                    break;
-                }
-                // Shell not on PATH: try the next candidate; any other error is real.
-                Err(e) if e.kind() == std::io::ErrorKind::NotFound && i == 0 => continue,
-                Err(e) => {
-                    eprintln!("xtask test-gpu: could not spawn {shell}: {e}");
-                    return ExitCode::from(1);
-                }
+                .arg(&bin.exe)
+                .arg("--include-ignored")
+                .args(test_bin_args)
+                // What `cargo test` does for a test binary: run it from its package directory.
+                .current_dir(&bin.manifest_dir)
+                .env("CARGO_MANIFEST_DIR", &bin.manifest_dir);
+            if timeout_unset {
+                cmd.env("GPU_RUN_TIMEOUT_MIN", "180");
             }
-        }
-        match result {
-            Some(r) => r,
-            None => {
-                eprintln!("xtask test-gpu: neither `pwsh` nor `powershell` found on PATH");
+            set_env(&mut cmd);
+            run_tee(&mut cmd)
+        }) {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("xtask test-gpu: could not spawn {shell}: {e}");
                 return ExitCode::from(1);
             }
         }
@@ -221,6 +245,103 @@ fn test_gpu(args: &[String]) -> ExitCode {
         },
     );
     ExitCode::from(exit as u8)
+}
+
+/// One compiled test executable, and the package directory `cargo test` would run it from.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct TestBin {
+    exe: PathBuf,
+    manifest_dir: PathBuf,
+}
+
+/// The string value of `key` (given with its quotes and colon, e.g. `"\"executable\":"`) in one line of
+/// cargo's JSON, unescaped; `None` when the key is absent or its value is `null`. xtask carries no serde, so
+/// this reads only what cargo's flat artifact lines need: `\\`, `\"`, `\/` and `\uXXXX` escapes.
+fn json_string_field(line: &str, key: &str) -> Option<String> {
+    let rest = line[line.find(key)? + key.len()..].trim_start();
+    let mut chars = rest.strip_prefix('"')?.chars();
+    let mut out = String::new();
+    loop {
+        match chars.next()? {
+            '"' => return Some(out),
+            '\\' => match chars.next()? {
+                'n' => out.push('\n'),
+                't' => out.push('\t'),
+                'r' => out.push('\r'),
+                'u' => {
+                    let hex: String = chars.by_ref().take(4).collect();
+                    out.push(char::from_u32(u32::from_str_radix(&hex, 16).ok()?)?);
+                }
+                c => out.push(c),
+            },
+            c => out.push(c),
+        }
+    }
+}
+
+/// The test executables in `cargo test --no-run --message-format=json-render-diagnostics` stdout: the
+/// `compiler-artifact` lines whose `profile` has `"test":true` and whose `executable` is not null, in the order
+/// cargo built them, each once.
+fn parse_test_bins(stdout: &str) -> Vec<TestBin> {
+    let mut out: Vec<TestBin> = Vec::new();
+    for line in stdout.lines() {
+        if !line.contains("\"reason\":\"compiler-artifact\"") {
+            continue;
+        }
+        let Some(p) = line.find("\"profile\":{") else {
+            continue;
+        };
+        let profile = &line[p..];
+        let profile = &profile[..profile.find('}').unwrap_or(profile.len())];
+        if !profile.contains("\"test\":true") {
+            continue;
+        }
+        let (Some(exe), Some(manifest)) = (
+            json_string_field(line, "\"executable\":"),
+            json_string_field(line, "\"manifest_path\":"),
+        ) else {
+            continue;
+        };
+        let Some(dir) = Path::new(&manifest).parent() else {
+            continue;
+        };
+        let bin = TestBin {
+            exe: PathBuf::from(exe),
+            manifest_dir: dir.to_path_buf(),
+        };
+        if !out.contains(&bin) {
+            out.push(bin);
+        }
+    }
+    out
+}
+
+/// Run `run` once per binary, in order. The first non-zero exit code is the result; unless `keep_going`
+/// (`--no-fail-fast`) the loop stops there, as `cargo test` does. The lines of every binary are kept.
+/// Each call is one lock hold: the caller's closure takes and releases the lock around that one binary.
+fn run_each<F>(
+    bins: &[TestBin],
+    keep_going: bool,
+    mut run: F,
+) -> std::io::Result<(i32, Vec<String>)>
+where
+    F: FnMut(&TestBin) -> std::io::Result<(i32, Vec<String>)>,
+{
+    let mut code = 0;
+    let mut lines = Vec::new();
+    for bin in bins {
+        let (c, l) = run(bin)?;
+        lines.extend(l);
+        if c != 0 {
+            if code == 0 {
+                code = c;
+            }
+            if !keep_going {
+                break;
+            }
+        }
+    }
+    Ok((code, lines))
 }
 
 /// Where the machine-readable run record goes: `$BARACUDA_RESULTS_FILE`, else
@@ -471,6 +592,95 @@ mod tests {
                 failed: 1,
                 ignored: 1
             }
+        );
+    }
+
+    const ART: &str = r#"{"reason":"compiler-artifact","package_id":"path+file:///C:/p/crates/a#a@0.1.0","manifest_path":"C:\\p\\crates\\a\\Cargo.toml","target":{"kind":["test"],"crate_types":["bin"],"name":"smoke","src_path":"C:\\p\\crates\\a\\tests\\smoke.rs","edition":"2024","doc":false,"doctest":false,"test":true},"profile":{"opt_level":"0","debuginfo":2,"debug_assertions":true,"overflow_checks":true,"test":true},"features":[],"filenames":["C:\\p\\target\\debug\\deps\\smoke-1.exe"],"executable":"C:\\p\\target\\debug\\deps\\smoke-1.exe","fresh":false}"#;
+
+    #[test]
+    fn parses_test_executables_and_unescapes_windows_paths() {
+        let lib = ART.replace("smoke-1.exe", "a-2.exe");
+        let not_test = ART.replace("\"test\":true}", "\"test\":false}");
+        let rlib = ART.replace(
+            "\"executable\":\"C:\\\\p\\\\target\\\\debug\\\\deps\\\\smoke-1.exe\"",
+            "\"executable\":null",
+        );
+        let out = [
+            "{\"reason\":\"build-script-executed\"}".to_owned(),
+            ART.to_owned(),
+            lib,
+            ART.to_owned(), // a repeated line is one binary
+            not_test,       // a non-test profile is not run
+            rlib,           // `"executable":null` is not run
+        ]
+        .join("\n");
+        let bins = parse_test_bins(&out);
+        assert_eq!(bins.len(), 2, "{bins:?}");
+        assert_eq!(
+            bins[0].exe,
+            PathBuf::from("C:\\p\\target\\debug\\deps\\smoke-1.exe")
+        );
+        assert_eq!(bins[0].manifest_dir, PathBuf::from("C:\\p\\crates\\a"));
+        assert!(bins[1].exe.ends_with("a-2.exe"));
+    }
+
+    #[test]
+    fn json_field_is_none_for_null_and_missing() {
+        assert_eq!(
+            json_string_field("{\"executable\":null}", "\"executable\":"),
+            None
+        );
+        assert_eq!(json_string_field("{}", "\"executable\":"), None);
+        assert_eq!(
+            json_string_field("{\"k\": \"a\\\"b\\u0041\"}", "\"k\":"),
+            Some("a\"bA".to_owned())
+        );
+    }
+
+    fn bin(n: &str) -> TestBin {
+        TestBin {
+            exe: PathBuf::from(n),
+            manifest_dir: PathBuf::from("."),
+        }
+    }
+
+    /// The lock is taken once per binary, not once per run: the closure (one lock hold) is called for each
+    /// binary in order, so another lane can acquire between any two of them.
+    #[test]
+    fn one_lock_hold_per_binary_in_order() {
+        let bins = [bin("a"), bin("b"), bin("c")];
+        let mut holds = Vec::new();
+        let (code, lines) = run_each(&bins, false, |b| {
+            holds.push(b.exe.to_string_lossy().into_owned());
+            Ok((0, vec![format!("ran {}", b.exe.display())]))
+        })
+        .unwrap();
+        assert_eq!(holds, ["a", "b", "c"]);
+        assert_eq!(code, 0);
+        assert_eq!(lines, ["ran a", "ran b", "ran c"]);
+    }
+
+    #[test]
+    fn stops_at_first_failure_unless_no_fail_fast() {
+        let bins = [bin("a"), bin("b"), bin("c")];
+        let fail_b = |b: &TestBin| Ok((if b.exe.ends_with("b") { 101 } else { 0 }, vec![]));
+        let mut seen = 0;
+        let (code, _) = run_each(&bins, false, |b| {
+            seen += 1;
+            fail_b(b)
+        })
+        .unwrap();
+        assert_eq!((code, seen), (101, 2), "stops after b");
+        let mut seen = 0;
+        let (code, _) = run_each(&bins, true, |b| {
+            seen += 1;
+            fail_b(b)
+        })
+        .unwrap();
+        assert_eq!(
+            (code, seen),
+            (101, 3),
+            "--no-fail-fast runs c too, keeps the first code"
         );
     }
 
