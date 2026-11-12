@@ -626,7 +626,10 @@ mod tests {
 
     #[test]
     fn json_field_is_none_for_null_and_missing() {
-        assert_eq!(json_string_field("{\"executable\":null}", "\"executable\":"), None);
+        assert_eq!(
+            json_string_field("{\"executable\":null}", "\"executable\":"),
+            None
+        );
         assert_eq!(json_string_field("{}", "\"executable\":"), None);
         assert_eq!(
             json_string_field("{\"k\": \"a\\\"b\\u0041\"}", "\"k\":"),
@@ -674,7 +677,11 @@ mod tests {
             fail_b(b)
         })
         .unwrap();
-        assert_eq!((code, seen), (101, 3), "--no-fail-fast runs c too, keeps the first code");
+        assert_eq!(
+            (code, seen),
+            (101, 3),
+            "--no-fail-fast runs c too, keeps the first code"
+        );
     }
 
     #[test]
