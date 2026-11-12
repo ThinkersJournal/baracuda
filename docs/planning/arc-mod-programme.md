@@ -57,13 +57,10 @@ Non-Info findings first (PM instruction 1). "Waived" means an `[[allow]]` in a `
 
 ## Ratchet (instruction 3)
 
-The count of findings per rule must not grow. Proposal, not built: a committed baseline `docs/planning/arc-mod-baseline.json`
-(rule to count, from the table above) and a script that runs the fast rules (ARC-001, 002, 005 each finished inside a 100 s timeout on the root
-manifest; not timed more exactly) in CI and fails if a count rises or a component is added that the declaration does not place. The slow `--workspace` MOD runs
-take about 7 minutes each on this machine, too long for the PR gate; a nightly job could run them. The declaration's own
-`ratchet = true` key is parsed but not read by coderipper yet (`src/architecture.rs`), so the baseline script stands in for it. Open
-question for the PM: does the portfolio workflow (`portfolio.yml`, pinned to coderipper 0.9.24 in `ci.yml:569`, which predates the ARC
-rules) get bumped, or does baracuda pin its own coderipper for this?
+Decision (PM, 2026-11-12): wait for coderipper's own ratchet key (`ratchet = true` in `[architecture]`, parsed by coderipper's
+`src/architecture.rs` but not read yet) and do not write a baseline script in CI. The key is not set here until coderipper reads it:
+setting it now would claim a ratchet that nothing enforces. The CI job that will run it is the advisory `portfolio` job, repinned to
+coderipper 33cc3b7 (0.43.49) in a separate PR. Until then the baseline in the table above is the number to hold.
 
 ## Not checked
 
