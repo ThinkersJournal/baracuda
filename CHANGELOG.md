@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.123 - 2026-11-12
+
+- **`scripts/gpu-run-mutex.ps1`, `scripts/test-gpu-run-interleave.ps1` and `scripts/test-gpu-run-mutex-acl.ps1` no longer start with a UTF-8 BOM** (PM 2026-11-12, from Fuel's repo guard: a BOM only where Windows PowerShell 5.1 needs it, i.e. for non-ASCII text). Checked per file: 0 non-ASCII bytes in each. `scripts/gpu-run.ps1` keeps its BOM (72 non-ASCII bytes). Verified: the interleave test (per-binary order `ABABABAB`, whole-run control `AAAABBBB`) and the mutex ACL test pass under pwsh 7.7 and Windows PowerShell 5.1.26100. No behaviour change.
+
 ## 0.1.0-alpha.122 - 2026-11-11
 
 - **Fix: paged decode read page 0 for every token once a request spanned more than one page (power-of-two `page_size`, the vLLM default 16 included).** The 2026-05 vendor patch that replaced `cuda::fast_mod_div` in `vendor/flashinfer/include/flashinfer/fastdiv.cuh` used a 33-bit magic constant truncated to 32 bits: every power-of-two divisor got quotient 0 and 4999 of the divisors 1..5000 disagreed with true division. Replaced with the Granlund-Montgomery round-up method; it agrees with true division in 20,585,084 host checks (d to 2^32 - 1). The existing smoke test used `page_size` 1 and one token, so it never saw it. Also affects `BatchPagedPrefillPlan` and the other plans that include `fastdiv.cuh` (not separately re-tested).

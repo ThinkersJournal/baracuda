@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
   Test: Global\gpu-run is created so EVERY authenticated account can open it.
