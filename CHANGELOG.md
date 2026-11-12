@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.125 - 2026-11-12
+
+Adds `docs/planning/api-freeze/r6/gemm.md`: the R6 public-shape review of the 217 `gemm` census rows at origin/main 3713ab29. Findings: stale `mod.rs` doc, only 2 of 9 descriptors `non_exhaustive`, i32/usize extent types, sparse24 field order and AWQ/Marlin naming, cutlass types re-exported through `IntGemmPlan`, inconsistent `m == 0` handling, `repack` error type, feature-gated `run`. No code change. Verified by reading the sources and grepping each `run` for `can_implement`.
+
 ## 0.1.0-alpha.124 - 2026-11-12
 
 - **Fix: the `last_page_len` contract of `PagedKvAppendPlan` / `baracuda_kernels_flashinfer_paged_kv_append_decode_*` is now documented as upstream FlashInfer defines it, and the smoke tests check it.** Upstream (`flashinfer-ai/flashinfer` `eee0d75f`, `flashinfer/page.py` `append_paged_kv_cache`, Note: "`kv_indices`, `kv_indptr`, `kv_last_page_len` has incorporated appended k/v") and the vendored `AppendPagedKVCacheDecodeKernel` (`page.cuh`, byte-identical to upstream) take `last_page_len[b]` **counting the new token**, in `[1, page_size]`: the token goes to slot `last_page_len[b] - 1` of the request's last page (`seq_len = (pages - 1) * page_size + last_page_len`; `0` would underflow). Our `paged_kv_append.rs` header, the `last_page_len` field doc and the launcher comment said the opposite ("increment `last_page_len` by 1 *after* the call"), so a caller following them overwrote its last existing token and never wrote the new one. **The wrong side was ours; the kernel was not touched.**
