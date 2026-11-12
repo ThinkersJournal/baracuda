@@ -1413,7 +1413,7 @@ Owner: *U* = Unpopped (neutral IR and walker), *B* = Baracuda (`baracuda-cuda-pa
 | P10 | tensor-core `mma`/`wmma`/`ldmatrix` (arrives as asm, needs P5) | B L + U M | none for lift; target is FlashInfer prefill (`mma.cuh`, `prefill.cuh`) |
 | P11 | the body lift itself (CST -> `KernelFn`: statements, indexing, builtins, typed declines; needs G3) | U XL + B L | `baracuda-cuda-emit/tests/lift.rs` (2) and `baracuda-cuda-parse/tests/convert.rs` (14); goal: lift the paged-decode instantiation, re-emit, pass `paged_decode_vs_reference.rs` |
 
-Unpopped IR gaps these rows wait on: G1 expression-valued launch grid, G2 struct-typed scalar params, G3 pointer values, G4 FP element atomics, G5 async-copy statement, G6 texture/surface space (G1 and G2 named by Unpopped 2026-11-11; G3-G6 found by reading `kernel.rs`/`exec.rs`, each to be confirmed with Unpopped before scheduling).
+Unpopped IR gaps these rows wait on: G1 expression-valued launch grid, G2 struct-typed scalar params, G3 pointer values, G4 FP element atomics, G5 async-copy statement, G6 texture/surface space (Unpopped's rows, as of 2026-11-12: G3 = U9c, G4 = U12b, G5 = mostly done as CopyAsync/AsyncCommit/AsyncWait with U13 left, G6 = U21, G1 = U22, G2 = U23; `KernelInterface` shipped in 0.45.1; `baracuda-cuda-emit` `lower_kernel` = U20, ours; see the update section of `docs/planning/cuda-parser-coverage.md`) (G1 and G2 named by Unpopped 2026-11-11; G3-G6 found by reading `kernel.rs`/`exec.rs`, each to be confirmed with Unpopped before scheduling).
 
 ## Pre-1.0 must-haves
 

@@ -109,3 +109,22 @@ reading `kernel.rs`/`exec.rs`/`kernel_extern.rs`. Each should be confirmed with 
 Which `MmaAtom`s and `CollectiveKind` variants Unpopped covers beyond their names; whether `tree-sitter-cuda` parses
 `cg::` templates, `asm` operands and `<<<>>>` without `ERROR` nodes (the crate's own tests do not say); regex counts are
 text matches, not syntax (comments and string literals match); the sizes are estimates.
+
+## Update 2026-11-12: Unpopped's answer to G1-G6 (their notice after Unpopped#336, main `0ca89050`)
+
+The gaps above were read from Unpopped 0.43.2. Unpopped's reply (relayed, not re-read in their code by this lane) is that the
+IR has moved on, so treat the IR-status column of the table as of 0.43.2 and use this mapping:
+
+| gap | Unpopped row | state they report |
+|---|---|---|
+| G3 pointer values | U9c, size L | trigger met by the paged decode |
+| G4 FP atomics | U12b widened | `F32`/`F64` add already built; `F16`/`Bf16`/packed is M |
+| G5 async copy | covered by `CopyAsync` / `AsyncCommit` / `AsyncWait`; the remainder is U13 (predicated, zero-fill, cache hint, pipeline), M, BREAKING 0.46.0 | **this document said "absent": that was true of 0.43.2 only** |
+| G6 texture/surface | U21, size L, low rank | |
+| G1 expression-valued grid | U22, M | |
+| G2 struct-typed scalar params | U23, M | |
+
+Also theirs or shared: U15 packed 8/16-lane (M), U17 PDL (M), U18 `Stmt::For` unroll hint (S-M, BREAKING 0.46.0), U19 C-family
+frontend (XL, with Baracuda), U20 `baracuda-cuda-emit` `lower_kernel` (L, **Baracuda's**). `KernelInterface` shipped in Unpopped
+0.45.1, so the "unmerged Unpopped#335" wording above is stale. P4 therefore no longer waits on a new async-copy statement, only
+on G3 (U9c) and the U13 remainder.
