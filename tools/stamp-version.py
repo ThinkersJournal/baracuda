@@ -154,6 +154,8 @@ def version_changes(root, old, new):
         orig = t
         for nm in names:
             t = re.sub(r'(name = "' + re.escape(nm) + r'"\nversion = ")' + q + '"', lambda m: m.group(1) + new + '"', t)
+            # dependency refs `"name OLD"` (written when the lock holds two versions of the name)
+            t = re.sub(r'(?m)^(\s*")' + re.escape(nm) + ' ' + q + r'(")', lambda m: m.group(1) + nm + ' ' + new + m.group(2), t)
         if t == orig:
             die("Cargo.lock: no workspace crate entry carries the old version")
         out.append((lock, t, crlf))
@@ -166,6 +168,8 @@ def version_changes(root, old, new):
         orig = t
         for nm in names:
             t = re.sub(r'(name = "' + re.escape(nm) + r'"\nversion = ")' + q + '"', lambda m: m.group(1) + new + '"', t)
+            # dependency refs `"name OLD"` (written when the lock holds two versions of the name)
+            t = re.sub(r'(?m)^(\s*")' + re.escape(nm) + ' ' + q + r'(")', lambda m: m.group(1) + nm + ' ' + new + m.group(2), t)
         if t != orig:
             out.append((p, t, crlf))
     extra = os.path.join(root, "tools", "stamp-extra.txt")
