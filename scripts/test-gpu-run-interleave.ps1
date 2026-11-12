@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
   Test: with the gpu-run lock taken per test binary, two concurrent holders alternate.

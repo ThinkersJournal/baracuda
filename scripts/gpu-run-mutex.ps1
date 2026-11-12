@@ -1,4 +1,4 @@
-﻿# Dot-sourced by gpu-run.ps1. Defines New-GpuRunMutex.
+# Dot-sourced by gpu-run.ps1. Defines New-GpuRunMutex.
 #
 # WHY this exists: `New-Object System.Threading.Mutex($false, 'Global\gpu-run')` creates the
 # mutex with the DEFAULT ACL (SYSTEM, Administrators, and the creating account only). The
