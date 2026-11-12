@@ -34,6 +34,12 @@ behind the opt-in `flashinfer` cargo feature.
   references the third-party `licenses/` directory in the upstream
   tree, none of whose files are vendored here).
 - **Vendored**: 2026-05-28.
+- **Verified against upstream** 2026-11-12: `git fetch --depth=1 origin eee0d75f91f64c520bfaed07e39a850ea4ddde23`
+  (it exists; `feat(kda): add recurrent KDA decode kernel ...`, 2026-05-28) and a byte comparison of every vendored file
+  against that commit with line endings normalised: `LICENSE`, `NOTICE` and 20 headers are identical; `attention/decode.cuh`,
+  `fastdiv.cuh`, `fp16.h`, `math.cuh`, `sampling.cuh`, `utils.cuh` and `vec_dtypes.cuh` differ only by the patches
+  listed below (diffs read line by line). `LICENSE-FP16` has no counterpart in the FlashInfer tree; it is byte-identical to
+  `Maratyszcza/FP16` `LICENSE` (the MIT text `fp16.h`'s SPDX header credits to Marat Dukhan / AMD).
 
 ## License attribution
 
@@ -214,11 +220,21 @@ Patches applied to vendored headers (record every divergence here):
    widths the helper supports. Re-add the 512 arm if a future tier
    needs MLA-style head_dim=512.
 5. `fastdiv.cuh` — replaced `cuda::fast_mod_div<uint32_t>` (from
-   CCCL 2.4+'s `<cuda/cmath>`) with a pure-C++ libdivide-style
-   magic-number divmod. The CCCL version isn't shipped with every
-   CUDA toolkit release; the bit-equivalent pure-C++ form sidesteps
-   the dependency. Same `divmod()` / `operator unsigned int()` /
-   `operator/` / `operator%` surface.
+   CCCL 2.4+'s `<cuda/cmath>`) with a pure-C++ round-up magic-number divmod
+   (Granlund-Montgomery, PLDI 1994 fig. 4.1: `m' = floor(2^32 (2^l - d) / d) + 1`,
+   `q = (hi + ((n - hi) >> 1)) >> (l - 1)`). Same `divmod()` /
+   `operator unsigned int()` / `operator/` / `operator%` surface.
+   **Corrected 2026-11-12.** The first version of this patch used the
+   single-multiply form `m = 2^(32+l)/d + 1`, a 33-bit constant truncated to
+   32 bits, so every power-of-two divisor (every `page_size` of 2, 4, 8, 16, ...)
+   got `q == 0` and almost every other divisor was wrong too (4999 of the 5000
+   divisors 1..5000 failed against true division). Paged decode then read page 0
+   for every token once a request spanned more than one page; the existing
+   smoke test used `page_size` 1 and one token and never saw it. The new code
+   agrees with true division in 20,585,084 host checks (d = 1..5000 plus d up
+   to 2^32 - 1, n including 0, 2^31 and 2^32 - 1), and
+   `crates/baracuda-flashinfer/tests/paged_decode_vs_reference.rs` passes on a
+   device (max abs error f16 2.2e-4, bf16 1.7e-3 against an f64 reference).
 6. `attention/decode.cuh` line 941 — `extern __attribute__((shared))
    uint8_t smem[]` replaced with `extern __shared__ uint8_t smem[]`.
    The `__attribute__((shared))` spelling doesn't parse under MSVC
