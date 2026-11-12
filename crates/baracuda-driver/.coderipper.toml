@@ -1,0 +1,14 @@
+# CodeRipper waivers for this crate (a --workspace run reads each member's own file). Each names the finding, why, an owner and when to
+# remove it; the plan is a row in docs/planning/arc-mod-programme.md at the workspace root.
+
+[[allow]]
+check = "MOD-002"
+file = "src/library.rs"
+symbol = "library,module"
+reason = "a real cycle, one concept in two files: `module::Function` records its owner as `Module` or `library::Library` (the cuLibrary flow, src/module.rs:219) and `library::Kernel` hands out `module::Function` values (src/library.rs:19). Moving `Function` and its owner enum into a module both import removes it; not done in the change that declared this, to keep it reviewable. Owner: baracuda lane. Remove this entry when `module` no longer names `library`."
+
+[[allow]]
+check = "MOD-002"
+file = "src/memory.rs"
+symbol = "memory,stream"
+reason = "a real cycle, kept for the public API: `Stream::memcpy_dtod` (src/stream.rs:274) takes two `memory::DeviceBuffer` values and `memory` names `Stream` for every async copy (src/memory.rs:17). Moving `memcpy_dtod` to `DeviceBuffer` removes it but is a breaking change to a published method, so it waits for the next breaking release. Owner: baracuda lane. Remove this entry when `Stream` no longer names `memory`."
