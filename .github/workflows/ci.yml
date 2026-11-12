@@ -113,6 +113,17 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit 1 }
           powershell -NoProfile -File scripts/test-gpu-run-mutex-acl.ps1
           if ($LASTEXITCODE -ne 0) { exit 1 }
+      # Two concurrent gpu-run holders alternate (the lock is taken per test binary) and never overlap,
+      # with a whole-run control that starves the second lane. Before the open-first fix in
+      # gpu-run-mutex.ps1 a SECOND gpu-run got "access denied" instead of waiting.
+      - name: gpu-run per-binary interleave test
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File scripts/test-gpu-run-interleave.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          powershell -NoProfile -File scripts/test-gpu-run-interleave.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
       # Crate-licence guard: `MIT OR Apache-2.0` requires the licence text to
       # travel with every copy, and a published crate contains only files from its
       # own directory. alpha.79 shipped 69 crates with no licence text (the
