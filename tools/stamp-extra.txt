@@ -1,0 +1,5 @@
+# One path per line: a file that pins the project version as =X.Y.Z; or `path ~ REGEX` for a present-tense
+# statement (REGEX has {old} for the version and ONE group: the text kept before it).
+ARCHITECTURE.md ~ (The workspace is at \*\*v){old}
+OP-MATRIX.md ~ (the workspace is now at ){old}
+README.md ~ (`main` is at `){old}
