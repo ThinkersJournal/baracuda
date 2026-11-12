@@ -1391,6 +1391,30 @@ Out of scope for Phase 49 (future):
 - **LAMB f16/bf16** — Phase 49 ships f32-only LAMB; mixed-precision
   LAMB is a follow-up.
 
+## Comprehensive CUDA parser (scheduled, not started: the 2026-10-28 hold on new parser/emitter features stands)
+
+CireSnave 2026-11-11, verbatim: *"If the CUDA parser is not comprehensive, Baracuda still has work to do to make it comprehensively cover everything CUDA can do."*
+
+Measured at `origin/main` `059d3d88` against Unpopped 0.43.2: `baracuda-cuda-parse` is a grammar binding plus a ten-word residue list that **refuses** `__shared__`, `atomicAdd`, `atomicCAS`, `__syncthreads`, `cublas`, `cudnn`, `printf`, `asm`, `cp.async`, `__shfl`; the shared walkers lift idioms (elementwise, reduction, scan), and there is **no CST -> `KernelFn` lift of a hand-written body**. Evidence, IR status, the six IR gaps (G1-G6) and the suggested order are in `docs/planning/cuda-parser-coverage.md`. First target: the vendored FlashInfer paged decode (`crates/baracuda-kernels-sys/vendor/flashinfer/include/flashinfer/attention/decode.cuh`), checked by `crates/baracuda-flashinfer/tests/paged_decode_vs_reference.rs`.
+
+Owner: *U* = Unpopped (neutral IR and walker), *B* = Baracuda (`baracuda-cuda-parse`, `baracuda-cuda-emit` spelling, device tests). Sizes are estimates. Dependency order.
+
+| id | construct family | owner / size | existing test that will show it |
+|---|---|---|---|
+| P1 | shared memory and barriers (`__shared__`, `extern __shared__`, `__syncthreads`, `__syncwarp`) | B S + U M | `baracuda-cuda-parse/tests/convert.rs::cuda_refuses_residue` (flips for `__shared__`); `__syncthreads` has no test yet |
+| P2 | warp shuffles, votes, reductions (`__shfl_*_sync`, `__ballot_sync`, `__reduce_*_sync`) | B S + U M | none asserts `__shfl`; emit side: `baracuda-cuda-emit/tests/contract.rs::scan_advertises_a_recipe_carrying_contract` |
+| P3 | atomics and fences (int now; FP atomics need IR gap G4) | B S + U M | none asserts `atomicAdd`/`atomicCAS` |
+| P4 | `cp.async` and pipelines (needs G3 pointer values, G5 async-copy statement) | U L + B M | none; first consumer is the paged decode (`decode.cuh`: 33 matches) |
+| P5 | inline PTX / `asm` (lift direction) | B M + U S | `baracuda-cuda-emit/tests/extern_ptx.rs::popc_b32_matches_its_reference`, `::fma_rn_f32_matches_its_reference` (emit direction today) |
+| P6 | cooperative groups (`cg::this_thread_block`, `.sync()`, `tiled_partition`, `cg::reduce`); not in the residue list, so first make it refuse | B M + U S | none; `decode.cuh` has 18 `.sync()` calls |
+| P7 | templates, `constexpr`, `if constexpr`, struct params, `__grid_constant__` (G2) | U L + B M | `baracuda-cuda-emit/tests/new_node_declines.rs::integer_and_packed_nodes_are_typed_declines_and_a_plain_body_still_emits` (the decline contract) |
+| P8 | launch bounds and attributes (`__launch_bounds__`, `__maxnreg__`, `__restrict__`, `__cluster_dims__`; G1 expression-valued grid) | B S + U S | none; Unpopped#335 `KernelInterface` carries the fields |
+| P9 | texture and surface (G6: no IR memory space) | U L + B M | none; decline test goes in `new_node_declines.rs` |
+| P10 | tensor-core `mma`/`wmma`/`ldmatrix` (arrives as asm, needs P5) | B L + U M | none for lift; target is FlashInfer prefill (`mma.cuh`, `prefill.cuh`) |
+| P11 | the body lift itself (CST -> `KernelFn`: statements, indexing, builtins, typed declines; needs G3) | U XL + B L | `baracuda-cuda-emit/tests/lift.rs` (2) and `baracuda-cuda-parse/tests/convert.rs` (14); goal: lift the paged-decode instantiation, re-emit, pass `paged_decode_vs_reference.rs` |
+
+Unpopped IR gaps these rows wait on: G1 expression-valued launch grid, G2 struct-typed scalar params, G3 pointer values, G4 FP element atomics, G5 async-copy statement, G6 texture/surface space (G1 and G2 named by Unpopped 2026-11-11; G3-G6 found by reading `kernel.rs`/`exec.rs`, each to be confirmed with Unpopped before scheduling).
+
 ## Pre-1.0 must-haves
 
 Work that needs to land before the `0.1.0-beta.0` cut. Ordered by
