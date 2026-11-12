@@ -19,72 +19,52 @@
 
 namespace flashinfer {
 
-// baracuda: pure-C++ libdivide-style fast unsigned 32-bit divmod.
+// baracuda: pure-C++ fast unsigned 32-bit divmod.
 // Upstream FlashInfer v0.6.12 wraps `cuda::fast_mod_div<uint32_t>` from
 // CCCL 2.4+'s `<cuda/cmath>`; not all toolkits ship that header (in
-// particular older CCCL bundled with CUDA 12.0-12.2 doesn't). The
-// classic two-step magic-number approach used here is bit-equivalent
-// on every observed input and avoids the CCCL dependency. See
-// vendor/flashinfer/VENDOR.md "Patch list" for the rationale.
+// particular older CCCL bundled with CUDA 12.0-12.2 doesn't). This is the
+// Granlund-Montgomery round-up method ("Division by invariant integers
+// using multiplication", PLDI 1994, fig. 4.1) and avoids the CCCL
+// dependency. See vendor/flashinfer/VENDOR.md "Patch list" #5.
 //
-// Algorithm: pick `m, l` such that `n / d == ((m * n) >> 32) >> l` for
-// every `n` in `[0, 2^32)`. Special-case `d == 1` (which the formula
-// can't express because `m` would overflow).
+// Algorithm, for d >= 2 and l = ceil(log2(d)):
+//   m' = floor(2^32 * (2^l - d) / d) + 1            (fits in 32 bits)
+//   hi = floor(m' * n / 2^32)
+//   q  = (hi + ((n - hi) >> 1)) >> (l - 1)          (== n / d for every n)
+// d == 1 and the default-constructed d == 0 are identity (q = n, r = 0).
+//
+// The first version of this patch used the single-multiply form
+// `m = 2^(32+l)/d + 1`, a 33-bit constant truncated to 32 bits: every
+// power-of-two divisor (so every page_size of 2, 4, 8, 16, ...) got
+// q == 0, and most other divisors were wrong too. Paged decode then read
+// page 0 for every token. Fixed with the tests in
+// crates/baracuda-flashinfer/tests/paged_decode_vs_reference.rs.
 struct uint_fastdiv {
-  __host__ __device__ uint_fastdiv() : d_(0), m_(1), l_(0) {}
+  __host__ __device__ uint_fastdiv() : d_(0), m_(0), l_(0) {}
 
-  __host__ uint_fastdiv(uint32_t d)
-      : d_(d), m_(1), l_(0) {
-    if (d == 0) {
-      // Match upstream behaviour: the default-constructed wrapper takes
-      // `d == 0` as a placeholder and downstream call sites are expected
-      // to set the divisor before use. Keep m_=1, l_=0; divmod is then
-      // identity which is the safest no-op.
+  __host__ uint_fastdiv(uint32_t d) : d_(d), m_(0), l_(0) {
+    if (d <= 1) {
+      // d == 0: placeholder, divmod is the identity. d == 1: identity.
       return;
     }
-    if (d == 1) {
-      m_ = 1u;
-      l_ = 0u;
-      return;
-    }
-    // Find l = ceil(log2(d)).
+    // l = ceil(log2(d)), in [1, 32].
     uint32_t l = 0;
-    while ((1u << l) < d) ++l;
-    // m = ceil((2^32 * 2^l) / d).
-    // Computed as (((1ULL << l) << 32) + d - 1) / d, then truncate to 32 bits.
-    uint64_t numer = (uint64_t(1) << (32 + l)) - (uint64_t(1) << 32);
-    // Equivalent: m = floor(((2^(32+l) - 2^32)) / d) + 1 + something —
-    // the textbook two-step form below avoids subtracting 1 from m.
-    uint64_t m = (uint64_t(1) << (32 + l)) / d + 1;
+    while (l < 32 && (uint64_t(1) << l) < d) ++l;
+    uint64_t m = ((uint64_t(1) << 32) * ((uint64_t(1) << l) - d)) / d + 1;
     m_ = uint32_t(m);
     l_ = l;
-    (void)numer;
   }
 
   __host__ __device__ __forceinline__ operator unsigned int() const { return d_; }
 
   __host__ __device__ __forceinline__ void divmod(uint32_t n, uint32_t& q, uint32_t& r) const {
-    if (d_ == 0) {
+    if (d_ <= 1) {
       q = n;
       r = 0;
       return;
     }
-    if (d_ == 1) {
-      q = n;
-      r = 0;
-      return;
-    }
-    // q = (m * n) >> (32 + l).
-    uint64_t prod = uint64_t(m_) * uint64_t(n);
-    uint32_t hi = uint32_t(prod >> 32);
-    // Two-step shift to handle l == 0 cleanly.
-    uint32_t t = (n - hi) >> 1;
-    q = (t + hi) >> (l_ - (l_ == 0 ? 0 : 1));
-    // Simpler equivalent form that avoids the conditional above:
-    // q = ((uint64_t(m_) * n) + n) >> (32 + l_) when l_ > 0; for l_ == 0
-    // the divisor must be 1 which we already handled.
-    // Fall back to the literal definition for safety:
-    q = uint32_t((uint64_t(m_) * uint64_t(n)) >> 32) >> l_;
+    uint32_t hi = uint32_t((uint64_t(m_) * uint64_t(n)) >> 32);
+    q = (hi + ((n - hi) >> 1)) >> (l_ - 1);
     r = n - q * d_;
   }
 

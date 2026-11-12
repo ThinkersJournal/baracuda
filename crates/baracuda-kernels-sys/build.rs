@@ -187,6 +187,10 @@ fn pick_cuda_versioned_x64_under_lib(lib_dir: &Path) -> Option<String> {
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=kernels");
+    // The vendored sources (FlashInfer, FA2, ...) are #included by the launchers;
+    // without this, editing a vendored header neither reruns this script nor
+    // invalidates the object cache, and the old objects keep being linked.
+    println!("cargo:rerun-if-changed=vendor");
     println!("cargo:rerun-if-env-changed=DOCS_RS");
 
     // Export our header dir to dependents (baracuda-ozimmu-sys et al.) via the
@@ -229,6 +233,8 @@ fn main() {
         // wrappers, warp-reduction primitives, ...).
         .include_path("kernels/include")
         .watch(collect_header_files())
+        // Vendored headers (a directory: forge hashes every .h/.cuh/.hpp under it).
+        .watch(vec![std::path::PathBuf::from("vendor")])
         .out_dir(&out_dir);
 
     // Phase 42 — Dao-AILab FlashAttention v2 (vendored under
