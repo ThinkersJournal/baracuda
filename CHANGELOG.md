@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.127 - 2026-11-12
+
+Adds `docs/planning/api-freeze/r6/sort.md`: the R6 public-shape review of the 268 `sort` census rows at origin/main 8a3414f0. Findings: `HistogramddPlan` can never be constructed yet its 16 rows are `stable`, `SORT_MAX_ROW` is exceeded by `ArgsortPlan`, `TOPK_MAX_K` means two things, rank-2 and `i32` indices fixed in the types, mixed `i32`/`i64` extents, narrow dtypes, two scratch conventions. No code change. Verified by reading the sources and grepping each `run` for `can_implement`.
+
 ## 0.1.0-alpha.126 - 2026-11-12
 
 Adds `docs/planning/api-freeze/r6/norm.md`: the R6 public-shape review of the 235 `norm` census rows at origin/main 3713ab29. Findings: `InstanceNorm*` has no public `can_implement` and its `select` (and the public `num_channels()` of four descriptors) can index out of bounds on `channel_axis >= N`, `channel_axis` accepts only 1, rank bounds 2..=8 vs 1..=8, three spellings of the saved statistics, differing affine flags, instance-norm `sku()` reports GroupNorm. No code change. Verified by reading the sources and grepping each `run` for `can_implement`; the panic was read, not executed.
