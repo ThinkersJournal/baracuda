@@ -36,8 +36,8 @@ Method: grepped the whole directory for `fn can_implement`, `non_exhaustive`, `C
    The adaptive, fractional and LP plans have no `Drop` (grep).
 4. **`#[non_exhaustive]` is on 10 of 20 files, not uniformly.** By grep: the three adaptive-avg, both fractional, `lp_pool1d`,
    `lp_pool2d`, `max_pool{1,2,3}d` carry it (`max_pool2d.rs` twice, on `PoolMode` and `Pool2dDescriptor`). The adaptive-max,
-   `avg_pool{1,2,3}d` and the two `*_backward` files carry none. Which of the 48 structs each attribute sits on was not traced
-   per type, so the split by struct is unknown. `avg_pool*` reuse the `max_pool*` descriptors (`mod.rs` re-exports), so
+   `avg_pool{1,2,3}d` and the two `*_backward` files carry none. 11 `#[non_exhaustive]` attributes sit on a `struct` or `enum` (of 49 types; grep for the attribute line, and 0
+   `finish_non_exhaustive` hits in this directory). Which type each sits on was not traced. `avg_pool*` reuse the `max_pool*` descriptors (`mod.rs` re-exports), so
    their descriptors are covered while their args may not be.
 5. **Two entry points per plan, except LP.** `run_fw` and `run_bw` in 14 of 18 files (2 hits each);
    the four LP files have 1 `run_*` hit each (by file name, forward in `lp_pool*d` and backward in `*_backward`; bodies not read), so LP forward and
