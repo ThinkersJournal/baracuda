@@ -1,0 +1,3 @@
+kind: docs: R6 review of the kernels conv family (371 rows, 7 findings)
+---
+Adds `docs/planning/api-freeze/r6/conv.md`: the R6 public-shape review of the 371 `conv` census rows at origin/main 446aa5d6. Findings: none of the nine plans has a public `can_implement`; the six cuDNN plans keep handles and descriptors in `Cell`s (so, by reading, not `Send`/`Sync`) and expose `run_fw`/`run_bw_data`/`run_dw` and a workspace accessor that is `0` until first use; `#[non_exhaustive]` on the six conv descriptors only; the algorithm picker is public on `Conv2dPlan` alone. No code change. Probe-based (greps over all nine files, full reads of `conv2d.rs` pieces), not a line read of every file; nothing executed.
