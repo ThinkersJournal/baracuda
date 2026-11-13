@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.138 - 2026-11-13
+
+R6 public-API freeze review of the `baracuda-kernels` `quantize` family (628 census rows, 7 findings). Docs only; no code change.
+
 ## 0.1.0-alpha.137 - 2026-11-13
 
 R6 public-API freeze review of the `baracuda-kernels` `pool` family (390 census rows, 8 findings). Docs only; no code change.
