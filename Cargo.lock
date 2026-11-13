@@ -113,7 +113,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-cuda-emit"
-version = "0.43.1"
+version = "0.45.0"
 dependencies = [
  "baracuda-cuda-parse",
  "baracuda-driver",
@@ -127,7 +127,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-cuda-parse"
-version = "0.43.0"
+version = "0.45.0"
 dependencies = [
  "fishstringer-slang-parse",
  "tree-sitter",
@@ -138,7 +138,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-cuda-seam"
-version = "0.1.0-alpha.136"
+version = "0.45.0"
 dependencies = [
  "baracuda-cuda-emit",
  "fireline-grammar",
