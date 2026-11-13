@@ -1,3 +1,0 @@
-kind: docs: R6 review of the kernels attention family (716 rows, 8 findings)
----
-Adds `docs/planning/api-freeze/r6/attention.md`: the R6 public-shape review of the 716 `attention` census rows at origin/main 4081d9ba. Findings: three backward plans (selective scan, SSD chunk scan, hyper-connection) have no public `can_implement`; `#[non_exhaustive]` is on 7 descriptors and enums and absent on the rest (the census column marks only 5); five kernel-limit consts are public; `HyperConnectionPlan` has a training mode only by construction. No code change. Probe-based (greps over every file plus full reads of the backward plans), not a line read of all 25 files; nothing executed.
