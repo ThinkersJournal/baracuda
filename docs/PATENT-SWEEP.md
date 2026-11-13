@@ -276,6 +276,23 @@ Ideas 15 and 16 added. Method: the same general web search tool as above (no pat
 - **Idea 16 result:** no patent found for either half. The adjoint is the textbook derivative of `y = x / sum(x)`; published work on the same operator (arXiv 2606.07574 implicit-differentiation backward; Megatron-Core's recompute backward; mHC-lite) is prior art for exact backward, not a patent. The cast wrapper is generic (FlashAttention-3 backward postprocess, aprender-train `bf16_cast`, TensorRT-Edge-LLM cast kernels). Google Patents hit on the wrapper: Intel US10726514B2 / US10242423B2 "Compute optimizations for low precision machine learning operations", seen in a result list, not opened; its summary is a hardware precision-fallback (compute low, escalate when the loss exceeds a threshold), a different mechanism from an unconditional widen/run/narrow. Verdict `clear` on what was seen, with the same weak-null caveat; the vendored mHC kernel stays outside the sweep.
 - **Not done:** no re-check of ideas 1-14; no claim of any charted verdict changes.
 
+## Async scheduling instructions (added 2026-11-13, PM [NOTICE] patent-risk-async-wait, board 431 hit 22)
+
+Source of the claim text: the PM's message, quoting CireSnave's ruling of 2026-11-13. **I did not read the patents.** Patents named: US12118382B2 and US11294713B2 (NVIDIA). Claim 1 as relayed: "prevent one or more first instructions of a first thread from being performed while one or more second instructions of the first thread are being performed"; claims 9, 17 and 23 as relayed are the same as method, system and processor claims. CireSnave's words as relayed: the issue "applies to any code created for non-Nvidia hardware that executes a hardware instruction that causes async scheduling of instructions in the hardware itself". Not legal advice; no attorney; self-serve only. Nothing here is a verdict.
+
+**Targets baracuda generates code for (read at origin/main 3e04bc56):**
+
+| target | instruction of this kind | where |
+|---|---|---|
+| NVIDIA CUDA (sm_80 and up), via `baracuda-cuda-emit` and NVRTC | none emitted by the emitter: `git grep Stmt::` over `crates/baracuda-cuda-emit/src` finds 0 hits, and the crate pins Unpopped 0.43.2, so whether that release has `Stmt::AsyncWait`, `CopyAsync` or `AsyncCommit` at all was not checked | `crates/baracuda-cuda-emit`, `crates/baracuda-cuda-seam` |
+| NVIDIA CUDA, hand-written and vendored kernels | `cp.async` and `cp.async` wait/fence (`cp_async_fence`, `cp_async_wait`) are in baracuda's own `kernels/include/baracuda_cp_async.cuh` (30 hits), `baracuda_flash_sdpa_sm89.cuh`, `kernels/attention/mhc_launcher.cu`, and vendored FlashInfer, FlashAttention-2, Marlin and mHC sources (hit counts from `git grep -i 'cp.async\|cp_async\|CopyAsync'`, bench probes excluded) | `crates/baracuda-kernels-sys` |
+| CUDA parser (`baracuda-cuda-parse`) | lists `cp.async` in `CUDA_RESIDUE` (`lib.rs:65`): text containing it is left in the source language rather than lifted, so the parser produces no async statement | `crates/baracuda-cuda-parse` |
+| any non-NVIDIA backend (Slang, Vulkan, ROCm, CPU) | none: baracuda has no non-NVIDIA emitter or kernel set (`ls crates` shows `cuda-emit`, `cuda-seam`, `cuda-parse`, `seam` only) | - |
+
+**Reading.** The instruction in question exists in baracuda today only as NVIDIA's own `cp.async` on NVIDIA GPUs, written by hand or vendored, not lowered from a neutral `Stmt` and not on a competitor's hardware. Whether that falls inside the patents' claims, or under any licence NVIDIA grants for its own platform, was **not** checked and is a question for CireSnave, not for this lane. The exposure CireSnave describes (a lowering to a non-NVIDIA async instruction) does not exist in this repo; the thing that could create it is a repin to an Unpopped release with the new `Stmt` variants, because `cuda-emit` would then have to handle them.
+
+**Proposed handling (for the PM to confirm):** when the repin to a release with those variants happens, `baracuda-cuda-emit` declines `AsyncWait`, `CopyAsync` and `AsyncCommit` by name (a typed `Unsupported`, naming the patents), and lowers nothing until CireSnave rules on the NVIDIA target. No code is changed in this commit.
+
 ## Needs review (to the PM)
 1. ~~US8584106B2 and US8261270B2~~ claims were read in full later the same day (see "Claim charts"): `design-around`, not `needs-review`.
 2. ~~US20240103872~~ read in full: Intel hardware-instruction claims, clear (pending; re-check if granted).

@@ -1,0 +1,3 @@
+kind: docs: patent-sweep note for async scheduling instructions (Unpopped AsyncWait/CopyAsync)
+---
+Adds a section to `docs/PATENT-SWEEP.md` recording, per the PM's [NOTICE] of 2026-11-13 (board 431), the targets baracuda generates code for and whether any carries an instruction that schedules asynchronously: only NVIDIA `cp.async` in hand-written and vendored kernels, none in `baracuda-cuda-emit`, no non-NVIDIA target. Carries the claim text as relayed, says the patents were not read, and proposes a typed decline of the three `Stmt` variants at the next Unpopped repin. No code change, not legal advice.
