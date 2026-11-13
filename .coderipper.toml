@@ -30,3 +30,363 @@ check = "version-consistency"
 file = "xtask/Cargo.toml"
 symbol = "xtask"
 reason = "publish = false; workspace task runner, versioned 0.0.0 so no consumer reads it as a family member"
+
+# Architecture declaration (ARC-001/002/005; advisory). Read by `coderipper`. Layers are listed bottom first: a crate may depend on
+# its own layer or any layer below it. ARCHITECTURE.md ("Layered design") is the prose version: safe plan API over library wrappers,
+# CUTLASS and bespoke kernels, over the driver and raw FFI. One component per workspace crate, named by the crate.
+[architecture]
+style = "layered"
+
+
+[[architecture.component]]
+name = "baracuda-bench-stats"
+paths = ["crates/baracuda-bench-stats"]
+
+[[architecture.component]]
+name = "baracuda-build"
+paths = ["crates/baracuda-build"]
+
+[[architecture.component]]
+name = "baracuda-core"
+paths = ["crates/baracuda-core"]
+
+[[architecture.component]]
+name = "baracuda-cuda-parse"
+paths = ["crates/baracuda-cuda-parse"]
+
+[[architecture.component]]
+name = "baracuda-cuda-vocab"
+paths = ["crates/baracuda-cuda-vocab"]
+
+[[architecture.component]]
+name = "baracuda-forge"
+paths = ["crates/baracuda-forge"]
+
+[[architecture.component]]
+name = "baracuda-seam"
+paths = ["crates/baracuda-seam"]
+
+[[architecture.component]]
+name = "baracuda-types"
+paths = ["crates/baracuda-types"]
+
+[[architecture.component]]
+name = "baracuda-types-derive"
+paths = ["crates/baracuda-types-derive"]
+
+
+[[architecture.component]]
+name = "baracuda-cublas-sys"
+paths = ["crates/baracuda-cublas-sys"]
+
+[[architecture.component]]
+name = "baracuda-cuda-sys"
+paths = ["crates/baracuda-cuda-sys"]
+
+[[architecture.component]]
+name = "baracuda-cudf-sys"
+paths = ["crates/baracuda-cudf-sys"]
+
+[[architecture.component]]
+name = "baracuda-cudnn-sys"
+paths = ["crates/baracuda-cudnn-sys"]
+
+[[architecture.component]]
+name = "baracuda-cufft-sys"
+paths = ["crates/baracuda-cufft-sys"]
+
+[[architecture.component]]
+name = "baracuda-cufile-sys"
+paths = ["crates/baracuda-cufile-sys"]
+
+[[architecture.component]]
+name = "baracuda-cupti-sys"
+paths = ["crates/baracuda-cupti-sys"]
+
+[[architecture.component]]
+name = "baracuda-curand-sys"
+paths = ["crates/baracuda-curand-sys"]
+
+[[architecture.component]]
+name = "baracuda-cusolver-sys"
+paths = ["crates/baracuda-cusolver-sys"]
+
+[[architecture.component]]
+name = "baracuda-cusparse-sys"
+paths = ["crates/baracuda-cusparse-sys"]
+
+[[architecture.component]]
+name = "baracuda-cutensor-sys"
+paths = ["crates/baracuda-cutensor-sys"]
+
+[[architecture.component]]
+name = "baracuda-cutlass-kernels-sys"
+paths = ["crates/baracuda-cutlass-kernels-sys"]
+
+[[architecture.component]]
+name = "baracuda-cutlass-sys"
+paths = ["crates/baracuda-cutlass-sys"]
+
+[[architecture.component]]
+name = "baracuda-cuvs-sys"
+paths = ["crates/baracuda-cuvs-sys"]
+
+[[architecture.component]]
+name = "baracuda-cvcuda-sys"
+paths = ["crates/baracuda-cvcuda-sys"]
+
+[[architecture.component]]
+name = "baracuda-flashinfer-sys"
+paths = ["crates/baracuda-flashinfer-sys"]
+
+[[architecture.component]]
+name = "baracuda-kernels-sys"
+paths = ["crates/baracuda-kernels-sys"]
+
+[[architecture.component]]
+name = "baracuda-nccl-sys"
+paths = ["crates/baracuda-nccl-sys"]
+
+[[architecture.component]]
+name = "baracuda-npp-sys"
+paths = ["crates/baracuda-npp-sys"]
+
+[[architecture.component]]
+name = "baracuda-nvcomp-sys"
+paths = ["crates/baracuda-nvcomp-sys"]
+
+[[architecture.component]]
+name = "baracuda-nvimagecodec-sys"
+paths = ["crates/baracuda-nvimagecodec-sys"]
+
+[[architecture.component]]
+name = "baracuda-nvjitlink-sys"
+paths = ["crates/baracuda-nvjitlink-sys"]
+
+[[architecture.component]]
+name = "baracuda-nvjpeg-sys"
+paths = ["crates/baracuda-nvjpeg-sys"]
+
+[[architecture.component]]
+name = "baracuda-nvml-sys"
+paths = ["crates/baracuda-nvml-sys"]
+
+[[architecture.component]]
+name = "baracuda-nvrtc-sys"
+paths = ["crates/baracuda-nvrtc-sys"]
+
+[[architecture.component]]
+name = "baracuda-nvshmem-sys"
+paths = ["crates/baracuda-nvshmem-sys"]
+
+[[architecture.component]]
+name = "baracuda-ozimmu-sys"
+paths = ["crates/baracuda-ozimmu-sys"]
+
+[[architecture.component]]
+name = "baracuda-tensorrt-sys"
+paths = ["crates/baracuda-tensorrt-sys"]
+
+[[architecture.component]]
+name = "baracuda-transformer-engine-sys"
+paths = ["crates/baracuda-transformer-engine-sys"]
+
+
+[[architecture.component]]
+name = "baracuda-cublas"
+paths = ["crates/baracuda-cublas"]
+
+[[architecture.component]]
+name = "baracuda-cudf"
+paths = ["crates/baracuda-cudf"]
+
+[[architecture.component]]
+name = "baracuda-cudnn"
+paths = ["crates/baracuda-cudnn"]
+
+[[architecture.component]]
+name = "baracuda-cufft"
+paths = ["crates/baracuda-cufft"]
+
+[[architecture.component]]
+name = "baracuda-cufile"
+paths = ["crates/baracuda-cufile"]
+
+[[architecture.component]]
+name = "baracuda-cupti"
+paths = ["crates/baracuda-cupti"]
+
+[[architecture.component]]
+name = "baracuda-curand"
+paths = ["crates/baracuda-curand"]
+
+[[architecture.component]]
+name = "baracuda-cusolver"
+paths = ["crates/baracuda-cusolver"]
+
+[[architecture.component]]
+name = "baracuda-cusparse"
+paths = ["crates/baracuda-cusparse"]
+
+[[architecture.component]]
+name = "baracuda-cutensor"
+paths = ["crates/baracuda-cutensor"]
+
+[[architecture.component]]
+name = "baracuda-cuvs"
+paths = ["crates/baracuda-cuvs"]
+
+[[architecture.component]]
+name = "baracuda-cvcuda"
+paths = ["crates/baracuda-cvcuda"]
+
+[[architecture.component]]
+name = "baracuda-driver"
+paths = ["crates/baracuda-driver"]
+
+[[architecture.component]]
+name = "baracuda-kernels-types"
+paths = ["crates/baracuda-kernels-types"]
+
+[[architecture.component]]
+name = "baracuda-nccl"
+paths = ["crates/baracuda-nccl"]
+
+[[architecture.component]]
+name = "baracuda-npp"
+paths = ["crates/baracuda-npp"]
+
+[[architecture.component]]
+name = "baracuda-nvcomp"
+paths = ["crates/baracuda-nvcomp"]
+
+[[architecture.component]]
+name = "baracuda-nvimagecodec"
+paths = ["crates/baracuda-nvimagecodec"]
+
+[[architecture.component]]
+name = "baracuda-nvjitlink"
+paths = ["crates/baracuda-nvjitlink"]
+
+[[architecture.component]]
+name = "baracuda-nvjpeg"
+paths = ["crates/baracuda-nvjpeg"]
+
+[[architecture.component]]
+name = "baracuda-nvml"
+paths = ["crates/baracuda-nvml"]
+
+[[architecture.component]]
+name = "baracuda-nvrtc"
+paths = ["crates/baracuda-nvrtc"]
+
+[[architecture.component]]
+name = "baracuda-nvshmem"
+paths = ["crates/baracuda-nvshmem"]
+
+[[architecture.component]]
+name = "baracuda-ozimmu"
+paths = ["crates/baracuda-ozimmu"]
+
+[[architecture.component]]
+name = "baracuda-runtime"
+paths = ["crates/baracuda-runtime"]
+
+[[architecture.component]]
+name = "baracuda-tensorrt"
+paths = ["crates/baracuda-tensorrt"]
+
+[[architecture.component]]
+name = "baracuda-transformer-engine"
+paths = ["crates/baracuda-transformer-engine"]
+
+
+[[architecture.component]]
+name = "baracuda-cuda-emit"
+paths = ["crates/baracuda-cuda-emit"]
+
+[[architecture.component]]
+name = "baracuda-cuda-seam"
+paths = ["crates/baracuda-cuda-seam"]
+
+[[architecture.component]]
+name = "baracuda-cutlass"
+paths = ["crates/baracuda-cutlass"]
+
+[[architecture.component]]
+name = "baracuda-megatron"
+paths = ["crates/baracuda-megatron"]
+
+[[architecture.component]]
+name = "baracuda-optim"
+paths = ["crates/baracuda-optim"]
+
+[[architecture.component]]
+name = "baracuda-tensorrt-builder"
+paths = ["crates/baracuda-tensorrt-builder"]
+
+
+[[architecture.component]]
+name = "baracuda-kernels"
+paths = ["crates/baracuda-kernels"]
+
+
+[[architecture.component]]
+name = "baracuda"
+paths = ["crates/baracuda"]
+
+[[architecture.component]]
+name = "baracuda-examples"
+paths = ["examples"]
+
+[[architecture.component]]
+name = "baracuda-flashinfer"
+paths = ["crates/baracuda-flashinfer"]
+
+[[architecture.component]]
+name = "baracuda-kernels-bench"
+paths = ["crates/baracuda-kernels-bench"]
+
+[[architecture.component]]
+name = "xtask"
+paths = ["xtask"]
+
+# build helpers, vocabulary and codegen inputs that depend on nothing above them
+[[architecture.layer]]
+name = "foundation"
+components = ["baracuda-bench-stats", "baracuda-build", "baracuda-core", "baracuda-cuda-parse", "baracuda-cuda-vocab", "baracuda-forge", "baracuda-seam", "baracuda-types", "baracuda-types-derive"]
+
+# raw FFI crates (*-sys, and the vendored kernel / CUTLASS build crates); may depend on foundation and on each other
+[[architecture.layer]]
+name = "sys"
+components = ["baracuda-cublas-sys", "baracuda-cuda-sys", "baracuda-cudf-sys", "baracuda-cudnn-sys", "baracuda-cufft-sys", "baracuda-cufile-sys", "baracuda-cupti-sys", "baracuda-curand-sys", "baracuda-cusolver-sys", "baracuda-cusparse-sys", "baracuda-cutensor-sys", "baracuda-cutlass-kernels-sys", "baracuda-cutlass-sys", "baracuda-cuvs-sys", "baracuda-cvcuda-sys", "baracuda-flashinfer-sys", "baracuda-kernels-sys", "baracuda-nccl-sys", "baracuda-npp-sys", "baracuda-nvcomp-sys", "baracuda-nvimagecodec-sys", "baracuda-nvjitlink-sys", "baracuda-nvjpeg-sys", "baracuda-nvml-sys", "baracuda-nvrtc-sys", "baracuda-nvshmem-sys", "baracuda-ozimmu-sys", "baracuda-tensorrt-sys", "baracuda-transformer-engine-sys"]
+
+# safe RAII wrappers over one CUDA library each, plus the driver and the shared kernels vocabulary
+[[architecture.layer]]
+name = "wrappers"
+components = ["baracuda-cublas", "baracuda-cudf", "baracuda-cudnn", "baracuda-cufft", "baracuda-cufile", "baracuda-cupti", "baracuda-curand", "baracuda-cusolver", "baracuda-cusparse", "baracuda-cutensor", "baracuda-cuvs", "baracuda-cvcuda", "baracuda-driver", "baracuda-kernels-types", "baracuda-nccl", "baracuda-npp", "baracuda-nvcomp", "baracuda-nvimagecodec", "baracuda-nvjitlink", "baracuda-nvjpeg", "baracuda-nvml", "baracuda-nvrtc", "baracuda-nvshmem", "baracuda-ozimmu", "baracuda-runtime", "baracuda-tensorrt", "baracuda-transformer-engine"]
+
+# crates that combine several wrappers (cutlass, megatron, optim) and the kernel-generation seam
+[[architecture.layer]]
+name = "composites"
+components = ["baracuda-cuda-emit", "baracuda-cuda-seam", "baracuda-cutlass", "baracuda-megatron", "baracuda-optim", "baracuda-tensorrt-builder"]
+
+# baracuda-kernels, the Plan-Descriptor-Args op API
+[[architecture.layer]]
+name = "plan"
+components = ["baracuda-kernels"]
+
+# facade, integrations, benches, examples and the task runner; nothing in the workspace depends on these
+[[architecture.layer]]
+name = "top"
+components = ["baracuda", "baracuda-examples", "baracuda-flashinfer", "baracuda-kernels-bench", "xtask"]
+
+
+# ARC advisory findings accepted for now. The MOD-* waivers are in the member's own .coderipper.toml (crates/baracuda-driver,
+# crates/baracuda-kernels-sys): a member's run reads its own file, not this one. Each is a row in docs/planning/arc-mod-programme.md.
+
+[[allow]]
+check = "ARC-005"
+file = "crates/baracuda-ozimmu/Cargo.toml"
+symbol = "baracuda-ozimmu->baracuda-ozimmu-sys"
+reason = "a safe wrapper depends on its own raw FFI crate: `-sys` crates are the stable end of each pair by design (ARCHITECTURE.md, layered design), and ozimmu-sys is unstable only because it depends on kernels-sys, cublas-sys, cuda-sys and forge. Owner: baracuda lane. Remove this entry when ozimmu-sys stops depending on kernels-sys, or when the margin falls under 0.3."

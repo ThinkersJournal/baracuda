@@ -1,0 +1,7 @@
+# CodeRipper waivers for this crate (a --workspace run reads each member's own file). Each names the finding, why, an owner and when to
+# remove it; the plan is a row in docs/planning/arc-mod-programme.md at the workspace root.
+
+[[allow]]
+check = "MOD-005"
+file = "src/lib.rs"
+reason = "a real candidate, not a false alarm: about 60,000 code lines of `extern` declarations (161 blocks) plus the facades `cudnn_ffi`, `pool_cudnn_facade`, `conv_cudnn_facade`, `cusolver_facade`, `cufft_facade`, `curand_facade`, `cutlass_reexport` and `gemm_dense_cublas_facade` in one file. It should become one module per op family, re-exported at the root so the paths do not change. Not done in the change that declared this: the ABI manifest check reads this file, so the split needs that script changed in the same PR. Owner: baracuda lane. Remove this entry when the file falls under 2,234 code lines."
