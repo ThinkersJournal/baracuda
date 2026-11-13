@@ -34,15 +34,14 @@ The other bodies were **not** read. A verdict on the public shape, not on kernel
    `expect` either.
 4. **The op set is a runtime support check, not a type.** `UnaryDescriptor.kind` is a `UnaryKind` (defined outside this
    directory and not located in the crates of this tree, so not reviewed here). `UnaryBackwardPlan::select` accepts a fixed list
-   of saved-x and saved-y kinds (about 44 named in its error text) and rejects the rest with `Error::Unsupported` ("other
+   of saved-x and saved-y kinds (about 45 named in its error text, counted by eye) and rejects the rest with `Error::Unsupported` ("other
    (kind, dtype) pairs land in later fanout"), so a valid `UnaryKind` can still fail `select`. That is the design;
    the freeze should say the supported set is not part of the semver promise, or publish it.
 5. **`unary.rs` module doc is stale.** Its head says "Today only `UnaryKind::Neg` on `f32` is wired" and that "the other
    unary variants ... land in fanout sessions" (`unary.rs:7-11`), in a file of 5,829 lines whose sibling backward plan
    lists dozens of ops. I did not check which forward ops are wired; the doc line is wrong or the file is dead weight
    until someone does.
-6. **`aux_element` is set only where it should be.** `Some` in `cast.rs` and `cast_subbyte.rs` (one each, counted by
-   grep: the second dtype), `None` in the other 18. `PRelu` reports `op: UnaryKind::PReLU` in
+6. **`aux_element` is `Some` in two files.** `cast.rs` and `cast_subbyte.rs` (one `aux_element: Some` each, by grep), `None` in the other 18 (grep); whether the cast value is right was not checked. `PRelu` reports `op: UnaryKind::PReLU` in
    `OpCategory::UnaryElementwise` (`prelu.rs:119-128`), so its identity is shared with the unary family.
 
 ## Not checked
