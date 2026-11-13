@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.129 - 2026-11-12
+
+Moves the advisory `portfolio` job in `.github/workflows/ci.yml` from coderipper `ee9c3950` (installs 0.9.24, before the ARC and MOD rules) to `33cc3b7e` (ciresnave/coderipper#307, installs 0.43.49), the pin the PM named (not checked against the other repos). The job is advisory and not a required status; the caller passes nothing else, and the reusable workflow's inputs (`runs-on`, `timeout-minutes`) are unchanged. No code change. Not verified until CI runs on this PR: whether the newer rule set finishes inside the job's default 30-minute timeout on a workspace of 77 crates (the MOD rules took about 7 minutes each over `--workspace` locally).
+
 ## 0.1.0-alpha.128 - 2026-11-12
 
 Declares the workspace architecture in `.coderipper.toml` (77 crates in six layers, matching `ARCHITECTURE.md`; ARC-001 and ARC-002 now run and find 0 violations and 0 cycles over 278 edges), waives the three non-Info findings and one ARC-005 Info with owner and removal condition, and adds `docs/planning/arc-mod-programme.md` with the baseline (83 MOD findings), the scheduled rows and a ratchet proposal. No code change. Verified with coderipper 0.43.20: ARC-001/002/005 on the root, MOD-002 on `-p baracuda-driver`, MOD-005 on `-p baracuda-kernels-sys`.
