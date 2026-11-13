@@ -1,3 +1,0 @@
-kind: docs: R6 review of the kernels linalg family (295 rows, 8 findings)
----
-Adds `docs/planning/api-freeze/r6/linalg.md`: the R6 public-shape review of the 295 `linalg` census rows at origin/main 3e04bc56. Findings: none of the 15 plans has a public `can_implement`; workspace size is a cached `Cell` (0 until first use, 0 for batched) with an ignored `_stream` parameter; `run` is defined per concrete dtype; `handle_init` is a `#[doc(hidden)] pub mod` with no census rows; no `#[non_exhaustive]`; `WY_NB` is a public const mirrored in a CUDA header; three bare `unreachable!()` were not traced. No code change. Probe-based (greps over all 17 files, a few reads), not a line read of every body; nothing executed.
