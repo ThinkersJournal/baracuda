@@ -41,9 +41,9 @@ use unpopped::{
 // `Cuda` moved to the sibling `baracuda-cuda-emit`; reached via the dev-dep cycle.
 use baracuda_cuda_emit::Cuda;
 // The sibling backends, published from the Unpopped extraction (test-only dev-deps).
+use fishstringer_slang_emit::Slang;
 use unpopped_cpu_c::CpuC;
 use unpopped_vocab::{ArchSku, ElementKind, OpCategory, OperandDesc, StructureKey, structure_key};
-use fishstringer_slang_emit::Slang;
 
 // ---------------------------------------------------------------------------
 // Seeded LCG (Knuth/MMIX constants) — the same generator used by the reader
