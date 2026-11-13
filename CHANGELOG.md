@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.133 - 2026-11-13
+
+Adds `docs/planning/api-freeze/r6/image.md`: the R6 public-shape review of the 276 `image` census rows at origin/main df7eed36. Findings: `#[non_exhaustive]` only on the `interpolate` pair (`GridSampleDescriptor` has no mode or padding field to grow into); `InterpolateMode` publishes five reserved modes that `select` rejects; extents are named `i32` fields and float parameters mix `f32` and `f64`; `aux_element` is set on `Nms` and the two `RoiPool` plans. All 12 plans have `can_implement` and none panics outside tests. No code change. Probe-based (greps over all 12 files, descriptor reads), not a line read of every body; nothing executed.
+
 ## 0.1.0-alpha.132 - 2026-11-13
 
 Adds `docs/planning/api-freeze/r6/elementwise.md`: the R6 public-shape review of the 353 `elementwise` census rows at origin/main b8c1b377. Findings: `PReluPlan` and `PReluBackwardPlan` have no public `can_implement` (the other 18 plans do); no descriptor is `#[non_exhaustive]`; the five non-test `expect` calls are guarded by `can_implement`/`select`; the supported unary op set is a runtime check; the `unary.rs` module doc ("only Neg on f32") is stale. No code change. Probe-based (greps over all 20 files, a few reads), not a line read of all of it; nothing executed.
