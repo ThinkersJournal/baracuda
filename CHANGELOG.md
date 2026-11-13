@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.130 - 2026-11-13
+
+Adds `docs/planning/api-freeze/r6/attention.md`: the R6 public-shape review of the 716 `attention` census rows at origin/main 4081d9ba. Findings: three backward plans (selective scan, SSD chunk scan, hyper-connection) have no public `can_implement`; `#[non_exhaustive]` is on 7 descriptors and enums and absent on the rest (the census column marks only 5); five kernel-limit consts are public; `HyperConnectionPlan` has a training mode only by construction. No code change. Probe-based (greps over every file plus full reads of the backward plans), not a line read of all 25 files; nothing executed.
+
 ## 0.1.0-alpha.129 - 2026-11-12
 
 Moves the advisory `portfolio` job in `.github/workflows/ci.yml` from coderipper `ee9c3950` (installs 0.9.24, before the ARC and MOD rules) to `33cc3b7e` (ciresnave/coderipper#307, installs 0.43.49), the pin the PM named (not checked against the other repos). The job is advisory and not a required status; the caller passes nothing else, and the reusable workflow's inputs (`runs-on`, `timeout-minutes`) are unchanged. No code change. Not verified until CI runs on this PR: whether the newer rule set finishes inside the job's default 30-minute timeout on a workspace of 77 crates (the MOD rules took about 7 minutes each over `--workspace` locally).
