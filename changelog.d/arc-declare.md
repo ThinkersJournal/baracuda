@@ -1,3 +1,0 @@
-kind: chore: [architecture] declaration and ARC/MOD waivers (coderipper)
----
-Declares the workspace architecture in `.coderipper.toml` (77 crates in six layers, matching `ARCHITECTURE.md`; ARC-001 and ARC-002 now run and find 0 violations and 0 cycles over 278 edges), waives the three non-Info findings and one ARC-005 Info with owner and removal condition, and adds `docs/planning/arc-mod-programme.md` with the baseline (83 MOD findings), the scheduled rows and a ratchet proposal. No code change. Verified with coderipper 0.43.20: ARC-001/002/005 on the root, MOD-002 on `-p baracuda-driver`, MOD-005 on `-p baracuda-kernels-sys`.

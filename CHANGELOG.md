@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.128 - 2026-11-12
+
+Declares the workspace architecture in `.coderipper.toml` (77 crates in six layers, matching `ARCHITECTURE.md`; ARC-001 and ARC-002 now run and find 0 violations and 0 cycles over 278 edges), waives the three non-Info findings and one ARC-005 Info with owner and removal condition, and adds `docs/planning/arc-mod-programme.md` with the baseline (83 MOD findings), the scheduled rows and a ratchet proposal. No code change. Verified with coderipper 0.43.20: ARC-001/002/005 on the root, MOD-002 on `-p baracuda-driver`, MOD-005 on `-p baracuda-kernels-sys`.
+
 ## 0.1.0-alpha.127 - 2026-11-12
 
 Adds `docs/planning/api-freeze/r6/sort.md`: the R6 public-shape review of the 268 `sort` census rows at origin/main 8a3414f0. Findings: `HistogramddPlan` can never be constructed yet its 16 rows are `stable`, `SORT_MAX_ROW` is exceeded by `ArgsortPlan`, `TOPK_MAX_K` means two things, rank-2 and `i32` indices fixed in the types, mixed `i32`/`i64` extents, narrow dtypes, two scratch conventions. No code change. Verified by reading the sources and grepping each `run` for `can_implement`.
