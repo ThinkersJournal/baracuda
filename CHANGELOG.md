@@ -16,6 +16,14 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.135 - 2026-11-13
+
+Adds a section (async scheduling plus the barrier-aggregation note, US8539204B2) to `docs/PATENT-SWEEP.md` recording, per the PM's [NOTICE] of 2026-11-13 (board 431), the targets baracuda generates code for and whether any carries an instruction that schedules asynchronously: only NVIDIA `cp.async` in hand-written and vendored kernels, none in `baracuda-cuda-emit`, no non-NVIDIA target. Carries the claim text as relayed, says the patents were not read, and records board 434 (lowering for NVIDIA permitted; non-NVIDIA declined by name; no unpopped release with the new variants yet). No code change, not legal advice.
+
+## 0.1.0-alpha.134 - 2026-11-13
+
+Adds `docs/planning/api-freeze/r6/linalg.md`: the R6 public-shape review of the 295 `linalg` census rows at origin/main 3e04bc56. Findings: none of the 15 plans has a public `can_implement`; workspace size is a cached `Cell` (0 until first use, 0 for batched) with an ignored `_stream` parameter; `run` is defined per concrete dtype; `handle_init` is a `#[doc(hidden)] pub mod` with no census rows; no `#[non_exhaustive]`; `WY_NB` is a public const mirrored in a CUDA header; three bare `unreachable!()` were not traced. No code change. Probe-based (greps over all 17 files, a few reads), not a line read of every body; nothing executed.
+
 ## 0.1.0-alpha.133 - 2026-11-13
 
 Adds `docs/planning/api-freeze/r6/image.md`: the R6 public-shape review of the 276 `image` census rows at origin/main df7eed36. Findings: `#[non_exhaustive]` only on the `interpolate` pair (`GridSampleDescriptor` has no mode or padding field to grow into); `InterpolateMode` publishes five reserved modes that `select` rejects; extents are named `i32` fields and float parameters mix `f32` and `f64`; `aux_element` is set on `Nms` and the two `RoiPool` plans. All 12 plans have `can_implement` and none panics outside tests. No code change. Probe-based (greps over all 12 files, descriptor reads), not a line read of every body; nothing executed.
