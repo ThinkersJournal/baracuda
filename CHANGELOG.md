@@ -16,6 +16,22 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.138 - 2026-11-13
+
+R6 public-API freeze review of the `baracuda-kernels` `quantize` family (628 census rows, 7 findings). Docs only; no code change.
+
+## 0.1.0-alpha.137 - 2026-11-13
+
+R6 public-API freeze review of the `baracuda-kernels` `pool` family (390 census rows, 8 findings). Docs only; no code change.
+
+## 0.1.0-alpha.136 - 2026-11-13
+
+Adds `docs/planning/api-freeze/r6/loss.md`: the R6 public-shape review of the 726 `loss` census rows at origin/main 3e04bc56. Findings: none of the 41 plans has a public `can_implement`; `CtcLossCudnnPlan` holds cuDNN state in `Cell`s with a three-method workspace API; `#[non_exhaustive]` on 2 of 41 descriptors; `aux_element` is `I64` for three index-target losses and `None` for `Nll` and `CrossEntropy` which also take `i64` targets; `ignore_index` only on fused linear cross-entropy; four rows are classed `doc-hidden` in the census though the source has no `#[doc(hidden)]`. No code change. Probe-based (greps over all 22 files, a few reads), not a line read of every body; nothing executed.
+
+## 0.1.0-alpha.135 - 2026-11-13
+
+Adds a section (async scheduling plus the barrier-aggregation note, US8539204B2) to `docs/PATENT-SWEEP.md` recording, per the PM's [NOTICE] of 2026-11-13 (board 431), the targets baracuda generates code for and whether any carries an instruction that schedules asynchronously: only NVIDIA `cp.async` in hand-written and vendored kernels, none in `baracuda-cuda-emit`, no non-NVIDIA target. Carries the claim text as relayed, says the patents were not read, and records board 434 (lowering for NVIDIA permitted; non-NVIDIA declined by name; no unpopped release with the new variants yet). No code change, not legal advice.
+
 ## 0.1.0-alpha.134 - 2026-11-13
 
 Adds `docs/planning/api-freeze/r6/linalg.md`: the R6 public-shape review of the 295 `linalg` census rows at origin/main 3e04bc56. Findings: none of the 15 plans has a public `can_implement`; workspace size is a cached `Cell` (0 until first use, 0 for batched) with an ignored `_stream` parameter; `run` is defined per concrete dtype; `handle_init` is a `#[doc(hidden)] pub mod` with no census rows; no `#[non_exhaustive]`; `WY_NB` is a public const mirrored in a CUDA header; three bare `unreachable!()` were not traced. No code change. Probe-based (greps over all 17 files, a few reads), not a line read of every body; nothing executed.

@@ -1,6 +1,6 @@
 [package]
 name = "baracuda-seam"
-version = "0.1.0-alpha.134"
+version = "0.1.0-alpha.138"
 description = "Profile v1 kernel-seam handshake, provider side: Baracuda's advertised SeamHello (over fireline-announce) + the baracuda_seam_hello() entry point a consumer reads to negotiate a seam profile + capabilities."
 edition.workspace = true
 license.workspace = true
