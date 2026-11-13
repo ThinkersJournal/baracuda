@@ -34,10 +34,10 @@ public shape, not on numerics.
 2. **`CtcLossCudnnPlan` is the third state-holding plan style.** It keeps `Cell`s over a cuDNN handle, two tensor
    descriptors, a CTC descriptor, `workspace_bytes` and `workspace_queried` (`ctc_loss_cudnn.rs:119-131`) and has a `Drop`
    (`:533`). Its workspace API is three methods: `workspace_size()`, `workspace_size_queried()`, `query_workspace_size(..)`.
-   By reading, `Cell` over raw handles is neither `Send` nor `Sync` (not compiled). Compare `conv` 2 and 4 and `linalg` 2; the
-   other 40 loss plans have `workspace_size()` only and are stateless.
-3. **`#[non_exhaustive]` on two of 82 descriptors.** Only `FusedLinearCrossEntropyDescriptor` and its backward twin carry
-   it (`fused_linear_cross_entropy.rs:108, 972`), with `new` and `with_reduction`/`with_ignore_index` setters. The other 40
+   By reading, `Cell` over raw handles is neither `Send` nor `Sync` (not compiled). Compare `conv` 2 and 4 and `linalg` 2; `MseLossPlan` and its backward
+   have `workspace_size()` only (read); the other plans' state was not read.
+3. **`#[non_exhaustive]` on two of 41 descriptors.** Only `FusedLinearCrossEntropyDescriptor` and its backward twin carry
+   it (`fused_linear_cross_entropy.rs:108, 972`), with `new` and `with_reduction`/`with_ignore_index` setters. The other 39
    descriptors, such as `MseLossDescriptor<N> { input_shape, reduction, element }`, are plain structs with public fields,
    so a new field is a breaking change after the freeze. Same split as `attention` 2, `conv` 5, `elementwise` 2, `image` 1,
    `linalg` 5.
