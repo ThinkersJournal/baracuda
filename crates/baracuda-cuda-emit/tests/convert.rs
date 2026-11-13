@@ -15,7 +15,7 @@ use unpopped::convert::{lift_elementwise, lift_reduction};
 use unpopped::generate;
 use unpopped_cpu_c::CpuC;
 use unpopped_vocab::{ArchSku, ElementKind, OpCategory, OperandDesc, structure_key};
-use vulkane_slang_parse::SLANG;
+use fishstringer_slang_parse::SLANG;
 
 const F32: &[ElementKind] = &[ElementKind::F32];
 

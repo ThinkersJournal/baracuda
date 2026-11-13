@@ -15,7 +15,7 @@ use unpopped::ir::BinaryOp;
 use unpopped::{OpDef, UnaryOp, input, try_generate};
 use unpopped_cpu_c::CpuC;
 use unpopped_vocab::{ArchSku, ElementKind, OpCategory, OperandDesc, structure_key};
-use vulkane_slang_emit::Slang;
+use fishstringer_slang_emit::Slang;
 
 /// CpuC lowers `f16` / `bf16` (a CPU codec since unpopped-cpu-c 0.15.0: the halves
 /// are carried in `unsigned short` and converted through integer helpers, where
