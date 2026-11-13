@@ -1,0 +1,3 @@
+kind: docs: R6 review of the kernels image family (276 rows, 5 findings)
+---
+Adds `docs/planning/api-freeze/r6/image.md`: the R6 public-shape review of the 276 `image` census rows at origin/main df7eed36. Findings: `#[non_exhaustive]` only on the `interpolate` pair (`GridSampleDescriptor` has no mode or padding field to grow into); `InterpolateMode` publishes five reserved modes that `select` rejects; extents are named `i32` fields and float parameters mix `f32` and `f64`; `aux_element` is set on `Nms` and the two `RoiPool` plans. All 12 plans have `can_implement` and none panics outside tests. No code change. Probe-based (greps over all 12 files, descriptor reads), not a line read of every body; nothing executed.
