@@ -24,8 +24,8 @@ not on cuDNN or kernel numerics.
 1. **No plan in the family has a public `can_implement`.** Zero of nine (`grep can_implement` over the directory finds
    nothing), where every plan in `attention` has one except the two scan backward plans, and `norm`'s `InstanceNorm`
    pair is the only other gap. The six cuDNN plans validate in private `check_fw_args`, `check_bw_data_args`,
-   `check_dw_args` (three per file, counted) called from `run_*`; the three im2col/col2im plans validate in `select`
-   and `run`. A caller cannot pre-validate a conv call. This is the family-level counterpart of the per-plan gaps in
+   `check_dw_args` (three per file, counted) called from `run_*`; the three im2col/col2im plans validate in `select` (read for `im2col.rs`: `validate_geometry` at `:126`)
+   only. A caller cannot pre-validate a conv call. This is the family-level counterpart of the per-plan gaps in
    `norm` 1 and `attention` 1.
 2. **The six conv plans are not `select`-then-`run` plans; they build cuDNN state lazily behind `Cell`.** `Conv2dPlan`
    holds a `cudnnHandle_t`, four descriptors and four size and algorithm slots as `Cell<...>` (`conv2d.rs:247-262`),
@@ -57,5 +57,5 @@ not on cuDNN or kernel numerics.
 ## Not checked
 
 cuDNN or kernel numerics; the `check_*_args` bodies (their presence and call from `run_*` only); `Drop` of the cuDNN
-handles (not read; whether the plan destroys its handle and descriptors is a leak question, not a shape question);
+handles (six `impl Drop` exist in the directory, counted; bodies not read, and whether they destroy every handle and descriptor is a leak question, not a shape one);
 `Send`/`Sync` by compilation; the `conv1d`, `conv3d` and transpose bodies beyond their signatures. Nothing was executed.
