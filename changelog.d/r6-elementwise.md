@@ -1,0 +1,3 @@
+kind: docs: R6 review of the kernels elementwise family (353 rows, 6 findings)
+---
+Adds `docs/planning/api-freeze/r6/elementwise.md`: the R6 public-shape review of the 353 `elementwise` census rows at origin/main b8c1b377. Findings: `PReluPlan` and `PReluBackwardPlan` have no public `can_implement` (the other 18 plans do); no descriptor is `#[non_exhaustive]`; the five non-test `expect` calls are guarded by `can_implement`/`select`; the supported unary op set is a runtime check; the `unary.rs` module doc ("only Neg on f32") is stale. No code change. Probe-based (greps over all 20 files, a few reads), not a line read of all of it; nothing executed.
