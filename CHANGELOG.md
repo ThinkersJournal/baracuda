@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.132 - 2026-11-13
+
+Adds `docs/planning/api-freeze/r6/elementwise.md`: the R6 public-shape review of the 353 `elementwise` census rows at origin/main b8c1b377. Findings: `PReluPlan` and `PReluBackwardPlan` have no public `can_implement` (the other 18 plans do); no descriptor is `#[non_exhaustive]`; the five non-test `expect` calls are guarded by `can_implement`/`select`; the supported unary op set is a runtime check; the `unary.rs` module doc ("only Neg on f32") is stale. No code change. Probe-based (greps over all 20 files, a few reads), not a line read of all of it; nothing executed.
+
 ## 0.1.0-alpha.131 - 2026-11-13
 
 Adds `docs/planning/api-freeze/r6/conv.md`: the R6 public-shape review of the 371 `conv` census rows at origin/main 446aa5d6. Findings: none of the nine plans has a public `can_implement`; the six cuDNN plans keep handles and descriptors in `Cell`s (so, by reading, not `Send`/`Sync`) and expose `run_fw`/`run_bw_data`/`run_dw` and a workspace accessor that is `0` until first use; `#[non_exhaustive]` on the six conv descriptors only; the algorithm picker is public on `Conv2dPlan` alone. No code change. Probe-based (greps over all nine files, full reads of `conv2d.rs` pieces), not a line read of every file; nothing executed.
