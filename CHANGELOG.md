@@ -16,6 +16,14 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.141 - 2026-11-13
+
+ROADMAP: the 2026-10-28 hold on new CUDA parser/emitter features is superseded (CireSnave 2026-11-12, 2026-10-25 and board 434 C, as relayed by the PM); the kernel-layer emitter (`Cuda::lower_kernel`, row U20) is scheduled as three staged PRs. Docs only; no code change.
+
+## 0.1.0-alpha.140 - 2026-11-13
+
+R6 public-API freeze review of the `baracuda-kernels` `shape_layout` family (324 census rows, 8 findings). Docs only; no code change.
+
 ## 0.45.1 - 2026-11-14 (`baracuda-cuda-emit`)
 
 - `Cuda::lower_kernel` (ROADMAP U20, stage 1 of 3): the CUDA backend now runs `check_kernel` and lowers a kernel with no statements to an `extern "C" __global__` signature with an empty body (`T*` per buffer, `const T*` for a read-only one, `T` per scalar). Everything else stays a typed `LowerError::UnsupportedKernel` by name: the first statement of a non-empty body, a launch shape, an allocation, a result local, a packed local, an element type outside the CUDA table. Before this the backend declined every kernel through the trait default. None of `AsyncWait`, `CopyAsync`, `AsyncCommit`, `Collective` is lowered yet (stage 3, board 434 C). No existing output changes: the 333 library tests and the other emit test files pass unchanged.
