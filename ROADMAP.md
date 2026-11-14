@@ -1391,7 +1391,17 @@ Out of scope for Phase 49 (future):
 - **LAMB f16/bf16** — Phase 49 ships f32-only LAMB; mixed-precision
   LAMB is a follow-up.
 
-## Comprehensive CUDA parser (scheduled, not started: the 2026-10-28 hold on new parser/emitter features stands)
+## Comprehensive CUDA parser and kernel-layer emitter (scheduled; the 2026-10-28 hold is superseded, see the rulings below)
+
+**Rulings that lift the 2026-10-28 hold on new CUDA parser/emitter features** (relayed by the PM in [TASK] `baracuda-cuda-lowering-and-publish`, 2026-11-14; the quoted fragments are the PM's, not re-read at their source here):
+- CireSnave 2026-11-12: *"Unpopped first, then its parsers/emitters"* (owners); Unpopped's cross-GPU kernels block Fuel and Lightbulb.
+- CireSnave 2026-10-25: *"Baracuda is comprehensive by design"*.
+- Board 434, CireSnave: *"434: C."* NVIDIA targets (Baracuda) may lower `AsyncWait`, `CopyAsync`, `AsyncCommit` and `Collective` with a risk note (`docs/PATENT-SWEEP.md`, "Async scheduling instructions"); non-NVIDIA targets decline by name.
+
+**Kernel-layer emitter (row U20, ours), staged (PM approved 2026-11-14).** Measured at `origin/main` `c6a598e5` against Unpopped 0.45.12: `baracuda-cuda-emit` has 0 `lower_kernel` and 0 `KernelFn` references (`unpopped-cpu-c` 0.45.12 implements `Backend::lower_kernel`, `kernel.rs:669`), so `Cuda` returns the typed `UnsupportedKernel` for every kernel-layer function. The four flagged statements therefore need a `Cuda::lower_kernel`, not four match arms. Three PRs, each docs + tests, everything not yet taught declined by name (`UnsupportedKernel`, never an approximation):
+1. `Cuda::lower_kernel` skeleton: `check_kernel`, signature, parameters, the launch frame; every statement declined by name.
+2. The memory and control subset (loads, stores, locals, `if`/`for`, barriers); the rest still declined.
+3. The four flagged statements for CUDA, with the risk note carried in the doc and a test that a non-NVIDIA target still declines each by name.
 
 CireSnave 2026-11-11, verbatim: *"If the CUDA parser is not comprehensive, Baracuda still has work to do to make it comprehensively cover everything CUDA can do."*
 
