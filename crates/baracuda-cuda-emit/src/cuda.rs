@@ -86,6 +86,15 @@ impl Backend for Cuda {
         }
     }
 
+    /// Kernel-layer lowering (ROADMAP U20), stage 1: a signature and an empty body; every statement,
+    /// launch shape and allocation is a typed `UnsupportedKernel` by name (see `crate::kernel`).
+    fn lower_kernel(
+        &self,
+        kernel: &unpopped::kernel::KernelFn,
+    ) -> Result<GeneratedKernel, LowerError> {
+        crate::kernel::lower_kernel(kernel)
+    }
+
     fn supports_dtype(
         &self,
         dtype: ElementKind,
