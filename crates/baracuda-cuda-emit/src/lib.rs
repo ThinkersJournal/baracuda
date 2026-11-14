@@ -31,6 +31,7 @@ pub mod extern_asm;
 pub use extern_asm::{ExternError, extern_asm_cuda};
 
 /// The CUDA spellings of `Fma`, `Cast` and `Bitcast` (unpopped 0.24.0).
+mod kernel;
 mod typed;
 
 /// The NVRTC on-demand JIT compiler (`NvrtcCompiler`) — the production

@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.45.1 - 2026-11-14 (`baracuda-cuda-emit`)
+
+- `Cuda::lower_kernel` (ROADMAP U20, stage 1 of 3): the CUDA backend now runs `check_kernel` and lowers a kernel with no statements to an `extern "C" __global__` signature with an empty body (`T*` per buffer, `const T*` for a read-only one, `T` per scalar). Everything else stays a typed `LowerError::UnsupportedKernel` by name: the first statement of a non-empty body, a launch shape, an allocation, a result local, a packed local, an element type outside the CUDA table. Before this the backend declined every kernel through the trait default. None of `AsyncWait`, `CopyAsync`, `AsyncCommit`, `Collective` is lowered yet (stage 3, board 434 C). No existing output changes: the 333 library tests and the other emit test files pass unchanged.
+
 ## 0.45.0 - 2026-11-14 (`baracuda-cuda-emit`, `baracuda-cuda-parse`, `baracuda-cuda-seam`)
 
 - **Breaking:** the emitter, parser and seam crates move to Unpopped 0.45.12: `unpopped`, `unpopped-vocab` and `unpopped-cpu-c` 0.43.2 -> 0.45.12, and `baracuda-cuda-seam` to `fireline-synth ~0.2` (was `~0.1`; `fireline-grammar` stays `~0.1`). A consumer must resolve one copy of each in its graph. MAJOR.MINOR of the three crates follow the Unpopped release (versioning exception above); the workspace `0.1.0-alpha.N` crates are unchanged.
