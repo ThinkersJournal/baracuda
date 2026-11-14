@@ -1,15 +1,17 @@
 //! `Cuda::lower_kernel`, stages 1 and 2 of ROADMAP U20: the signature and argument block, the memory and control subset,
 //! and a typed `UnsupportedKernel` (never an approximation) for everything else, naming what it declined.
 //!
-//! Stage 2 lowers none of the four statements ruled by board 434 C (`AsyncWait`, `CopyAsync`, `AsyncCommit`,
-//! `Collective`); these tests pin that each of the three async statements is declined by name until stage 3.
-//! `Collective` needs a launch-scope kernel the checker accepts and is added with its lowering in stage 3.
+//! Stage 3 lowers the four statements ruled by board 434 C (`AsyncWait`, `CopyAsync`, `AsyncCommit`, `Collective`) for NVIDIA
+//! with a patent risk note; `cp.async` says it needs sm_80 in the interface, and the collectives are subgroup-scope only.
 
 use baracuda_cuda_emit::Cuda;
 use unpopped::backend::{Backend, LowerError};
 use unpopped::exec::{AllocDecl, ExecId, Extent, LaunchShape, MemorySpace};
 use unpopped::ir::{BinaryOp, ScalarExpr};
-use unpopped::kernel::{Block, BufferRole, KernelFn, LocalDecl, Param, Place, Stmt, check_kernel};
+use unpopped::kernel::{
+    Block, BufferRole, CollectiveKind, KernelFn, LocalDecl, Param, Place, ShuffleMode, Stmt,
+    VoteKind, check_kernel,
+};
 use unpopped_vocab::ElementKind;
 
 const I32: ElementKind = ElementKind::I32;
@@ -288,44 +290,170 @@ fn async_kernel(body: Vec<Stmt>) -> KernelFn {
     .with_launch(LaunchShape::new([4, 1, 1], [1, 1, 1]))
 }
 
-#[test]
-fn the_async_statements_are_declined_by_name_not_lowered() {
+fn async_body() -> Vec<Stmt> {
     let tid = ScalarExpr::Exec(ExecId::ThreadIdx(0));
-    let copy = Stmt::CopyAsync {
-        dst: Place::Alloc {
-            alloc: 0,
-            index: tid.clone(),
+    vec![
+        Stmt::CopyAsync {
+            dst: Place::Alloc {
+                alloc: 0,
+                index: tid.clone(),
+            },
+            src: Place::Logical {
+                buffer: 0,
+                coords: vec![tid],
+            },
+            elems: 1,
         },
-        src: Place::Logical {
-            buffer: 0,
-            coords: vec![tid],
-        },
-        elems: 1,
-    };
-    let cases = [
-        (
-            "CopyAsync",
-            vec![copy, Stmt::AsyncCommit, Stmt::AsyncWait { pending: 0 }],
-        ),
-        (
-            "AsyncCommit",
-            vec![Stmt::AsyncCommit, Stmt::AsyncWait { pending: 0 }],
-        ),
-        ("AsyncWait", vec![Stmt::AsyncWait { pending: 0 }]),
-    ];
-    for (name, body) in cases {
-        let k = async_kernel(body);
-        let checked = check_kernel(&k);
-        assert!(
-            checked.is_ok(),
-            "{name}: the fixture must pass the checker, got {checked:?}"
+        Stmt::AsyncCommit,
+        Stmt::AsyncWait { pending: 0 },
+    ]
+}
+
+#[test]
+fn the_async_statements_lower_to_cp_async_and_say_they_need_sm80() {
+    let k = async_kernel(async_body());
+    check_kernel(&k).expect("the fixture must pass the checker");
+    let g = Cuda.lower_kernel(&k).expect("cp.async lowers");
+    for want in [
+        "#error \"cp.async needs sm_80 or newer\"",
+        "cp.async.ca.shared.global [%0], [%1], %2;",
+        "cp.async.commit_group;",
+        "cp.async.wait_group %0;",
+        "\"n\"(0)",
+        "if (((unsigned long long)_g | (unsigned long long)_s) & 3) __trap();",
+        "patent risk note (board 434 C",
+    ] {
+        // `_g` is parenthesised by the emitter; match the pieces rather than the exact spacing
+        let alt = want.replace(
+            "((unsigned long long)_g | (unsigned long long)_s)",
+            "(((unsigned long long)_g) | (unsigned long long)_s)",
         );
-        let d = detail(Cuda.lower_kernel(&k));
         assert!(
-            d.contains(&format!("statement `{name}`")),
-            "{name} is named in the decline: {d}"
+            g.source.contains(want) || g.source.contains(&alt),
+            "missing `{want}`:\n{}",
+            g.source
         );
     }
+    let i = g.interface().expect("interface");
+    assert!(
+        i.requires.iter().any(|r| r.contains("sm_80")),
+        "the consumer can decline before compiling: {:?}",
+        i.requires
+    );
+    // 4, 8 or 16 bytes only: 3 x f32 is 12.
+    let mut bad = async_body();
+    if let Stmt::CopyAsync { elems, .. } = &mut bad[0] {
+        *elems = 3;
+    }
+    let k = async_kernel(bad);
+    if check_kernel(&k).is_ok() {
+        assert!(detail(Cuda.lower_kernel(&k)).contains("cp.async moves 4, 8 or 16"));
+    }
+}
+
+/// One warp: every lane contributes 1.0 and receives the warp's sum.
+fn warp_sum(kind: CollectiveKind, scope: unpopped::exec::Scope, block: u32) -> KernelFn {
+    // A vote's result is a u32, every other collective's is the value's type.
+    let out = if matches!(kind, CollectiveKind::Vote(_)) {
+        U32
+    } else {
+        F32
+    };
+    KernelFn::new(
+        "warp",
+        F32,
+        vec![Param::buffer("out", out, BufferRole::Write, Some(1))],
+        vec![LocalDecl::scalar(F32), LocalDecl::scalar(out)],
+        Block(vec![
+            Stmt::Let {
+                local: 0,
+                init: ScalarExpr::Const(1.0),
+            },
+            Stmt::Collective {
+                kind,
+                value: ScalarExpr::Local(0),
+                result: 1,
+                scope,
+            },
+            Stmt::Store {
+                place: Place::Logical {
+                    buffer: 0,
+                    coords: vec![ScalarExpr::Exec(ExecId::ThreadIdx(0))],
+                },
+                value: ScalarExpr::Local(1),
+            },
+        ]),
+    )
+    .with_launch(LaunchShape::new([block, 1, 1], [1, 1, 1]))
+}
+
+#[test]
+fn subgroup_collectives_lower_to_warp_intrinsics_and_the_rest_declines_by_name() {
+    use unpopped::exec::Scope;
+    use unpopped::ir::ReduceOp;
+    let sum = warp_sum(CollectiveKind::Reduce(ReduceOp::Sum), Scope::Subgroup, 32);
+    check_kernel(&sum).expect("well-formed");
+    let g = Cuda.lower_kernel(&sum).expect("a warp reduce lowers");
+    assert!(
+        g.source
+            .contains("__shfl_xor_sync(0xffffffffu, _v, _o, 32)")
+            && g.source.contains("_v = ((_v) + (_n));"),
+        "{}",
+        g.source
+    );
+    for (kind, want) in [
+        (
+            CollectiveKind::Shuffle {
+                mode: ShuffleMode::Xor,
+                operand: ScalarExpr::ConstInt(1, U32),
+            },
+            "__shfl_xor_sync(0xffffffffu, _v, (int)(1u), 32)",
+        ),
+        (
+            CollectiveKind::Vote(VoteKind::Ballot),
+            "__ballot_sync(0xffffffffu, _v != 0)",
+        ),
+        (
+            CollectiveKind::Scan {
+                op: ReduceOp::Sum,
+                exclusive: false,
+            },
+            "__shfl_up_sync(0xffffffffu, _v, _o, 32)",
+        ),
+        (
+            CollectiveKind::Broadcast {
+                lane: ScalarExpr::ConstInt(0, U32),
+            },
+            "__shfl_sync(0xffffffffu, _v, (int)(0u), 32)",
+        ),
+    ] {
+        let k = warp_sum(kind, Scope::Subgroup, 32);
+        if let Err(e) = check_kernel(&k) {
+            panic!("{want}: fixture refused by the checker: {e:?}");
+        }
+        let g = Cuda.lower_kernel(&k).expect("lowers");
+        assert!(g.source.contains(want), "missing `{want}`:\n{}", g.source);
+    }
+    // Declined by name: a block-scope collective, a block that is not whole warps, a float Max, a signed shuffle distance.
+    let k = warp_sum(CollectiveKind::Reduce(ReduceOp::Sum), Scope::Block, 32);
+    check_kernel(&k).expect("well-formed");
+    assert!(detail(Cuda.lower_kernel(&k)).contains("Block-scope `Collective`"));
+    let k = warp_sum(CollectiveKind::Reduce(ReduceOp::Sum), Scope::Subgroup, 48);
+    check_kernel(&k).expect("well-formed");
+    assert!(detail(Cuda.lower_kernel(&k)).contains("multiple of 32"));
+    let k = warp_sum(CollectiveKind::Reduce(ReduceOp::Max), Scope::Subgroup, 32);
+    check_kernel(&k).expect("well-formed");
+    assert!(detail(Cuda.lower_kernel(&k)).contains("float `Max` collective"));
+    let k = warp_sum(
+        CollectiveKind::Shuffle {
+            mode: ShuffleMode::Up,
+            operand: ScalarExpr::ConstInt(1, I32),
+        },
+        Scope::Subgroup,
+        32,
+    );
+    check_kernel(&k).expect("well-formed");
+    assert!(detail(Cuda.lower_kernel(&k)).contains("must be a u32"));
 }
 
 #[test]
@@ -389,7 +517,16 @@ mod nvrtc {
 
     #[test]
     fn lowered_kernels_compile_for_sm89() {
-        for k in [scale(), red()] {
+        for k in [
+            scale(),
+            red(),
+            async_kernel(async_body()),
+            warp_sum(
+                CollectiveKind::Reduce(unpopped::ir::ReduceOp::Sum),
+                unpopped::exec::Scope::Subgroup,
+                32,
+            ),
+        ] {
             if let Err(e) = compile("cuda:sm89", &k) {
                 panic!("{}: {e}", k.name);
             }

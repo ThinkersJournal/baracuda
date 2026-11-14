@@ -1,4 +1,4 @@
-//! Kernel-layer lowering for the CUDA backend (ROADMAP row U20), **stage 2: the memory and control subset**.
+//! Kernel-layer lowering for the CUDA backend (ROADMAP row U20), **stages 2 and 3: the memory and control subset, then the four statements of board 434 C**.
 //!
 //! [`Cuda::lower_kernel`](crate::Cuda) lowers a [`KernelFn`] to one `extern "C" __global__` function. It runs
 //! [`check_kernel`] itself (the input is data; the checker is the only gate) and then either spells the kernel
@@ -36,17 +36,35 @@
 //! but only the five above are loaded or stored. An out-of-bounds coordinate or `Shared` index, or a zero `For`
 //! step, executes `__trap()`, as the IR's semantics trap.
 //!
+//! # Stage 3: the four statements ruled by board 434 C (NVIDIA only)
+//!
+//! `CopyAsync`, `AsyncCommit` and `AsyncWait` lower to `cp.async.ca.shared.global`, `cp.async.commit_group` and
+//! `cp.async.wait_group N` (a `Shared` destination, a global source, 4, 8 or 16 bytes). They need **sm_80 or newer**:
+//! the source carries an `#error` guard for an older `__CUDA_ARCH__` and the interface lists the requirement in
+//! [`KernelInterface::requires`], so a consumer on Pascal declines before it compiles. Conditions the hardware needs that
+//! the IR does not promise (the whole run in bounds, a unit innermost source stride, natural alignment of both addresses)
+//! are checked and trap. `Collective` lowers at `Subgroup` scope only, as a warp of 32 with the full mask: `Shuffle`
+//! (`Idx` any integer, `Up`/`Down`/`Xor` with a `u32` distance or mask, since a signed one means something else off the
+//! ends of the warp), `Vote`, `Broadcast`, `Reduce` and `Scan` (inclusive, and exclusive for `Sum`/`And`/`Or`/`Xor`) with
+//! `Sum` (wrapping), `Max`, `Min` on integers, `Sum` on floats (the order differs from the oracle's left-to-right fold, so
+//! compare within a tolerance), and the integer bit ops. A float `Max`/`Min`, a `Block`-scope collective, a block that is
+//! not whole warps, `CollectiveTuple`, `ReduceWith` and `ScanWith` decline by name. The emitted source says it lowers a
+//! statement under a patent risk note: US11294713B2 and US12118382B2 (async copy and wait), US8539204B2 (barrier
+//! aggregation), `docs/PATENT-SWEEP.md` hits 22 and 23; **not a clearance**. Targets other than NVIDIA decline these
+//! statements by name in their own emitters; this crate has only the NVIDIA one.
+//!
 //! Everything else is declined by name: any other statement (named by its variant, so a new `Stmt` variant is
 //! named too), any other expression node, a `Subgroup`, `Cluster` or `Device` barrier, a cluster or multi-device
 //! launch, a dynamic or non-`Shared` allocation, a result local (a callee), a packed local, `ClusterPeer`,
-//! `Peer` and `Multicast` places. Stage 3 lowers the four statements ruled by board 434 C (`AsyncWait`,
-//! `CopyAsync`, `AsyncCommit`, `Collective`) for NVIDIA targets with the patent risk note
-//! (`docs/PATENT-SWEEP.md`, "Async scheduling instructions"); none of them is lowered here.
+//! `Peer` and `Multicast` places.
 
 use unpopped::backend::{GeneratedKernel, LowerError, Spelling};
 use unpopped::exec::{ExecId, Extent, MemorySpace, Scope};
-use unpopped::ir::{BinaryOp, ScalarExpr};
-use unpopped::kernel::{Block, BufferRole, KernelFn, ParamKind, Place, Stmt, check_kernel};
+use unpopped::ir::{BinaryOp, ReduceOp, ScalarExpr};
+use unpopped::kernel::{
+    Block, BufferRole, CollectiveKind, KernelFn, ParamKind, Place, ShuffleMode, Stmt, VoteKind,
+    check_kernel,
+};
 use unpopped::kernel_interface::{KernelInterface, LaunchBounds, ParamsBlock, ParamsBlockField};
 use unpopped::types::{Ty, infer_ty_in};
 use unpopped_vocab::ElementKind;
@@ -238,6 +256,10 @@ struct Cx<'a> {
     out: String,
     depth: usize,
     fresh: u32,
+    /// The kernel uses `cp.async` (needs sm_80 or newer).
+    async_used: bool,
+    /// The kernel lowers a statement under a patent risk note (board 434 C).
+    flagged: bool,
 }
 
 impl Cx<'_> {
@@ -425,6 +447,229 @@ impl Cx<'_> {
         }
     }
 
+    /// `cp.async` of `elems` consecutive elements, global to `Shared` (PTX `cp.async.ca`; sm_80 or newer). Exact, so every
+    /// condition the hardware needs that the IR does not guarantee is checked and traps: bounds of the whole run, a unit
+    /// innermost stride on the source, and the natural alignment of both addresses.
+    fn copy_async(&mut self, dst: &Place, src: &Place, elems: u32) -> Result<(), LowerError> {
+        let (Place::Alloc { alloc, index }, Place::Logical { buffer, coords }) = (dst, src) else {
+            return Err(refuse(format!(
+                "kernel `{}`: `CopyAsync` between these places is not lowered (a `Shared` allocation from a global buffer is)",
+                self.k.name
+            )));
+        };
+        let elem = self.k.allocs[*alloc as usize].elem;
+        let bytes = size_align(elem).map_or(0, |s| s * elems);
+        if !matches!(bytes, 4 | 8 | 16) {
+            return Err(refuse(format!(
+                "kernel `{}`: `CopyAsync` of {elems} x {elem:?} is {bytes} bytes (cp.async moves 4, 8 or 16)",
+                self.k.name
+            )));
+        }
+        let Extent::Static(n) = self.k.allocs[*alloc as usize].extent else {
+            return Err(refuse(format!(
+                "kernel `{}`: `CopyAsync` into a dynamic allocation is not lowered yet",
+                self.k.name
+            )));
+        };
+        self.async_used = true;
+        self.flagged = true;
+        let tn = type_name(elem).unwrap_or_default();
+        self.line("{");
+        self.depth += 1;
+        let g = self.place(src)?;
+        let s = self.place(dst)?;
+        if elems > 1 {
+            let last = coords.len() - 1;
+            let c = self.ex(&coords[last])?;
+            self.line(&format!(
+                "if (a.b{buffer}_stride[{last}] != 1 || (long long)({c}) + {elems} > a.b{buffer}_shape[{last}]) __trap();"
+            ));
+            let i = self.ex(index)?;
+            self.line(&format!("if ((long long)({i}) + {elems} > {n}) __trap();"));
+        }
+        self.line(&format!(
+            "const {tn}* _g = &{g}; unsigned _s = (unsigned)__cvta_generic_to_shared(&{s});"
+        ));
+        self.line(&format!(
+            "if ((((unsigned long long)_g) | (unsigned long long)_s) & {}) __trap();",
+            bytes - 1
+        ));
+        self.line(&format!(
+            "asm volatile(\"cp.async.ca.shared.global [%0], [%1], %2;\" :: \"r\"(_s), \"l\"(_g), \"n\"({bytes}) : \"memory\");"
+        ));
+        self.depth -= 1;
+        self.line("}");
+        Ok(())
+    }
+
+    /// A `Subgroup`-scope collective as a warp collective with the full mask (the subgroup of an NVIDIA target is a warp of 32).
+    fn collective(
+        &mut self,
+        kind: &CollectiveKind,
+        value: &ScalarExpr,
+        result: u32,
+        scope: Scope,
+    ) -> Result<(), LowerError> {
+        let name = &self.k.name;
+        if !matches!(scope, Scope::Subgroup) {
+            return Err(refuse(format!(
+                "kernel `{name}`: a {scope:?}-scope `Collective` is not lowered yet (stage 3 lowers the subgroup, a warp of 32)"
+            )));
+        }
+        let threads = self.k.launch.map_or(0, |l| l.block.iter().product::<u32>());
+        if threads == 0 || !threads.is_multiple_of(32) {
+            return Err(refuse(format!(
+                "kernel `{name}`: a subgroup `Collective` needs a block of a multiple of 32 threads, got {threads}"
+            )));
+        }
+        let t = self.scalar_ty(value)?;
+        let tn = type_name(t).unwrap_or_default();
+        let v = self.ex(value)?;
+        let m = "0xffffffffu";
+        let lane = "((threadIdx.x + threadIdx.y * blockDim.x + threadIdx.z * blockDim.x * blockDim.y) & 31u)";
+        // `x op y` for a fold, wrapping on signed integers.
+        let fold = |op: ReduceOp, x: &str, y: &str| -> Result<String, LowerError> {
+            let sym = match op {
+                ReduceOp::Sum => Some("+"),
+                ReduceOp::And => Some("&"),
+                ReduceOp::Or => Some("|"),
+                ReduceOp::Xor => Some("^"),
+                _ => None,
+            };
+            Ok(match (op, sym) {
+                (ReduceOp::Max | ReduceOp::Min, _) if is_float(t) => {
+                    return Err(refuse(format!(
+                        "kernel `{name}`: a float `{op:?}` collective is not lowered yet (its NaN behaviour is not pinned down)"
+                    )));
+                }
+                (ReduceOp::Max, _) => format!("(({x}) > ({y}) ? ({x}) : ({y}))"),
+                (ReduceOp::Min, _) => format!("(({x}) < ({y}) ? ({x}) : ({y}))"),
+                (_, Some(s)) if is_signed_int(t) && matches!(op, ReduceOp::Sum) => {
+                    let u = unsigned_of(t);
+                    format!("(({tn})(({u})({x}) {s} ({u})({y})))")
+                }
+                (_, Some(s)) => format!("(({x}) {s} ({y}))"),
+                _ => {
+                    return Err(refuse(format!(
+                        "kernel `{name}`: a collective fold `{op:?}` is not lowered"
+                    )));
+                }
+            })
+        };
+        let unsigned_operand = |e: &ScalarExpr| -> Result<String, LowerError> {
+            if self.scalar_ty(e)? != ElementKind::U32 {
+                return Err(refuse(format!(
+                    "kernel `{name}`: a shuffle distance or mask must be a u32 (a signed one has a different meaning off the ends of the warp)"
+                )));
+            }
+            self.ex(e)
+        };
+        let r = format!("l{result}");
+        let mut body = Vec::new();
+        let rt = match kind {
+            CollectiveKind::Shuffle { mode, operand } => {
+                let call = match mode {
+                    ShuffleMode::Idx => {
+                        format!("__shfl_sync({m}, _v, (int)({}), 32)", self.ex(operand)?)
+                    }
+                    ShuffleMode::Up => {
+                        format!(
+                            "__shfl_up_sync({m}, _v, {}, 32)",
+                            unsigned_operand(operand)?
+                        )
+                    }
+                    ShuffleMode::Down => {
+                        format!(
+                            "__shfl_down_sync({m}, _v, {}, 32)",
+                            unsigned_operand(operand)?
+                        )
+                    }
+                    ShuffleMode::Xor => format!(
+                        "__shfl_xor_sync({m}, _v, (int)({}), 32)",
+                        unsigned_operand(operand)?
+                    ),
+                    other => {
+                        return Err(refuse(format!(
+                            "kernel `{name}`: shuffle mode `{other:?}` is not lowered"
+                        )));
+                    }
+                };
+                body.push(format!("{r} = {call};"));
+                tn.clone()
+            }
+            CollectiveKind::Broadcast { lane: l } => {
+                body.push(format!(
+                    "{r} = __shfl_sync({m}, _v, (int)({}), 32);",
+                    self.ex(l)?
+                ));
+                tn.clone()
+            }
+            CollectiveKind::Vote(vk) => {
+                let f = match vk {
+                    VoteKind::All => format!("(unsigned int)__all_sync({m}, _v != 0)"),
+                    VoteKind::Any => format!("(unsigned int)__any_sync({m}, _v != 0)"),
+                    VoteKind::Ballot => format!("__ballot_sync({m}, _v != 0)"),
+                    other => {
+                        return Err(refuse(format!(
+                            "kernel `{name}`: vote `{other:?}` is not lowered"
+                        )));
+                    }
+                };
+                body.push(format!("{r} = {f};"));
+                "unsigned int".to_string()
+            }
+            CollectiveKind::Reduce(op) => {
+                // Butterfly: every lane ends with the fold of the whole warp.
+                body.push(format!(
+                    "for (int _o = 16; _o > 0; _o >>= 1) {{ {tn} _n = __shfl_xor_sync({m}, _v, _o, 32); _v = {}; }}",
+                    fold(*op, "_v", "_n")?
+                ));
+                body.push(format!("{r} = _v;"));
+                tn.clone()
+            }
+            CollectiveKind::Scan { op, exclusive } => {
+                // Hillis-Steele inclusive scan by `shfl_up`; an exclusive one shifts it by a lane and gives lane 0 the identity.
+                body.push(format!(
+                    "for (unsigned _o = 1u; _o < 32u; _o <<= 1) {{ {tn} _n = __shfl_up_sync({m}, _v, _o, 32); if ({lane} >= _o) _v = {}; }}",
+                    fold(*op, "_v", "_n")?
+                ));
+                if *exclusive {
+                    let ident = match op {
+                        ReduceOp::Sum | ReduceOp::Or | ReduceOp::Xor => format!("({tn})0"),
+                        ReduceOp::And => format!("({tn})(~({tn})0)"),
+                        _ => {
+                            return Err(refuse(format!(
+                                "kernel `{name}`: an exclusive `{op:?}` scan has no identity"
+                            )));
+                        }
+                    };
+                    body.push(format!(
+                        "{{ {tn} _x = __shfl_up_sync({m}, _v, 1u, 32); _v = ({lane} == 0u) ? {ident} : _x; }}"
+                    ));
+                }
+                body.push(format!("{r} = _v;"));
+                tn.clone()
+            }
+            other => {
+                return Err(refuse(format!(
+                    "kernel `{name}`: collective `{}` is not lowered yet",
+                    variant_name(&format!("{other:?}"))
+                )));
+            }
+        };
+        self.flagged = true;
+        self.line(&format!("{rt} {r};"));
+        self.line("{");
+        self.depth += 1;
+        self.line(&format!("{tn} _v = ({tn})({v});"));
+        for l in body {
+            self.line(&l);
+        }
+        self.depth -= 1;
+        self.line("}");
+        Ok(())
+    }
+
     fn block(&mut self, b: &Block) -> Result<(), LowerError> {
         for s in &b.0 {
             self.stmt(s)?;
@@ -527,6 +772,25 @@ impl Cx<'_> {
                 self.scope(body)?;
                 self.line("}");
             }
+            Stmt::CopyAsync { dst, src, elems } => self.copy_async(dst, src, *elems)?,
+            Stmt::AsyncCommit => {
+                self.async_used = true;
+                self.flagged = true;
+                self.line("asm volatile(\"cp.async.commit_group;\" ::: \"memory\");");
+            }
+            Stmt::AsyncWait { pending } => {
+                self.async_used = true;
+                self.flagged = true;
+                self.line(&format!(
+                    "asm volatile(\"cp.async.wait_group %0;\" :: \"n\"({pending}) : \"memory\");"
+                ));
+            }
+            Stmt::Collective {
+                kind,
+                value,
+                result,
+                scope,
+            } => self.collective(kind, value, *result, *scope)?,
             Stmt::Break => self.line("break;"),
             Stmt::Continue => self.line("continue;"),
             Stmt::Return => self.line("return;"),
@@ -689,6 +953,8 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
         out: String::new(),
         depth: 1,
         fresh: 0,
+        async_used: false,
+        flagged: false,
     };
     for (i, p) in k.params.iter().enumerate() {
         if let ParamKind::Scalar { local, .. } = &p.kind {
@@ -711,9 +977,7 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     let name = format!("baracuda_cuda_kernel_{ident_name}");
     let sname = format!("Args_{ident_name}");
     let mut src = String::new();
-    src.push_str(
-        "// Generated by baracuda-cuda-emit (kernel-layer lowering, stage 2), do not edit.\n",
-    );
+    src.push_str("// Generated by baracuda-cuda-emit (kernel-layer lowering), do not edit.\n");
     src.push_str(&format!("// kernel: {}\n", k.name));
     src.push_str(&format!("struct {sname} {{\n"));
     for f in &block.fields {
@@ -724,6 +988,12 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
         "static_assert(sizeof({sname}) == {} && alignof({sname}) == {}, \"{sname}: argument block layout differs from KernelInterface::params_block\");\n",
         block.size, block.align
     ));
+    if cx.async_used {
+        src.push_str("#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 800\n#error \"cp.async needs sm_80 or newer\"\n#endif\n");
+    }
+    if cx.flagged {
+        src.push_str("// Lowers an asynchronous-copy or collective statement under a patent risk note (board 434 C, docs/PATENT-SWEEP.md hits 22 and 23). Not a clearance.\n");
+    }
     let bounds_attr = bounds.map_or(String::new(), |t| format!("__launch_bounds__({t}) "));
     let mut params = ptrs;
     params.push(format!("{sname} a"));
@@ -745,6 +1015,9 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
         .with_params_block(pb);
     if let Some(t) = bounds {
         iface = iface.with_launch_bounds(LaunchBounds::new(t, None));
+    }
+    if cx.async_used {
+        iface = iface.with_requires("cp.async (sm_80 or newer)");
     }
     Ok(GeneratedKernel::new(name, src).with_interface(iface))
 }
