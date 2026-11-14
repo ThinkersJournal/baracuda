@@ -1,6 +1,6 @@
 [package]
 name = "baracuda-cuda-seam"
-version = "0.1.0-alpha.139"
+version = "0.45.0"
 description = "FireLine's kernel-seam `Synthesizer` implementation (`BaracudaSynthesizer`) over the CUDA backend in `baracuda-cuda-emit`, as Fuel calls it."
 
 edition.workspace = true
@@ -36,7 +36,7 @@ unpopped-vocab = { workspace = true }
 # interface and a 0.x minor is a breaking change. Both crates must resolve to ONE copy each in the
 # graph (Fuel's `jit-synth` feature implements the same `fireline_synth::Synthesizer`).
 fireline-grammar = "~0.1"
-fireline-synth = "~0.1"
+fireline-synth = "~0.2"
 
 [lints]
 workspace = true
