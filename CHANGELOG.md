@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.140 - 2026-11-13
+
+R6 public-API freeze review of the `baracuda-kernels` `shape_layout` family (324 census rows, 8 findings). Docs only; no code change.
+
 ## 0.45.0 - 2026-11-14 (`baracuda-cuda-emit`, `baracuda-cuda-parse`, `baracuda-cuda-seam`)
 
 - **Breaking:** the emitter, parser and seam crates move to Unpopped 0.45.12: `unpopped`, `unpopped-vocab` and `unpopped-cpu-c` 0.43.2 -> 0.45.12, and `baracuda-cuda-seam` to `fireline-synth ~0.2` (was `~0.1`; `fireline-grammar` stays `~0.1`). A consumer must resolve one copy of each in its graph. MAJOR.MINOR of the three crates follow the Unpopped release (versioning exception above); the workspace `0.1.0-alpha.N` crates are unchanged.
