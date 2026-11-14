@@ -16,6 +16,18 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.139 - 2026-11-13
+
+R6 public-API freeze review of the `baracuda-kernels` `segment` family (368 census rows, 6 findings). Docs only; no code change.
+
+## 0.1.0-alpha.138 - 2026-11-13
+
+R6 public-API freeze review of the `baracuda-kernels` `quantize` family (628 census rows, 7 findings). Docs only; no code change.
+
+## 0.1.0-alpha.137 - 2026-11-13
+
+R6 public-API freeze review of the `baracuda-kernels` `pool` family (390 census rows, 8 findings). Docs only; no code change.
+
 ## 0.1.0-alpha.136 - 2026-11-13
 
 Adds `docs/planning/api-freeze/r6/loss.md`: the R6 public-shape review of the 726 `loss` census rows at origin/main 3e04bc56. Findings: none of the 41 plans has a public `can_implement`; `CtcLossCudnnPlan` holds cuDNN state in `Cell`s with a three-method workspace API; `#[non_exhaustive]` on 2 of 41 descriptors; `aux_element` is `I64` for three index-target losses and `None` for `Nll` and `CrossEntropy` which also take `i64` targets; `ignore_index` only on fused linear cross-entropy; four rows are classed `doc-hidden` in the census though the source has no `#[doc(hidden)]`. No code change. Probe-based (greps over all 22 files, a few reads), not a line read of every body; nothing executed.
