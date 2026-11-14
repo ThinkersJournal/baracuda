@@ -52,7 +52,7 @@ baracuda-nvrtc = { workspace = true, optional = true }
 # a number here becomes a citation with no invalidation the next time either bumps.)
 # Test-only: no lib code depends on them. Kept as registry deps (not path) so
 # `cargo package` ships a tree that resolves for downloaders.
-unpopped-cpu-c = "0.45.12"
+unpopped-cpu-c = "0.45.17"
 fishstringer-slang-emit = "0.1.0"
 fishstringer-slang-parse = "0.1.0"
 # Runs the emitted Fma / Cast / Bitcast kernels on the device (`tests/typed_exprs.rs`).
