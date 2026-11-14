@@ -1,8 +1,8 @@
 # R6 review: `baracuda-cuda-emit`, `baracuda-cuda-parse`, `baracuda-cuda-seam`
 
 Reviewer: baracuda lane (R6 owner, PM [TASK] 2026-11-10, 2026-11-14). Ref: `origin/main` `c6a598e5` (the three crates at 0.45.0, as published
-2026-11-14). Items: the 25 census rows for the three crates in the §7.4 census (`items.tsv`: emit 21, parse 2, seam 2; all `public`, 24 `stable`
-and the one `stable` enum with `non_exhaustive = 1`). **The census is stale for these crates** (finding 1), so this review reads the
+2026-11-14). Items: the 25 census rows for the three crates in the §7.4 census (`items.tsv`: emit 21, parse 2, seam 2; all 25 `public` and `stable`,
+one of them with `non_exhaustive = 1`). **The census is stale for these crates** (finding 1), so this review reads the
 source, not only the rows. Method: read `lib.rs` of emit, parse and seam, `nvrtc.rs` (the enum and `new`), the `pub` lines of
 `cfamily_shadow.rs` and `extern_asm.rs`, and `BaracudaSynthesizer` (`seam lib.rs:224-246`); grepped `non_exhaustive`, `cfamily_shadow`
 and `use tree_sitter`. The 7,000-line `cuda.rs` and the seam `synthesize` body were **not** read. A verdict on the public shape, not on the
@@ -15,7 +15,7 @@ emitted CUDA.
 | `Cuda` (unit struct) + `impl Backend` | 1 + trait | stable at the Unpopped line | finding 2 |
 | 3 `emit_*_helper` fns | 3 | stable | decided "keep" at alpha.163 (ROADMAP) |
 | `cfamily_shadow` (7 fns) | 7 | **freeze decision** | finding 3 |
-| `nvrtc` (`NvrtcCompiler`, `NvrtcTargetError`) | 5 | stable | feature-gated; the enum is `#[non_exhaustive]` |
+| `nvrtc` (`NvrtcCompiler`, `NvrtcTargetError`) | 6 | stable | feature-gated; the enum is `#[non_exhaustive]` |
 | `extern_asm` (feature `extern_asm_cuda`) | 3 | **not in the census** | finding 1; `ExternError` is not `#[non_exhaustive]` (finding 4) |
 | `parse_cuda`, `CUDA` | 2 | stable at the Unpopped line | finding 2 |
 | `BaracudaSynthesizer`, `new` | 2 + trait | stable at the FireLine line | finding 2 |
