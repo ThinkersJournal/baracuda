@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.142 - 2026-11-13
+
+R6 public-API freeze review of `baracuda-cuda-emit`, `baracuda-cuda-parse` and `baracuda-cuda-seam` (25 census rows, 7 findings; the census predates `extern_asm`). Docs only; no code change.
+
 ## 0.1.0-alpha.141 - 2026-11-13
 
 ROADMAP: the 2026-10-28 hold on new CUDA parser/emitter features is superseded (CireSnave 2026-11-12, 2026-10-25 and board 434 C, as relayed by the PM); the kernel-layer emitter (`Cuda::lower_kernel`, row U20) is scheduled as three staged PRs. Docs only; no code change.
