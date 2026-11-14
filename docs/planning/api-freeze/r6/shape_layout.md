@@ -31,8 +31,8 @@ the public shape, not on the CUDA kernels or numerics.
    fields (`ConcatDescriptor`, `ConcatArgs` at `concat.rs:29, 52`). A new field is a breaking change. Same all-or-nothing case as `segment` 2.
 3. **Rank is a const generic: 54 of 57 structs carry `const N: usize`.** `ConcatPlan<T, const N: usize>`, `ConcatDescriptor<const N: usize>`,
    `WriteSliceDescriptor<const N: usize>` (`concat.rs:80, 29`, `write_slice.rs:64`, by grep). Freezing the structs freezes the rank-as-type
-   shape; a caller picks `N` at compile time. The three structs without it are `FillPlan` and its two siblings (grep on the signature line;
-   `fill.rs` not read). The supported rank range is not a public constant: 0 hits for `MAX_RANK` or `MAX_DIMS` in the directory (control: `pool`
+   shape; a caller picks `N` at compile time. The three structs without it are `FillDescriptor`, `FillArgs` and `FillPlan` (`fill.rs:31, 43, 68`, by
+   grep on the signature lines; the file body was not read). The supported rank range is not a public constant: 0 hits for `MAX_RANK` or `MAX_DIMS` in the directory (control: `pool`
    has none either, `quantize` has `MAX_RANK`); what `select` does for a large `N` was not read.
 4. **`aux_element` is `None` in all 19 plans.** One hit per file, each `None` (`concat.rs:141` to `write_slice.rs:229`). Unlike `segment`,
    `quantize` and `pool` there are no index tensors here, so a uniform `None` is expected; nothing to ask.
