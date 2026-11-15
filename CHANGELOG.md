@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.149 - 2026-11-15
+
+Adds `docs/planning/api-freeze/r6/forge.md`: the R6 public-API-freeze review of `baracuda-forge` at `25d4baeb`. Eight findings, among them 0 `#[non_exhaustive]` on a 10-variant `Error` and three structs with 12 public fields, a serde-derived `BuildCache` whose format is an on-disk contract, and a census `reach` column that reads `private-mod` for 118 of 126 rows although every type is re-exported. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
+
 ## 0.1.0-alpha.148 - 2026-11-15
 
 Adds `docs/planning/api-freeze/r6/kernels-sys.md`: the R6 public-API-freeze review of `baracuda-kernels-sys` at `c8df7e3e`. Seven findings, chiefly that the census rows cover about 1% of the public function surface (57 fn-like rows against 5,593 `pub fn` by grep) and that its line numbers are stale. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
