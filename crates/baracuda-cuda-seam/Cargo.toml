@@ -35,8 +35,8 @@ unpopped-vocab = { workspace = true }
 # envelope (what was `fuel-kernel-seam`). `~0.1`, never `^`: each FireLine crate's version follows its
 # interface and a 0.x minor is a breaking change. Both crates must resolve to ONE copy each in the
 # graph (Fuel's `jit-synth` feature implements the same `fireline_synth::Synthesizer`).
-fireline-grammar = "~0.3"
-fireline-synth = "~0.3"
+fireline-grammar = "~0.4"
+fireline-synth = "~0.4"
 
 [lints]
 workspace = true
