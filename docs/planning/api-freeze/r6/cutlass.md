@@ -14,7 +14,7 @@ was built. A verdict on the public shape.
 | 5 plan structs (`GemmPlan`, `BatchedGemmPlan`, `GroupedGemmPlan`, `PreparedGroupedGemm`, `IntGemmPlan`) + 29 methods | 34 | stable with a note | finding 4 |
 | 9 descriptor/args/preference structs, 56 pub fields | 65 | **freeze decision** | finding 1 |
 | `GroupedScheduleMode`, `GroupedPlanPreference` | 3 | **freeze decision** | finding 2 |
-| `Error`, `Result`, 31 re-exported vocabulary types | 33+ | stable with a note | finding 3 |
+| `Error`, `Result`, 21 re-exported vocabulary types | 23+ | stable with a note | finding 3 |
 | `GemmSku` and `precision_guarantee` | 6 | stable with a note | finding 5 |
 
 ## Findings
@@ -25,10 +25,10 @@ was built. A verdict on the public shape.
    `#[non_exhaustive]` in `src/` (grep). Decision: `#[non_exhaustive]` plus constructors on the descriptor and args structs, or declare them frozen.
 2. **`GroupedScheduleMode` has one variant and the doc says another is planned.** `types.rs:242-247` (`DeviceOnly`, `#[default]`), doc: CUTLASS also offers
    `HostPrecompute` "we'll add it later". The enum is closed and derives `Eq`, so adding the variant is breaking. Decision: `#[non_exhaustive]` now.
-3. **`Error` and 22 of the vocabulary types are not defined here.** `error.rs:5` re-exports `Error`, `Result` from `baracuda-kernels-types` (the
+3. **`Error` and 21 vocabulary types are not defined here.** `error.rs:5` re-exports `Error`, `Result` from `baracuda-kernels-types` (the
    census row `enum Error` at `error.rs:23` is therefore stale: the line is a comment, the enum is `#[non_exhaustive]` in
    `baracuda-kernels-types/src/error.rs:24-25`). `types.rs:22` re-exports 21 names and `:37` aliases `Element` as `CutlassElement`; `lib.rs:60` re-exports 31 names
-   from `types`. Freezing this crate freezes those names' identity to the `baracuda-kernels-types` version, the same coupling as `baracuda-types` finding 5.
+   from `types` (the 21 plus this crate's own 10 descriptor types). Freezing this crate freezes those names' identity to the `baracuda-kernels-types` version, the same coupling as `baracuda-types` finding 5.
 4. **1 `pub unsafe fn`, with a `# Safety` section.** `PreparedGroupedGemm::run` (`plan.rs:5483`): an asynchronous H2D copy out of a pinned buffer plus raw
    device addresses, so the caller keeps the plan and buffers alive until the stream completes and as long as any captured graph can replay. The contract
    is written down. Everything else is safe: 28 `pub fn` plus that one makes the 29 census methods. The plan types document `Send + Sync` (`plan.rs:3505`,
