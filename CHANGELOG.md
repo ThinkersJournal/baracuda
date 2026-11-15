@@ -16,6 +16,18 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.145 - 2026-11-14
+
+Adds `docs/planning/api-freeze/r6/cudnn.md`: the R6 public-API-freeze review of `baracuda-cudnn` at `fdfb1715`. Eight findings, among them 0 `#[non_exhaustive]` on 19 enums, 17 `unsafe impl Send` with no stated invariant, and 17 `as_raw` methods that put the sys crate's types in the public API. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
+
+## 0.1.0-alpha.146 - 2026-11-14
+
+Adds `docs/planning/api-freeze/r6/cublas.md`: the R6 public-API-freeze review of `baracuda-cublas` at `fdfb1715`. Eight findings, among them 0 `#[non_exhaustive]` on 5 enums, a documented `Send` on `Handle` that looks wrong by reading (`Arc<HandleInner>` where only `HandleInner` is `Send`), and 28 `#[doc(hidden)]` raw methods on sealed public traits. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
+
+## 0.1.0-alpha.144 - 2026-11-14
+
+Adds `docs/planning/api-freeze/r6/runtime.md`: the R6 public-API-freeze review of `baracuda-runtime` at `b931ce59`. Seven findings, among them no `#[non_exhaustive]` on 4 enums or on the 22-field `DeviceProperties`, 59 public `unsafe` functions (all with a `# Safety` section), and 30 of 38 public type names shared with `baracuda-driver`. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
+
 ## 0.1.0-alpha.143 - 2026-11-14
 
 Adds `docs/planning/api-freeze/r6/driver.md`: the R6 public-API-freeze review of `baracuda-driver` at `8fae2fb9`. Eight findings, among them no `#[non_exhaustive]` on 9 enums, 72 public `unsafe` functions (all with a `# Safety` section), public unsafe traits that are not sealed, and an `async` feature that gates nothing. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
