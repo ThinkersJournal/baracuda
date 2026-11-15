@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.152 - 2026-11-15
+
+Adds `docs/planning/api-freeze/r6/types.md`: the R6 public-API-freeze review of `baracuda-types` at `edd7ae72`. Eight findings, among them `Half`/`BFloat16` deriving bit-equality `Eq`/`Hash` while `PartialOrd` compares as `f32` (confirmed by a compiled test: `NAN == NAN` but `partial_cmp` is `None`; fixed in #391), two unsealed `unsafe trait`s, `KernelArg` returning `*mut` from `&self`, and `DeviceRepr` owned by `unpopped-vocab`. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
+
 ## 0.1.0-alpha.151 - 2026-11-15
 
 `Cargo.lock` only: the three fireline crates move 0.4.0 -> 0.4.2 (the `~0.4` pins in `baracuda-cuda-seam` and `baracuda-seam` already accept it, so no manifest or published-version change). `cargo test --locked -p baracuda-cuda-seam -p baracuda-seam -p baracuda-cuda-emit --all-features` passes. fishstringer-slang-emit/-parse are already at 0.3.0 (latest).
