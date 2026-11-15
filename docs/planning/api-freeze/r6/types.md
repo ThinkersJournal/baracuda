@@ -21,7 +21,7 @@ in `tests/`. Method: grep counts over `src/*.rs`, read `lib.rs`, `kernel_arg.rs`
 
 1. **1 `#[non_exhaustive]` in the crate, on `Feature`** (`version.rs:82`, 13 variants, the right place: it grows with every CUDA release). The other
    enum, `StreamMode` (`Legacy`, `PerThread`), is closed with `Default` derived. It mirrors the two CUDA default-stream modes, so closed is
-   defensible, but the CUDA 13 line already discusses further modes in some libraries. Decision: keep closed or add the attribute.
+   defensible; a third mode would be a breaking change. Decision: keep closed or add the attribute.
 2. **Public fields and closed layout on the numeric types.** `Half(pub u16)`, `BFloat16(pub u16)` (`#[repr(transparent)]`) and `Complex32 { pub re, pub im }`,
    `Complex64 { pub re, pub im }` (`#[repr(C)]`). The layout is the CUDA one (`__half`, `float2`, `double2`), so freezing it costs nothing. The
    public tuple field means any `u16` is constructible directly, bypassing `from_bits`; that is intended, not unsound.
