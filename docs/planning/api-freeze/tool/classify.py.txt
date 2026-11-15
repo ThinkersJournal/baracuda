@@ -1,5 +1,7 @@
 import csv, re, sys, collections
 src, outdir = sys.argv[1], sys.argv[2]
+# argv[3] (optional): file of crate names, one per line, made by internal-crates.py: publish = false and no published crate depends on them.
+INTERNAL = set(open(sys.argv[3]).read().split()) if len(sys.argv) > 3 else set()
 OURS_CABI = {"baracuda-kernels-sys", "baracuda-cutlass-kernels-sys"}
 rows = list(csv.DictReader(open(src, newline=""), delimiter="\t"))
 # crate -> reexport text (to decide whether a pub item in a private module is in fact re-exported)
@@ -15,6 +17,8 @@ def reexported(r):
     return False
 PLUMB = re.compile(r"(^|::)_|_raw$|_ffi$")
 def classify(r):
+    if r["crate"] in INTERNAL:
+        return "internal"
     if r["deprecated"] == "1":
         return "candidate-for-removal"
     if r["hidden"] == "1":
@@ -37,7 +41,7 @@ for r in rows:
 cnt = collections.defaultdict(collections.Counter)
 for r in rows:
     cnt[r["crate"]][r["class"]] += 1
-classes = ["stable", "stable-c-abi", "vendor-mirror", "doc-hidden", "sealed-trait-pattern", "candidate-doc-hidden", "narrow-visibility-candidate", "candidate-for-removal"]
+classes = ["stable", "internal", "stable-c-abi", "vendor-mirror", "doc-hidden", "sealed-trait-pattern", "candidate-doc-hidden", "narrow-visibility-candidate", "candidate-for-removal"]
 with open(outdir + "/summary.tsv", "w") as f:
     f.write("crate\ttotal\t" + "\t".join(classes) + "\n")
     for k in sorted(cnt, key=lambda k: -sum(cnt[k].values())):

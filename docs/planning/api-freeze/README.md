@@ -26,8 +26,15 @@ with two extractor fixes; the §2 and §3 prose and the tables in the later sect
 2. **`doc-hidden` matched too much.** `flags()` set `hidden` when a `doc` attribute's text contained the word "hidden", which includes doc comments. It now requires exactly `#[doc(hidden)]`.
    Control: tracked `#[doc(hidden)]` lines by `git grep` over `crates` total 56, equal to the new class count of 56 (it was 62).
 
+3. **New class `internal`** (PM instruction, 2026-11-15). A crate is `internal` when it has `publish = false` **and** no crate that can be published has it as a normal or build dependency
+   (dev-dependencies do not count: cargo strips them from the published manifest). `tool/internal-crates.py.txt` computes the list from `cargo metadata --no-deps --locked`, and `classify.py` takes it as a third
+   argument and applies the rule first. At this ref it covers **4 of 77 packages**: `baracuda-bench-stats` (58 rows), `baracuda-kernels-bench` (115 rows), and `baracuda-examples` and `xtask` (no library, 0 rows).
+   `tools/kiss-ref-diff` is `publish = false` too but is not a workspace member, so `cargo metadata` does not list it; it has no library and 0 rows either way. So **173 rows are `internal`** and
+   **10,313 `stable`** (was 10,486): the published-API freeze scope is the `stable` column, and R6 row counts for `internal` crates are reported separately from it. The rows stay listed in `items.tsv`, class `internal`.
+   Control: every one of the 4 has no published user (the same query lists `baracuda-kernels-bench` as the user of `baracuda-bench-stats`, which is itself `internal`).
+
 Totals at `f7662ec1`: 22,509 rows (20,172 from the source walk plus 2,337 macro-expanded); 10,565 listed individually in `items.tsv` (481 macro-expanded) against 9,996 at alpha.96.
-Classes: stable 10,486, stable-c-abi 5,725, vendor-mirror 6,219, doc-hidden 56, sealed-trait-pattern 21, narrow-visibility-candidate 2, candidate-for-removal 0 (the 8 deprecated items are gone from the tree).
+Classes (before the `internal` class above moved 173 rows out of `stable`): stable 10,486, stable-c-abi 5,725, vendor-mirror 6,219, doc-hidden 56, sealed-trait-pattern 21, narrow-visibility-candidate 2, candidate-for-removal 0 (the 8 deprecated items are gone from the tree).
 
 **R6 reviews written against the old census (rows by crate: alpha.96 table | source walk at `f7662ec1` | with macros):**
 
@@ -129,6 +136,7 @@ Removing any of them is a breaking change under §4; do it in the beta.0 window,
 
 ## 3. Classification rules (applied by `tool/classify.py`, in this order)
 
+0. crate listed in the `internal` list (§0 item 3) → `internal`, before everything else.
 1. `#[deprecated]` → `candidate-for-removal`.
 2. `#[doc(hidden)]` → `doc-hidden`.
 3. `pub trait Sealed*` in a private module → `sealed-trait-pattern`.

@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.159 - 2026-11-15
+
+docs: API-freeze census classes every `publish = false` crate with no published dependent as `internal` (4 of 77 packages, 173 rows: `baracuda-bench-stats` 58, `baracuda-kernels-bench` 115), so `stable` drops 10,486 to 10,313 and the freeze scope is the published surface. Adds `tool/internal-crates.py.txt` and a third `classify.py` argument. No code change.
+
 ## 0.1.0-alpha.158 - 2026-11-15
 
 docs: R6 public-API-freeze review of `baracuda-kernels-bench` (115 census rows, 9 findings); recommends classing it `internal` since the crate is `publish = false`. No code change.
