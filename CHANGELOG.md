@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.155 - 2026-11-15
+
+Adds `docs/planning/api-freeze/r6/cvcuda.md`: the R6 public-API-freeze review of `baracuda-cvcuda` at `f7662ec1`. Seven findings, chiefly that 42 `simple_op!` macro-generated public operator structs are absent from the census (the extractor does not expand macros), 62 `pub unsafe fn submit` taking a raw `*mut c_void` stream, and untyped `i32`/`u32` codes in `Tensor::new` and `Threshold::new`. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
+
 ## 0.47.1 - 2026-11-15 (`baracuda-cuda-seam`)
 
 - Repins `fireline-grammar` and `fireline-synth` to ~0.5 (fireline 0.5.0 makes `read_contract` take `&dyn OpFactSource` and `&dyn DtypeSource`; the seam crates read no contracts, so this is a pin-only change). `baracuda-seam` (lockstep alpha) repins `fireline-announce` to ~0.5. The seam tests (21) pass against fireline 0.5.0.
