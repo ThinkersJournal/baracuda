@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.154 - 2026-11-15
+
+Adds `docs/planning/api-freeze/r6/cutlass.md`: the R6 public-API-freeze review of `baracuda-cutlass` at `daa4c795`. Eight findings, among them 56 public fields on 9 struct-literal-constructed descriptor and args structs with no `#[non_exhaustive]`, a single-variant `GroupedScheduleMode` whose doc plans a second variant, and `Error` re-exported from `baracuda-kernels-types` so the census `enum Error` row is stale. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
+
 ## 0.1.0-alpha.153 - 2026-11-15
 
 `baracuda-types`: `Half` and `BFloat16` derived `PartialEq`, `Eq` and `Hash` on the raw bits while `PartialOrd` compared as `f32`, so `NAN == NAN` was true yet `partial_cmp` was `None`, and `+0.0 == -0.0` was false yet `partial_cmp` was `Some(Equal)` (the `PartialOrd` contract was broken). `==` is now IEEE 754 equality through `f32`, like `f32` and the `half` crate: `NaN != NaN`, `+0.0 == -0.0`. `Eq` is removed (NaN is not equal to itself); `Hash` stays, normalised so `-0.0` hashes like `+0.0`.
