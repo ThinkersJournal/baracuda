@@ -35,7 +35,7 @@ R6 public-API freeze review of the `baracuda-kernels` `shape_layout` family (324
 ## 0.47.0 - 2026-11-14 (`baracuda-cuda-emit`, `baracuda-cuda-parse`, `baracuda-cuda-seam`)
 
 - **BREAKING** (`baracuda-cuda-emit`): `Cuda::lower_kernel` lowers a kernel to CUDA C (U20 stages 2 and 3): the by-value argument block ABI (`Args_<kernel>`, layout exactly `KernelInterface::params_block`), memory and control statements, static shared allocations, block barriers, `cp.async` copy/commit/wait (sm_80+, patent risk note in the source) and subgroup collectives. Everything else is declined by name. A launcher built for the stage-1 signature must pass the argument block.
-- Repins `unpopped`, `unpopped-vocab`, `unpopped-cpu-c` to ~0.47.0 (the emitter, parser and seam follow the Unpopped MAJOR.MINOR). `baracuda-cuda-parse` and the emitter's `convert` feature move from `unpopped::convert` to the new `unpopped-convert` crate (import path `unpopped_convert::`).
+- Repins `unpopped`, `unpopped-vocab`, `unpopped-cpu-c` to ~0.47.0 (the emitter, parser and seam follow the Unpopped MAJOR.MINOR). `baracuda-cuda-parse` and the emitter's `convert` feature move from `unpopped::convert` to the new `unpopped-convert` crate (import path `unpopped_convert::`). `baracuda-cuda-seam` and `baracuda-seam` require `fireline-synth`, `fireline-grammar` and `fireline-announce` ~0.3.
 
 ## 0.45.2 - 2026-11-14 (`baracuda-cuda-emit`)
 
