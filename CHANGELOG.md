@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.150 - 2026-11-15
+
+`baracuda-cuda-emit` and `baracuda-cuda-parse` dev-dependencies `fishstringer-slang-emit` / `-parse` move from `~0.2.0` to `~0.3.0` (0.3.0 makes `Slang::lower_kernel` buffers strided views with a `params_block`). Tests only; no library code change. `cargo test --locked -p baracuda-cuda-emit -p baracuda-cuda-parse --all-features` passes. Note: `fishstringer-slang-parse` 0.3.0 requires Rust 1.90 (dev-dependency only).
+
 ## 0.1.0-alpha.149 - 2026-11-15
 
 Adds `docs/planning/api-freeze/r6/forge.md`: the R6 public-API-freeze review of `baracuda-forge` at `25d4baeb`. Eight findings, among them 0 `#[non_exhaustive]` on a 10-variant `Error` and three structs with 12 public fields, a serde-derived `BuildCache` whose format is an on-disk contract, and a census `reach` column that reads `private-mod` for 118 of 126 rows although every type is re-exported. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
