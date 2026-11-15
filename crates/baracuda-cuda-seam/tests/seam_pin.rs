@@ -29,9 +29,9 @@ fn is_tilde(req: &str) -> bool {
 
 #[test]
 fn seam_crates_use_tilde_requirements() {
-    // Each FireLine crate follows its own interface line: the grammar is on 0.1, the synthesizer
-    // on 0.2 (fireline-synth 0.2.0 is on unpopped-vocab 0.45).
-    for (dep, line) in [("fireline-grammar", "~0.1"), ("fireline-synth", "~0.2")] {
+    // Each FireLine crate follows its own interface line: all three FireLine interface crates
+    // are on 0.3 (0.3.1 is on unpopped-vocab ~0.47.0).
+    for (dep, line) in [("fireline-grammar", "~0.3"), ("fireline-synth", "~0.3")] {
         let req = requirement(dep);
         assert!(
             is_tilde(&req),
