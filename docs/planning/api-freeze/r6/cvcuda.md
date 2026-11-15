@@ -24,8 +24,8 @@ built. A verdict on the public shape.
    structs the census does not list, and the 42 macro-generated `new` fns are absent while the 21 hand-written ones are present. The real public struct count is
    about 63, not 21. Decision: expand macros in the extractor (or add the macro invocations as rows) before the freeze.
 2. **62 `pub unsafe fn submit` with a raw `stream: *mut c_void`.** Each operator's `submit` takes the stream as a raw pointer (`lib.rs`, `Resize::submit`) with a one-line
-   `# Safety` (`stream` must be a live `cudaStream_t`), 63 `# Safety` headings for 63 `pub unsafe fn` (grep; the 63rd is `Tensor::from_raw`). The crate does not depend on
-   `baracuda-driver`, so a typed `Stream` is not available; changing `submit`'s first parameter later would be breaking in 62 places. Decision: freeze the raw pointer or
+   `# Safety` (`stream` must be a live `cudaStream_t`), 63 `# Safety` headings for 63 `pub unsafe fn` (grep; the 63rd is `Tensor::from_raw`). `baracuda-driver` is only a dev-dependency
+   (`Cargo.toml:29`), so a typed `Stream` is not in the public signatures; changing `submit`'s first parameter later would be breaking in 62 places. Decision: freeze the raw pointer or
    introduce a stream trait before the freeze.
 3. **Untyped integers where the sys crate has types.** `Tensor::new(shape: &[i64], dtype: i32, layout: i32)` takes opaque `i32` codes (the doc points at
    `NVCVTensorLayout.h`), and `Threshold::new(threshold_type: u32, max_batch_size: i32)` takes `u32` while `NVCVThresholdType` is re-exported at `lib.rs:378`. Freezing the integer
@@ -39,7 +39,7 @@ built. A verdict on the public shape.
 6. **The sys crate is part of the public API.** `lib.rs:23` re-exports `NVCVColorConversionCode`; `lib.rs:378`'s braced list re-exports `NVCVAdaptiveThresholdType`, `NVCVBorderType`, `NVCVFloat2`,
    `NVCVMorphologyType`, `NVCVSize2D`, `NVCVThresholdType`. `Tensor::as_raw`/`from_raw` expose `NVCVTensorHandle`. Freezing them freezes `baracuda-cvcuda-sys`' type shapes.
 7. **The census line numbers are stale for the hand-written operators.** Of the 23 struct, enum and fn rows, 15 do not name their item on the census line (`Threshold` at
-   census 1186 sits at 1175, 11 lines earlier; the remaining 14 `Threshold` through `PairwiseMatcher` rows drift the same way); the first 8 rows match. Positive control: the
+   census 1186 sits at 1175, 11 lines earlier; the other 14 rows, `AdaptiveThreshold` through `PairwiseMatcher`, also mismatch; their drift was not measured); the other 8 rows match. Positive control: the
    loop confirms the 8 matching rows. Names resolve; lines drifted.
 
 ## Not decided here
