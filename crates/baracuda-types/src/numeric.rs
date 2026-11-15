@@ -16,7 +16,7 @@ use core::fmt;
 /// IEEE 754 binary16 ("half-precision", `__half` in CUDA).
 ///
 /// Layout: 1 sign bit, 5 exponent bits (bias 15), 10 mantissa bits.
-#[derive(Copy, Clone, Default, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Default)]
 #[repr(transparent)]
 pub struct Half(
     /// Raw 16-bit IEEE 754 binary16 bit pattern.
@@ -185,6 +185,23 @@ impl fmt::Display for Half {
     }
 }
 
+/// IEEE 754 equality, consistent with [`PartialOrd`]: `NaN != NaN` and `+0.0 == -0.0`.
+/// (Not `Eq`: NaN is not equal to itself.)
+impl PartialEq for Half {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.to_f32() == other.to_f32()
+    }
+}
+
+/// Consistent with `==`: `-0.0` hashes like `+0.0`; NaNs may hash by bits because they are never equal.
+impl core::hash::Hash for Half {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        let bits = if self.0 & 0x7FFF == 0 { 0 } else { self.0 };
+        bits.hash(state);
+    }
+}
+
 impl PartialOrd for Half {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.to_f32().partial_cmp(&other.to_f32())
@@ -213,7 +230,7 @@ impl From<f32> for Half {
 }
 
 /// Brain Floating Point 16 (`__nv_bfloat16` in CUDA). The top 16 bits of an IEEE 754 `f32`.
-#[derive(Copy, Clone, Default, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Default)]
 #[repr(transparent)]
 pub struct BFloat16(
     /// Raw 16-bit bfloat16 representation (top 16 bits of an `f32`).
@@ -304,6 +321,23 @@ impl fmt::Debug for BFloat16 {
 impl fmt::Display for BFloat16 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         fmt::Display::fmt(&self.to_f32(), f)
+    }
+}
+
+/// IEEE 754 equality, consistent with [`PartialOrd`]: `NaN != NaN` and `+0.0 == -0.0`.
+/// (Not `Eq`: NaN is not equal to itself.)
+impl PartialEq for BFloat16 {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.to_f32() == other.to_f32()
+    }
+}
+
+/// Consistent with `==`: `-0.0` hashes like `+0.0`; NaNs may hash by bits because they are never equal.
+impl core::hash::Hash for BFloat16 {
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        let bits = if self.0 & 0x7FFF == 0 { 0 } else { self.0 };
+        bits.hash(state);
     }
 }
 
