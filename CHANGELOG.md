@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.158 - 2026-11-15
+
+docs: R6 public-API-freeze review of `baracuda-kernels-bench` (115 census rows, 9 findings); recommends classing it `internal` since the crate is `publish = false`. No code change.
+
 ## 0.1.0-alpha.157 - 2026-11-15
 
 `baracuda-cuda-seam` (`fireline-grammar`, `fireline-synth`) and `baracuda-seam` (`fireline-announce`) move from `~0.4` to `~0.5` (fireline 0.5.0). The crates read no contracts, so nothing else changes. `baracuda-cuda-seam` is 0.47.1 (emitter crates carry their own version). `cargo test --locked -p baracuda-cuda-seam -p baracuda-seam --all-features` passes.
