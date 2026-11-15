@@ -28,7 +28,8 @@ fn flags(a: &[Attribute]) -> (bool, bool, bool, bool) {
         let s = at.meta.to_token_stream().to_string().replace(' ', "");
         if p.is_ident("deprecated") { d = true; }
         if p.is_ident("non_exhaustive") { n = true; }
-        if p.is_ident("doc") && s.contains("hidden") { h = true; }
+        // exact `#[doc(hidden)]` only: `contains("hidden")` also matched doc comments that merely say "hidden"
+        if p.is_ident("doc") && s == "doc(hidden)" { h = true; }
         if p.is_ident("cfg") && s == "cfg(test)" { t = true; }
     }
     (h, d, n, t)
@@ -173,6 +174,9 @@ impl<'a> Ctx<'a> {
 fn main() {
     let root = PathBuf::from(std::env::args().nth(1).expect("repo root"));
     let outdir = PathBuf::from(std::env::args().nth(2).unwrap_or_else(|| ".".into()));
+    // optional 3rd arg: directory of `<crate>.rs` files produced by `rustc -Zunpretty=expanded` (see expand.sh.txt);
+    // items that exist only after macro expansion are added as rows with file `<macro-expanded>`, line 0.
+    let expdir: Option<PathBuf> = std::env::args().nth(3).map(PathBuf::from);
     let out = Command::new("git").current_dir(&root).args(["ls-files", "-z"]).output().unwrap();
     assert!(out.status.success(), "git ls-files failed: {}", String::from_utf8_lossy(&out.stderr));
     let all: Vec<String> = out.stdout.split(|b| *b == 0).filter(|s| !s.is_empty()).map(|s| String::from_utf8_lossy(s).into_owned()).collect();
@@ -195,6 +199,31 @@ fn main() {
         cx.file(&root.join(&lib_rel), true);
         for f in &cx.visited { reached_files.insert(f.clone()); }
         for x in &cx.missing { eprintln!("[{name}] {x}"); }
+        if let Some(ed) = &expdir {
+            let ep = ed.join(format!("{name}.rs"));
+            match std::fs::read_to_string(&ep) {
+                Err(_) => eprintln!("[{name}] NO-EXPANSION (macro-generated items not counted)"),
+                Ok(esrc) => match syn::parse_file(&esrc) {
+                    Err(e) => eprintln!("[{name}] EXPANSION-PARSE-ERR: {e}"),
+                    Ok(east) => {
+                        let mut cx2 = Ctx { krate: &name, root: &root, files: &files, rows: vec![], visited: BTreeSet::new(), missing: vec![] };
+                        cx2.items(&east.items, "<macro-expanded>", Path::new(""), true);
+                        let mut have: BTreeMap<(String, String), usize> = BTreeMap::new();
+                        for r in &cx.rows { *have.entry((r.kind.to_string(), r.name.clone())).or_insert(0) += 1; }
+                        let mut added = 0usize;
+                        for mut r in cx2.rows {
+                            if r.kind == "reexport" { continue; }
+                            let k = (r.kind.to_string(), r.name.clone());
+                            match have.get_mut(&k) {
+                                Some(n) if *n > 0 => *n -= 1,
+                                _ => { r.line = 0; cx.rows.push(r); added += 1; }
+                            }
+                        }
+                        eprintln!("[{name}] macro-expanded rows added: {added}");
+                    }
+                },
+            }
+        }
         let src_prefix = format!("{}/src/", dir.to_string_lossy().replace('\\', "/"));
         let unreached = files.iter().filter(|f| f.starts_with(&src_prefix) && !cx.visited.contains(*f)).count();
         summary.push(format!("{name}\t{m}\tLIB\t{publish_false}\t{unreached}"));
