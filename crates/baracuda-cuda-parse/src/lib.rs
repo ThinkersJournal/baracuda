@@ -31,7 +31,7 @@
 //! idioms, not a claim about the CUDA parser in general.
 
 use tree_sitter::{Parser, Tree};
-use unpopped::convert::Frontend;
+use unpopped_convert::Frontend;
 
 /// Parse CUDA source into a tree-sitter CST (error-tolerant; unrecognized
 /// constructs become `ERROR`/unhandled subtrees rather than failing).

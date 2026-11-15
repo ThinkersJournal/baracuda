@@ -12,7 +12,7 @@ use baracuda_cuda_emit::Cuda;
 // → `lift_reduction(&CUDA, …)`); the language is now the `Frontend` const, not the name.
 use baracuda_cuda_parse::CUDA;
 use fishstringer_slang_parse::SLANG;
-use unpopped::convert::{lift_elementwise, lift_reduction};
+use unpopped_convert::{lift_elementwise, lift_reduction};
 use unpopped::generate;
 use unpopped_cpu_c::CpuC;
 use unpopped_vocab::{ArchSku, ElementKind, OpCategory, OperandDesc, structure_key};
