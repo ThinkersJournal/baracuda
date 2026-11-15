@@ -1,4 +1,4 @@
-//! The CUDA [`unpopped::convert::Frontend`] — the parse-side (`.cu` -> IR)
+//! The CUDA [`unpopped_convert::Frontend`] — the parse-side (`.cu` -> IR)
 //! half of Baracuda's donation to Unpopped's neutral core.
 //!
 //! Moved out of `unpopped::convert` (Unpopped `deferred.md`'s "unpopped-cuda"
