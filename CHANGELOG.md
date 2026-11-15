@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.151 - 2026-11-15
+
+`Cargo.lock` only: the three fireline crates move 0.4.0 -> 0.4.2 (the `~0.4` pins in `baracuda-cuda-seam` and `baracuda-seam` already accept it, so no manifest or published-version change). `cargo test --locked -p baracuda-cuda-seam -p baracuda-seam -p baracuda-cuda-emit --all-features` passes. fishstringer-slang-emit/-parse are already at 0.3.0 (latest).
+
 ## 0.1.0-alpha.150 - 2026-11-15
 
 `baracuda-cuda-emit` and `baracuda-cuda-parse` dev-dependencies `fishstringer-slang-emit` / `-parse` move from `~0.2.0` to `~0.3.0` (0.3.0 makes `Slang::lower_kernel` buffers strided views with a `params_block`). Tests only; no library code change. `cargo test --locked -p baracuda-cuda-emit -p baracuda-cuda-parse --all-features` passes. Note: `fishstringer-slang-parse` 0.3.0 requires Rust 1.90 (dev-dependency only).
