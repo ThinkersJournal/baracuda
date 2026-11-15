@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.155 - 2026-11-15
+
+Adds `docs/planning/api-freeze/r6/cvcuda.md`: the R6 public-API-freeze review of `baracuda-cvcuda` at `f7662ec1`. Seven findings, chiefly that 42 `simple_op!` macro-generated public operator structs are absent from the census (the extractor does not expand macros), 62 `pub unsafe fn submit` taking a raw `*mut c_void` stream, and untyped `i32`/`u32` codes in `Tensor::new` and `Threshold::new`. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
+
 ## 0.1.0-alpha.154 - 2026-11-15
 
 Adds `docs/planning/api-freeze/r6/cutlass.md`: the R6 public-API-freeze review of `baracuda-cutlass` at `daa4c795`. Eight findings, among them 56 public fields on 9 struct-literal-constructed descriptor and args structs with no `#[non_exhaustive]`, a single-variant `GroupedScheduleMode` whose doc plans a second variant, and `Error` re-exported from `baracuda-kernels-types` so the census `enum Error` row is stale. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
