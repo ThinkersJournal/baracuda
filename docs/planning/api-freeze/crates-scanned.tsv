@@ -6,7 +6,7 @@ baracuda-cublas-sys	crates/baracuda-cublas-sys/Cargo.toml	LIB	false	0
 baracuda-cublas	crates/baracuda-cublas/Cargo.toml	LIB	false	0
 baracuda-cuda-emit	crates/baracuda-cuda-emit/Cargo.toml	LIB	false	1
 baracuda-cuda-parse	crates/baracuda-cuda-parse/Cargo.toml	LIB	false	0
-baracuda-cuda-seam	crates/baracuda-cuda-seam/Cargo.toml	LIB	true	0
+baracuda-cuda-seam	crates/baracuda-cuda-seam/Cargo.toml	LIB	false	0
 baracuda-cuda-sys	crates/baracuda-cuda-sys/Cargo.toml	LIB	false	1
 baracuda-cuda-vocab	crates/baracuda-cuda-vocab/Cargo.toml	LIB	false	0
 baracuda-cudf-sys	crates/baracuda-cudf-sys/Cargo.toml	LIB	false	0
@@ -66,6 +66,7 @@ baracuda-ozimmu-sys	crates/baracuda-ozimmu-sys/Cargo.toml	LIB	false	0
 baracuda-ozimmu	crates/baracuda-ozimmu/Cargo.toml	LIB	false	0
 baracuda-runtime	crates/baracuda-runtime/Cargo.toml	LIB	false	0
 baracuda-seam	crates/baracuda-seam/Cargo.toml	LIB	false	0
+baracuda-tensorrt-builder	crates/baracuda-tensorrt-builder/Cargo.toml	LIB	false	0
 baracuda-tensorrt-sys	crates/baracuda-tensorrt-sys/Cargo.toml	LIB	false	0
 baracuda-tensorrt	crates/baracuda-tensorrt/Cargo.toml	LIB	false	0
 baracuda-transformer-engine-sys	crates/baracuda-transformer-engine-sys/Cargo.toml	LIB	false	0

@@ -14,17 +14,18 @@ Method: grep counts over `src/*.rs`, read `lib.rs` head, `handle_init.rs`, the c
 | ABI constant, `AbiMismatch`, `check_abi` | 3 | stable | version integer is independent of the crate version, asserted by `scripts/check-abi-manifest.py` |
 | `#[repr(C)]` structs (`cuComplex`, `cuDoubleComplex`, `cufftComplex`, `cufftDoubleComplex`) + 8 fields | 12 | stable with a note | finding 4 |
 | 28 vendor types, 54 vendor consts | 82 | **freeze decision** | finding 3 |
-| ~5,460 `baracuda_kernels_*` extern fns | not in census | **freeze decision** | finding 1 |
+| ~5,460 `baracuda_kernels_*` extern fns | `stable-c-abi`, not in `items.tsv` | stable with a note | finding 1 |
 | 8 re-exports | 8 | stable with a note | finding 5 |
 | `handle_init` | 2 fns | stable | serialises cuBLAS/cuSOLVER handle creation, plain `Result<_, i32>` |
 
 ## Findings
 
-1. **The census covers about 1% of the public function surface.** Grep over `src/*.rs` finds 5,593 `pub fn` lines (5,460 named
-   `baracuda_kernels_*`, 61 `cusolver*`, 34 `cudnn*`, 16 `cublas*`, 10 `cufft*`, 8 `curand*`, 4 helpers); the census has 57 fn-like rows
-   (8 `fn`, 34 `ffi-import-fn`, 15 `fn-extern`). The 161 `extern "C"` blocks in `lib.rs` are therefore mostly unrowed. Every one of them is part
-   of the C ABI the crate exports. Decision: either widen the census extractor to the extern blocks or declare ABI-manifest
-   coverage (`check-abi-manifest.py`) the freeze mechanism for them. Not decided here which.
+1. **(Corrected.) The extern surface is classified `stable-c-abi`, not missing.** This finding first read `items.tsv` as covering about 1% of the function surface.
+   That was a misread: `items.tsv` deliberately omits the `stable-c-abi` and `vendor-mirror` classes (`api-freeze/README.md` §1-2), and
+   `per-crate-summary.tsv` counts them: `baracuda-kernels-sys` is 5,798 rows, of which 158 `stable`, 5,639 `stable-c-abi`, 1 `doc-hidden`, and 159 are listed individually. Grep over
+   `src/*.rs` finds 5,593 `pub fn` lines (5,460 `baracuda_kernels_*`, 61 `cusolver*`, 34 `cudnn*`, 16 `cublas*`, 10 `cufft*`, 8 `curand*`, 4 helpers), consistent with that class
+   count. The freeze question for them stays: they are our C ABI, frozen by `check-abi-manifest.py` and `ABI_VERSION`, not by `items.tsv`. Decision: confirm the ABI manifest is the freeze
+   mechanism for the 5,639.
 2. **The census line numbers are stale.** `baracuda_kernels_gather_rows_f32_run` is census line 77222 and sits at `lib.rs:76387`
    (about 835 lines earlier). Names are current: all 57 fn-like census names resolve to `fn <name>` (positive control: the gather-rows
    name above finds 1) and all 54 const names resolve to `const <name>`.
@@ -48,7 +49,7 @@ Method: grep counts over `src/*.rs`, read `lib.rs` head, `handle_init.rs`, the c
 
 ## Not decided here
 
-- How the ~5,460 extern fns are frozen (finding 1).
+- Whether the ABI manifest is the freeze mechanism for the 5,639 `stable-c-abi` rows (finding 1).
 - Whether the facade glob re-exports become named (finding 5).
-- Whether census row 77222's `doc-hidden` class is an extractor error (finding 6).
+- Nothing on finding 6: the `doc-hidden` row was an extractor false positive (the extractor matched the word "hidden" in a doc comment); fixed in the same PR.
 - Not checked: C-side signatures against the Rust declarations (the ABI manifest script does that), rustdoc output, the `links` key behaviour.

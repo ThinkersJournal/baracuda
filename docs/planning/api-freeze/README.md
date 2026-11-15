@@ -14,6 +14,43 @@ Three deliverables, all in this directory:
 | `crates-scanned.tsv` | which manifests were scanned, whether each has a lib root, `publish = false`, and how many `src/` files the module walk did not reach |
 | `tool/` | the enumerator + classifier source (`*.txt` so repo rustfmt/feature-coverage ignore them); method below |
 
+## 0. Re-measurement and extractor fixes (2026-11-15, `origin/main` `f7662ec1`)
+
+The committed tables below were produced at alpha.96. `items.tsv`, `per-crate-summary.tsv` and `crates-scanned.tsv` in this directory are now **regenerated at `f7662ec1`**
+with two extractor fixes; the §2 and §3 prose and the tables in the later sections keep their alpha.96 numbers and are not re-derived.
+
+1. **Macro-generated items are now counted.** The `syn` walker cannot see what `macro_rules!` emits, so (found by the R6 `baracuda-cvcuda` review: 42 `simple_op!` structs and their
+   `new` fns were missing) the tool takes a third argument, a directory of `rustc -Zunpretty=expanded` output per crate (`tool/expand.sh.txt`, nightly, `DOCS_RS=1` so nvcc build scripts skip), and
+   adds every `(kind, name)` pair the expansion has more of than the source walk, with `file = <macro-expanded>` and `line = 0`. Default features only. `reexport` rows are not diffed.
+   All 75 library crates expanded (0 failures, 0 parse errors).
+2. **`doc-hidden` matched too much.** `flags()` set `hidden` when a `doc` attribute's text contained the word "hidden", which includes doc comments. It now requires exactly `#[doc(hidden)]`.
+   Control: tracked `#[doc(hidden)]` lines by `git grep` over `crates` total 56, equal to the new class count of 56 (it was 62).
+
+Totals at `f7662ec1`: 22,509 rows (20,172 from the source walk plus 2,337 macro-expanded); 10,565 listed individually in `items.tsv` (481 macro-expanded) against 9,996 at alpha.96.
+Classes: stable 10,486, stable-c-abi 5,725, vendor-mirror 6,219, doc-hidden 56, sealed-trait-pattern 21, narrow-visibility-candidate 2, candidate-for-removal 0 (the 8 deprecated items are gone from the tree).
+
+**R6 reviews written against the old census (rows by crate: alpha.96 table | source walk at `f7662ec1` | with macros):**
+
+| crate | R6 doc | old | source walk now | with macros | verdict |
+|---|---|---:|---:|---:|---|
+| `baracuda-driver` | driver.md | 626 | 626 | 626 | unchanged |
+| `baracuda-cudnn` | cudnn.md | 241 | 241 | 241 | unchanged |
+| `baracuda-cublas` | cublas.md | 176 | 176 | 176 | unchanged |
+| `baracuda-forge` | forge.md | 126 | 126 | 126 | unchanged |
+| `baracuda-types` | types.md | 125 | 125 | 125 | unchanged |
+| `baracuda-runtime` | runtime.md | 431 | 394 | 394 | **changed**: -37 (not macros: 0 macro rows) |
+| `baracuda-cutlass` | cutlass.md | 118 | 110 | 110 | **changed**: -8 (not macros) |
+| `baracuda-cuda-emit` | cuda-emit-parse-seam.md | 21 | 32 | 32 | **changed**: +11 (not macros) |
+| `baracuda-seam` | cuda-emit-parse-seam.md | 34 | 5 | 5 | **changed**: -29 (not macros) |
+| `baracuda-cvcuda` | cvcuda.md | 118 | 118 | 202 | **changed**: +84 = 42 structs + 42 `new` (macros) |
+| `baracuda-kernels-sys` | kernels-sys.md | 159 | 182 | 472 | **changed**: +290 macro fns in private facades; the `stable-c-abi` class is not in `items.tsv` by design |
+
+Other listed crates that moved: `baracuda-kernels` 6,185 -> 6,165 (+20 macro, -40 other), `baracuda-tensorrt` 46 -> 79, `baracuda-tensorrt-builder` 0 -> 99 (new crate), `baracuda-kernels-types` 43 -> 76,
+`baracuda-nvcomp` 33 -> 63 (+30 macro), `baracuda-cufft` 70 -> 79 (+9 macro), `baracuda-cutlass-kernels-sys` 1 -> 49 (+48 macro), `baracuda-tensorrt-sys` 24 -> 29. Macro additions by crate
+(all 28 with any): the `*-sys` loader crates carry most of them (`baracuda-cuda-sys` 542, `baracuda-kernels-sys` 290, `baracuda-cusolver-sys` 275, `baracuda-cublas-sys` 200, `baracuda-cudnn-sys` 144, `baracuda-cvcuda-sys` 130 and 22 smaller).
+
+Reproduce: `bash tool/expand.sh.txt <repo> <out> <crate-list>` (crates with `LIB` in `crates-scanned.tsv`), build `tool/`, `pubinv <repo> <out> <out>` (third argument = the expansion directory), then `python -I classify.py <out>/items.tsv <out>`.
+
 ## 1. Method
 
 - **Enumeration is by `git ls-files`** (2 347 tracked files, 1 218 `.rs`), never a disk walk.
@@ -25,9 +62,10 @@ Three deliverables, all in this directory:
 - Per item it records `reach` (**`public`** = every enclosing module is `pub` up to the lib root;
   **`private-mod`** = a `pub` item inside a non-`pub` module), `#[doc(hidden)]`, `#[deprecated]`,
   `#[non_exhaustive]`, and whether it is FFI.
-- **Limits, stated:** items emitted by macro invocations are not seen (only literal `macro_rules`
-  exports are counted); trait-impl items are excluded (they are not new surface); `#[cfg(feature)]`
-  gating is **not** applied, so a feature-gated item counts once whichever feature enables it;
+- **Limits, stated:** (superseded in part, see §0) the alpha.96 walk did not see items emitted by macro invocations; since 2026-11-15
+  they are added from a `rustc -Zunpretty=expanded` pass, **default features only** (a macro item under a non-default feature is still not counted);
+  trait-impl items are excluded (they are not new surface); `#[cfg(feature)]`
+  gating is **not** applied to the source walk, so a feature-gated item counts once whichever feature enables it;
   `private-mod` + a matching `pub use` is treated as exported by name only (heuristic).
 - **Controls.** (a) All 74 manifests with a `[lib]` root were walked, **0** `UNRESOLVED mod` /
   `PARSE-ERR` / `NOT-TRACKED` lines on stderr. (b) The 3 crates with an unreached `src/` file are
@@ -52,7 +90,7 @@ Three deliverables, all in this directory:
 | `stable` | 9 905 | public, not hidden, not deprecated; **the freeze is a promise on these** |
 | `stable-c-abi` | 5 809 | `extern` symbols/types in `baracuda-kernels-sys` and `baracuda-cutlass-kernels-sys` — **our** C ABI |
 | `vendor-mirror` | 4 271 | every other `*-sys` crate: raw mirror of a vendor header (CUDA, cuDNN, cuBLAS…); stability follows the vendor |
-| `doc-hidden` | 62 | already `#[doc(hidden)]` |
+| `doc-hidden` | 62 (alpha.96; 56 after the §0 matcher fix) | already `#[doc(hidden)]` |
 | `sealed-trait-pattern` | 21 | `pub trait Sealed*` in a private module — the idiomatic sealed-trait; intentional |
 | `candidate-for-removal` | 8 | `#[deprecated]` (list below) |
 | `candidate-doc-hidden` | 0 | rule below; **nothing to propose** — FFI plumbing is already hidden |
@@ -75,7 +113,7 @@ Removing any of them is a breaking change under §4; do it in the beta.0 window,
 
 ### Findings the numbers expose
 
-1. **`doc(hidden)` is used on 62 items (0.3%)**, so "what is hidden today" is "almost nothing": the
+1. **`doc(hidden)` is used on 62 items (0.3%)** (alpha.96 figure; 56 after the §0 fix: 6 rows were doc comments containing the word "hidden"), so "what is hidden today" is "almost nothing": the
    freeze is almost entirely about deciding what to *start* promising. The 6 185-item
    `baracuda-kernels` surface is dominated by per-op `Plan` / `Descriptor` / `Args` types and their
    `pub` fields (3 660 pub fields workspace-wide); **pub fields on descriptor structs are the
