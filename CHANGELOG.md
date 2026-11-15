@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.148 - 2026-11-15
+
+Adds `docs/planning/api-freeze/r6/kernels-sys.md`: the R6 public-API-freeze review of `baracuda-kernels-sys` at `c8df7e3e`. Seven findings, chiefly that the census rows cover about 1% of the public function surface (57 fn-like rows against 5,593 `pub fn` by grep) and that its line numbers are stale. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
+
 ## 0.1.0-alpha.147 - 2026-11-14
 
 **BREAKING** (`baracuda-cuda-emit`, who: any launcher built for the stage-1 `lower_kernel` signature, i.e. Fuel's kernel launcher). `Cuda::lower_kernel` now lowers a whole kernel (U20 stages 2 and 3). ABI "B": the kernel takes its pointers `p0..` and then one by-value struct `Args_<kernel> a` laid out exactly as `KernelInterface::params_block` (per buffer `b<i>_shape[R]`, `b<i>_stride[R]`, `b<i>_base`; per scalar `s<i>`), with a `static_assert` on its size and alignment, rank at most 4 and at most 4096 bytes of arguments. Migration: build and pass that block at launch; read the layout from `KernelInterface`. Lowered: Let, Load, Assign, Store, If, For, While, Break, Continue, Return, block `Barrier`, static shared allocations, arithmetic, comparisons and casts on f32, f64, i32, u32, i64 (out-of-range indices trap); `CopyAsync`, `AsyncCommit`, `AsyncWait` as `cp.async` (sm_80 or newer, guarded by `#error`, patent risk note in the source and module docs); subgroup-scope `Collective` (shuffle, vote, broadcast, reduce, scan). Everything else is declined by name (block-scope collectives, `CollectiveTuple`, float Max/Min, masked access, atomics, Fence, Mma).
