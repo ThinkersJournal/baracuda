@@ -50,7 +50,7 @@ baracuda-bench-stats = { version = "0.1.0-alpha.154", path = "crates/baracuda-be
 # The Fuel kernel-seam `Synthesizer` over the CUDA backend. `publish = false`
 # (git deps on fuel's seam crates) — workspace-internal only; it is the home
 # of what used to be baracuda-cuda-emit's `seam` feature.
-baracuda-cuda-seam = { version = "0.47.0", path = "crates/baracuda-cuda-seam" }
+baracuda-cuda-seam = { version = "0.47.1", path = "crates/baracuda-cuda-seam" }
 # `baracuda-cuda-emit` and `baracuda-cuda-parse` are the crates NOT on the
 # shared version. The project's one-version rule has a single exception: a
 # crate built to work with a specific Unpopped release carries a version that

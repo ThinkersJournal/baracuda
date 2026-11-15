@@ -140,7 +140,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-cuda-seam"
-version = "0.47.0"
+version = "0.47.1"
 dependencies = [
  "baracuda-cuda-emit",
  "fireline-grammar",
@@ -1141,21 +1141,21 @@ checksum = "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48"
 
 [[package]]
 name = "fireline-announce"
-version = "0.4.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7383559c034708b88f9dc903c2f6ae2e74bff274fac84269a13263d27445bb17"
+checksum = "35fa6770f24b5e481cc14017a5f36ff8c3656de512448301e9449ddd87d222da"
 
 [[package]]
 name = "fireline-grammar"
-version = "0.4.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a40fc44480e8057cd19219d6eaee6e14204df4037961f7f989867020c6db90dd"
+checksum = "6b0833f3e2d9b57dd6cd52deab2d66cd5ed2406ae6cc201bf390203d918d2e56"
 
 [[package]]
 name = "fireline-synth"
-version = "0.4.2"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6487c59060f1b14dbd15cd6de86e785e0a79b51ce4ebaf0cfe702cc42039aab0"
+checksum = "59c02ae1263e77f992072fc5080395d0ac6987e188fc102d259e76f15cbb0e8d"
 dependencies = [
  "fireline-grammar",
  "unpopped-vocab",

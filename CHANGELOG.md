@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.47.1 - 2026-11-15 (`baracuda-cuda-seam`)
+
+- Repins `fireline-grammar` and `fireline-synth` to ~0.5 (fireline 0.5.0 makes `read_contract` take `&dyn OpFactSource` and `&dyn DtypeSource`; the seam crates read no contracts, so this is a pin-only change). `baracuda-seam` (lockstep alpha) repins `fireline-announce` to ~0.5. The seam tests (21) pass against fireline 0.5.0.
+
 ## 0.1.0-alpha.154 - 2026-11-15
 
 Adds `docs/planning/api-freeze/r6/cutlass.md`: the R6 public-API-freeze review of `baracuda-cutlass` at `daa4c795`. Eight findings, among them 56 public fields on 9 struct-literal-constructed descriptor and args structs with no `#[non_exhaustive]`, a single-variant `GroupedScheduleMode` whose doc plans a second variant, and `Error` re-exported from `baracuda-kernels-types` so the census `enum Error` row is stale. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
