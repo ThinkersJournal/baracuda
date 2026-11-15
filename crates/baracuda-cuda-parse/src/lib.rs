@@ -1,4 +1,4 @@
-//! The CUDA [`unpopped::convert::Frontend`] — the parse-side (`.cu` -> IR)
+//! The CUDA [`unpopped_convert::Frontend`] — the parse-side (`.cu` -> IR)
 //! half of Baracuda's donation to Unpopped's neutral core.
 //!
 //! Moved out of `unpopped::convert` (Unpopped `deferred.md`'s "unpopped-cuda"
@@ -31,7 +31,7 @@
 //! idioms, not a claim about the CUDA parser in general.
 
 use tree_sitter::{Parser, Tree};
-use unpopped::convert::Frontend;
+use unpopped_convert::Frontend;
 
 /// Parse CUDA source into a tree-sitter CST (error-tolerant; unrecognized
 /// constructs become `ERROR`/unhandled subtrees rather than failing).

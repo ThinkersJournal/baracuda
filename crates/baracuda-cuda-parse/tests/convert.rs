@@ -17,9 +17,9 @@
 //! module doc. These are CUDA-idiom golden vectors.
 
 use fishstringer_slang_parse::SLANG;
-use unpopped::convert::{lift_elementwise, lift_reduction, lift_scan};
 use unpopped::ir::{Access, BinaryOp, ReduceOp, ScalarExpr, UnaryOp};
 use unpopped::lift::{LiftError, Lifted};
+use unpopped_convert::{lift_elementwise, lift_reduction, lift_scan};
 use unpopped_vocab::ElementKind;
 
 use baracuda_cuda_parse::{CUDA, parse_cuda};

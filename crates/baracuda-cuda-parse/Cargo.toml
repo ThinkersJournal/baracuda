@@ -8,7 +8,7 @@ name = "baracuda-cuda-parse"
 # counter (0.14.3 chosen to match baracuda-cuda-emit exactly since both
 # crates work with the identical Unpopped release, not because PATCH tracks
 # Unpopped's own patch number as a rule).
-version = "0.45.0"
+version = "0.47.0"
 description = "CUDA -> IR frontend for the neutral `unpopped` kernel generator: the tree-sitter grammar binding (`parse_cuda`), the CUDA residue list, and the `CUDA` `Frontend` descriptor. Depends on the neutral generator `unpopped` (feature `convert`) and supplies the CUDA-specific parse-side surface from OUTSIDE the neutral core, mirroring `baracuda-cuda-emit`'s emit-side placement."
 edition.workspace = true
 # NOT `rust-version.workspace = true` (1.88): unlike baracuda-cuda-emit, whose
@@ -32,7 +32,8 @@ homepage.workspace = true
 # `convert` pulls unpopped's own tree-sitter deps too, but this crate calls
 # tree-sitter directly to build `parse_cuda`, so it also depends on the two
 # grammar crates below rather than relying on unpopped's transitive copies.
-unpopped = { workspace = true, features = ["convert"] }
+unpopped = { workspace = true }
+unpopped-convert = { workspace = true }
 # Pinned to the SAME versions `unpopped`'s own `convert` feature depends on
 # (crates/unpopped/Cargo.toml), so the `Tree`/`Parser` types this crate's
 # `parse_cuda` returns are the same types `unpopped::convert::Frontend::parse`
@@ -45,7 +46,7 @@ tree-sitter-cuda = "0.21"
 # code depends on it.
 unpopped-vocab = { workspace = true }
 # The `SLANG` Frontend (left unpopped core in 0.36; Vulkane owns Slang) for the cross-language lift test.
-fishstringer-slang-parse = "0.1.0"
+fishstringer-slang-parse = "~0.2.0"
 
 [lints]
 workspace = true
