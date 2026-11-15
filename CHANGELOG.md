@@ -16,6 +16,14 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.147 - 2026-11-14
+
+**BREAKING** (`baracuda-cuda-emit`, who: any launcher built for the stage-1 `lower_kernel` signature, i.e. Fuel's kernel launcher). `Cuda::lower_kernel` now lowers a whole kernel (U20 stages 2 and 3). ABI "B": the kernel takes its pointers `p0..` and then one by-value struct `Args_<kernel> a` laid out exactly as `KernelInterface::params_block` (per buffer `b<i>_shape[R]`, `b<i>_stride[R]`, `b<i>_base`; per scalar `s<i>`), with a `static_assert` on its size and alignment, rank at most 4 and at most 4096 bytes of arguments. Migration: build and pass that block at launch; read the layout from `KernelInterface`. Lowered: Let, Load, Assign, Store, If, For, While, Break, Continue, Return, block `Barrier`, static shared allocations, arithmetic, comparisons and casts on f32, f64, i32, u32, i64 (out-of-range indices trap); `CopyAsync`, `AsyncCommit`, `AsyncWait` as `cp.async` (sm_80 or newer, guarded by `#error`, patent risk note in the source and module docs); subgroup-scope `Collective` (shuffle, vote, broadcast, reduce, scan). Everything else is declined by name (block-scope collectives, `CollectiveTuple`, float Max/Min, masked access, atomics, Fence, Mma).
+
+Repins `unpopped`, `unpopped-vocab`, `unpopped-cpu-c` and the new `unpopped-convert` to ~0.47.0, `fireline-synth`, `-grammar`, `-announce` to ~0.4 (0.4.0) and the `fishstringer-slang` dev-dependencies to ~0.2.0. `baracuda-cuda-emit`, `baracuda-cuda-parse` and `baracuda-cuda-seam` are 0.47.0 (they follow the Unpopped MAJOR.MINOR; their CHANGELOG entry is separate). `baracuda-cuda-parse` and the emitter's `convert` feature import from `unpopped_convert::` instead of `unpopped::convert::`. Structure keys are sk8, so the emit goldens changed in the comment line only.
+
+Verified: `cargo test -p baracuda-cuda-emit -p baracuda-cuda-parse -p baracuda-cuda-seam -p baracuda-seam --all-features` 509 passed, 0 failed; clippy, rustfmt, abi-manifest ok; `cargo publish --workspace --dry-run --no-verify` packaged 73 crates. Not run: a device run of lowered kernels.
+
 ## 0.1.0-alpha.145 - 2026-11-14
 
 Adds `docs/planning/api-freeze/r6/cudnn.md`: the R6 public-API-freeze review of `baracuda-cudnn` at `fdfb1715`. Eight findings, among them 0 `#[non_exhaustive]` on 19 enums, 17 `unsafe impl Send` with no stated invariant, and 17 `as_raw` methods that put the sys crate's types in the public API. Docs only; no code, version or lockfile change. Verified by grep and read, no build.
