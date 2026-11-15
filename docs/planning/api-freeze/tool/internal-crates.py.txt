@@ -1,0 +1,15 @@
+# Usage: cargo metadata --no-deps --format-version 1 --locked | python -I internal-crates.py > internal-crates.txt
+# A crate is `internal` when `publish = false` AND no crate that can be published has it as a normal or build dependency.
+# Dev-dependencies do not count: cargo strips them from the published manifest. Prints one crate name per line and a count on stderr.
+import json, sys
+m = json.load(sys.stdin)
+pk = {p["name"]: p for p in m["packages"]}
+nopub = {n for n, p in pk.items() if p.get("publish") == []}
+out = []
+for n in sorted(nopub):
+    users = [q["name"] for q in pk.values() if q["name"] not in nopub
+             for d in q["dependencies"] if d["name"] == n and d["kind"] != "dev"]
+    if not users:
+        out.append(n)
+print("\n".join(out))
+print(len(pk), "packages;", len(nopub), "publish=false;", len(out), "internal:", ", ".join(out), file=sys.stderr)
