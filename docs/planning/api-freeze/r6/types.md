@@ -28,7 +28,7 @@ in `tests/`. Method: grep counts over `src/*.rs`, read `lib.rs`, `kernel_arg.rs`
 3. **`Half` and `BFloat16` derive `PartialEq, Eq, Hash` on the bits but implement `PartialOrd` via `f32`.** `numeric.rs:19` and `:216` derive; `:188`
    and `:310` implement `partial_cmp` through `to_f32()`. By reading, `Half::NAN == Half::NAN` is true (same bits) while `partial_cmp` of the same
    pair is `None`, and `+0.0` and `-0.0` are unequal under `==` but `Some(Equal)` under `partial_cmp`. The `PartialOrd` contract (`a == b` iff `partial_cmp`
-   is `Some(Equal)`) is broken by reading; not compiled, no test run. `Complex32`/`Complex64` derive `PartialEq` only (no `Eq`). Decision: pick bit
+   is `Some(Equal)`) is broken; confirmed by a compiled test (`tests/eq_ord_consistency.rs`, 4 of 4 failed on `main`), fixed in #391 (IEEE equality, `Eq` dropped). `Complex32`/`Complex64` derive `PartialEq` only (no `Eq`). Decision: pick bit
    equality or IEEE equality before freezing, and make `PartialOrd` match.
 4. **Two public `unsafe trait`s, each with a `# Safety` section.** `KernelArg` (`kernel_arg.rs:28`) and `ValidAsZeroBits` (`zero_bits.rs:60`); 21
    `unsafe impl` lines in `src/` (grep, macro-generated ones counted once). Neither is sealed, so a downstream `unsafe impl` becomes part of the semver
