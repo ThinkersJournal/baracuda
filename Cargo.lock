@@ -1163,9 +1163,9 @@ dependencies = [
 
 [[package]]
 name = "fishstringer-slang-emit"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e962f007ed764665ca956dea991c94036f7fdbbf15215cd3b8749c4b432edcec"
+checksum = "67fbcde623494eca63ab0b0f4e313baa10f3c64af1ac20a961c80b1a4825f79d"
 dependencies = [
  "unpopped",
  "unpopped-vocab",
@@ -1173,9 +1173,9 @@ dependencies = [
 
 [[package]]
 name = "fishstringer-slang-parse"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4bbb99c5e1465927c639f44b025364850c272ed2dfeb7a8879381b1dbb142fe4"
+checksum = "1a2e8aca818b02b619db9b89f0edbf12219f3d8d8b4f2e87be176e876d4d1b8c"
 dependencies = [
  "tree-sitter",
  "tree-sitter-slang",
