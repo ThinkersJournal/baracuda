@@ -12,10 +12,9 @@ installed on this box; `tests/gpu_smoke.rs` skips when it is absent). A verdict 
 |---|---|---|---|
 | 4 enums (`DataType`, `UnaryOp`, `BinaryOp`, `WorkspaceKind`) and 24 variants | 28 | **freeze decision** | finding 1 |
 | `Error`, `Result` | 2 | stable with a note | finding 2 |
-| 21 `pub unsafe fn` (descriptor/op constructors, execute methods, attribute get/set) | 21 | stable with a note | finding 3 |
+| 21 `pub unsafe fn` (constructors, attribute get/set, the 7 execute methods) | 21 | **freeze decision** (execute methods: finding 5) | finding 3 |
 | 7 `as_raw` methods | 7 | stable with a note | finding 4 |
-| `Plan::contract`, `reduce`, `elementwise_*`, `permute`, `contract_*` (7 execute methods; all `pub unsafe fn`, counted in the 21 above) | (21) | **freeze decision** | finding 5 |
-| `Handle` and the other 13 structs, remaining methods, 7 free fns | the rest | stable with a note | findings 4, 6, 7 |
+| 14 structs, the 24 remaining methods, 7 free fns (rows sum: 28 + 2 + 21 + 7 + 45 = 103) | 45 | stable with a note | findings 6, 7 |
 
 ## Findings
 
