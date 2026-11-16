@@ -37,6 +37,22 @@ reason = "publish = false; workspace task runner, versioned 0.0.0 so no consumer
 [architecture]
 style = "layered"
 
+# ARC-003/004/006/007/012 inputs. Policy = the two vocabulary crates that depend on nothing but `unpopped-vocab` (and the derive): baracuda-types
+# (dtypes, kernel-arg and status types) and baracuda-cuda-vocab. Infrastructure = every raw `-sys` FFI crate plus baracuda-driver, which
+# is the CUDA driver binding. Composition = the `baracuda` facade, the only crate whose job is to wire the wrappers together.
+[architecture.volatile]
+names = []
+namespaces = ["baracuda_cublas_sys::", "baracuda_cuda_sys::", "baracuda_cudf_sys::", "baracuda_cudnn_sys::", "baracuda_cufft_sys::", "baracuda_cufile_sys::", "baracuda_cupti_sys::", "baracuda_curand_sys::", "baracuda_cusolver_sys::", "baracuda_cusparse_sys::", "baracuda_cutensor_sys::", "baracuda_cutlass_kernels_sys::", "baracuda_cutlass_sys::", "baracuda_cuvs_sys::", "baracuda_cvcuda_sys::", "baracuda_flashinfer_sys::", "baracuda_kernels_sys::", "baracuda_nccl_sys::", "baracuda_npp_sys::", "baracuda_nvcomp_sys::", "baracuda_nvimagecodec_sys::", "baracuda_nvjitlink_sys::", "baracuda_nvjpeg_sys::", "baracuda_nvml_sys::", "baracuda_nvrtc_sys::", "baracuda_nvshmem_sys::", "baracuda_ozimmu_sys::", "baracuda_tensorrt_sys::", "baracuda_transformer_engine_sys::", "baracuda_driver::"]
+feature_cfg_in_policy = true
+
+[architecture.composition]
+roots = ["crates/baracuda/src/lib.rs"]
+
+[architecture.api_budget]
+# measured by ARC-006 on 71547fb82: 118 public items and members (types), 42 (vocab); ceilings leave ~10% headroom
+baracuda-types = 130
+baracuda-cuda-vocab = 50
+
 
 [[architecture.component]]
 name = "baracuda-bench-stats"
@@ -57,6 +73,8 @@ paths = ["crates/baracuda-cuda-parse"]
 [[architecture.component]]
 name = "baracuda-cuda-vocab"
 paths = ["crates/baracuda-cuda-vocab"]
+role = "policy"
+volatility = "stable"
 
 [[architecture.component]]
 name = "baracuda-forge"
@@ -69,6 +87,8 @@ paths = ["crates/baracuda-seam"]
 [[architecture.component]]
 name = "baracuda-types"
 paths = ["crates/baracuda-types"]
+role = "policy"
+volatility = "stable"
 
 [[architecture.component]]
 name = "baracuda-types-derive"
@@ -78,118 +98,176 @@ paths = ["crates/baracuda-types-derive"]
 [[architecture.component]]
 name = "baracuda-cublas-sys"
 paths = ["crates/baracuda-cublas-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cuda-sys"
 paths = ["crates/baracuda-cuda-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cudf-sys"
 paths = ["crates/baracuda-cudf-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cudnn-sys"
 paths = ["crates/baracuda-cudnn-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cufft-sys"
 paths = ["crates/baracuda-cufft-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cufile-sys"
 paths = ["crates/baracuda-cufile-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cupti-sys"
 paths = ["crates/baracuda-cupti-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-curand-sys"
 paths = ["crates/baracuda-curand-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cusolver-sys"
 paths = ["crates/baracuda-cusolver-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cusparse-sys"
 paths = ["crates/baracuda-cusparse-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cutensor-sys"
 paths = ["crates/baracuda-cutensor-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cutlass-kernels-sys"
 paths = ["crates/baracuda-cutlass-kernels-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cutlass-sys"
 paths = ["crates/baracuda-cutlass-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cuvs-sys"
 paths = ["crates/baracuda-cuvs-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-cvcuda-sys"
 paths = ["crates/baracuda-cvcuda-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-flashinfer-sys"
 paths = ["crates/baracuda-flashinfer-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-kernels-sys"
 paths = ["crates/baracuda-kernels-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-nccl-sys"
 paths = ["crates/baracuda-nccl-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-npp-sys"
 paths = ["crates/baracuda-npp-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-nvcomp-sys"
 paths = ["crates/baracuda-nvcomp-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-nvimagecodec-sys"
 paths = ["crates/baracuda-nvimagecodec-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-nvjitlink-sys"
 paths = ["crates/baracuda-nvjitlink-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-nvjpeg-sys"
 paths = ["crates/baracuda-nvjpeg-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-nvml-sys"
 paths = ["crates/baracuda-nvml-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-nvrtc-sys"
 paths = ["crates/baracuda-nvrtc-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-nvshmem-sys"
 paths = ["crates/baracuda-nvshmem-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-ozimmu-sys"
 paths = ["crates/baracuda-ozimmu-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-tensorrt-sys"
 paths = ["crates/baracuda-tensorrt-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-transformer-engine-sys"
 paths = ["crates/baracuda-transformer-engine-sys"]
+role = "infrastructure"
+volatility = "volatile"
 
 
 [[architecture.component]]
@@ -243,6 +321,8 @@ paths = ["crates/baracuda-cvcuda"]
 [[architecture.component]]
 name = "baracuda-driver"
 paths = ["crates/baracuda-driver"]
+role = "infrastructure"
+volatility = "volatile"
 
 [[architecture.component]]
 name = "baracuda-kernels-types"
@@ -334,6 +414,7 @@ paths = ["crates/baracuda-kernels"]
 [[architecture.component]]
 name = "baracuda"
 paths = ["crates/baracuda"]
+role = "composition"
 
 [[architecture.component]]
 name = "baracuda-examples"
@@ -346,6 +427,7 @@ paths = ["crates/baracuda-flashinfer"]
 [[architecture.component]]
 name = "baracuda-kernels-bench"
 paths = ["crates/baracuda-kernels-bench"]
+owns_data = ["pytorch_rtx4070_2.14.0_cu126.json"]
 
 [[architecture.component]]
 name = "xtask"
