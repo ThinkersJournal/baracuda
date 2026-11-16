@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.163 - 2026-11-15
+
+ci: `.coderipper.toml` declares `baracuda-kernels-bench` a `[[skip_member]]` while `nvcc` is absent, so the advisory portfolio job no longer fails on OPS-011 (the bench binary cannot link on a runner without nvcc). No code change.
+
 ## 0.1.0-alpha.162 - 2026-11-15
 
 docs: API-freeze census applies the `-sys` -> `vendor-mirror` rule before the private-module re-export escape (130 rows moved out of `stable`: `baracuda-cuvs-sys` 102, `baracuda-tensorrt-sys` 28) and expands `baracuda-cuvs-sys` with its `cuvs` feature so the 19 macro-generated `Cuvs` rows are counted. Adds `tool/classify-test.py.txt` (fails on the old order) and `tool/expand-features.txt`. No code change.

@@ -382,6 +382,17 @@ name = "top"
 components = ["baracuda", "baracuda-examples", "baracuda-flashinfer", "baracuda-kernels-bench", "xtask"]
 
 
+# The portfolio job runs on a hosted runner with no `nvcc`. OPS-011 builds each package's binaries (`cargo build --bins`) and runs them, and
+# `baracuda-bench` links `baracuda-kernels`, whose kernel symbols come from nvcc-compiled objects: without nvcc the link fails
+# (`undefined symbol: baracuda_kernels_rms_norm_f16_run`), which CodeRipper reports as "a rule did not run" and fails the job (red on every main
+# CI run since #364 repinned CodeRipper to 0.43.49). `needs = "nvcc"` skips the member only while nvcc is absent, so a runner that has it still judges it.
+# Cost: every rule is skipped for this one member on the hosted runner (it is a `publish = false` bench harness, class `internal` in the API-freeze census).
+[[skip_member]]
+name = "baracuda-kernels-bench"
+needs = "nvcc"
+reason = "its binary links the nvcc-compiled kernel objects of baracuda-kernels; the hosted runner has no nvcc, so OPS-011's `cargo build --bins` cannot link it"
+owner = "baracuda lane"
+
 # ARC advisory findings accepted for now. The MOD-* waivers are in the member's own .coderipper.toml (crates/baracuda-driver,
 # crates/baracuda-kernels-sys): a member's run reads its own file, not this one. Each is a row in docs/planning/arc-mod-programme.md.
 
