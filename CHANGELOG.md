@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.170 - 2026-11-16
+
+Move the portfolio workflow pin to coderipper c72a6e03 (0.47.5, was 0.43.49) and migrate the renamed rule id in `.coderipper.toml` (`version-consistency` -> `WSP-010`, 4 waivers). PIN-MOVE-0.47.5.
+
 ## 0.1.0-alpha.169 - 2026-11-16
 
 baracuda-cusolver, from the R6 review (docs/planning/api-freeze/r6/cusolver.md, findings 1, 2, 5, 8, 9). Behaviour that changes:
