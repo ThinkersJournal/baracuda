@@ -1072,6 +1072,8 @@ FFI**. Behind the new `distributed_optim` cargo feature on
   2. Local Adam step over the full (param, grad, exp_avg, exp_avg_sq)
      tuples — uses the inner Phase 49 plan unchanged, which compares the
      moment sizes with the params', so the moments are not sharded.
+
+- **Open items, tracked 2026-11-16 (not in the API freeze; the module is experimental):** (1) shard the optimizer state so the plan earns its ZeRO-1 name (the inner plan's size comparison currently forces full-size moments); (2) check the in-place all-gather's send pointer for ranks above 0 (`send == recv + rank * count`; the code passes the buffer start); (3) remove the `&DeviceBuffer` / `&mut DeviceBuffer` aliasing in the all-reduce call (`distributed.rs`, derived through a raw pointer; not run under Miri); (4) run the multi-rank scaffold test on a 2-GPU runner.
   3. `all_gather(updated_params, in-place)` reassembles the full
      updated tensor on every rank.
 - **Single-rank degenerate case**: when `world_size == 1` both

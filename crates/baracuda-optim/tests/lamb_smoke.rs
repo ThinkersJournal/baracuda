@@ -20,7 +20,7 @@
 #![cfg(feature = "device-tests")]
 
 use baracuda_driver::{Context, Device, DeviceBuffer};
-use baracuda_optim::{AdamMode, LambConfig, LambStepPlan, TensorList};
+use baracuda_optim::{AdamMode, LambConfig, LambStepPlan, TensorList, TensorListMut};
 
 /// CPU reference matching the kernel's two-stage flow.
 fn lamb_step_cpu(
@@ -114,27 +114,27 @@ fn lamb_f32_two_tensors_trust_ratio() {
     // CPU reference computes the same trust ratio.
     let g2_host: Vec<f32> = (0..n2).map(|i| ((i % 7) as f32) * 1e-6).collect();
 
-    let p1 = DeviceBuffer::from_slice(&ctx, &p1_host).unwrap();
-    let p2 = DeviceBuffer::from_slice(&ctx, &p2_host).unwrap();
+    let mut p1 = DeviceBuffer::from_slice(&ctx, &p1_host).unwrap();
+    let mut p2 = DeviceBuffer::from_slice(&ctx, &p2_host).unwrap();
     let g1 = DeviceBuffer::from_slice(&ctx, &g1_host).unwrap();
     let g2 = DeviceBuffer::from_slice(&ctx, &g2_host).unwrap();
     let m1_init = vec![0.0f32; n1];
     let m2_init = vec![0.0f32; n2];
     let v1_init = vec![0.0f32; n1];
     let v2_init = vec![0.0f32; n2];
-    let m1 = DeviceBuffer::from_slice(&ctx, &m1_init).unwrap();
-    let m2 = DeviceBuffer::from_slice(&ctx, &m2_init).unwrap();
-    let v1 = DeviceBuffer::from_slice(&ctx, &v1_init).unwrap();
-    let v2 = DeviceBuffer::from_slice(&ctx, &v2_init).unwrap();
+    let mut m1 = DeviceBuffer::from_slice(&ctx, &m1_init).unwrap();
+    let mut m2 = DeviceBuffer::from_slice(&ctx, &m2_init).unwrap();
+    let mut v1 = DeviceBuffer::from_slice(&ctx, &v1_init).unwrap();
+    let mut v2 = DeviceBuffer::from_slice(&ctx, &v2_init).unwrap();
     // Per-tensor u_scratch buffers (same shape as params).
-    let u1 = DeviceBuffer::<f32>::zeros(&ctx, n1).unwrap();
-    let u2 = DeviceBuffer::<f32>::zeros(&ctx, n2).unwrap();
+    let mut u1 = DeviceBuffer::<f32>::zeros(&ctx, n1).unwrap();
+    let mut u2 = DeviceBuffer::<f32>::zeros(&ctx, n2).unwrap();
 
-    let params = TensorList::new(&[&p1, &p2]).unwrap();
+    let mut params = TensorListMut::from_buffers([&mut p1, &mut p2]).unwrap();
     let grads = TensorList::new(&[&g1, &g2]).unwrap();
-    let mom = TensorList::new(&[&m1, &m2]).unwrap();
-    let vel = TensorList::new(&[&v1, &v2]).unwrap();
-    let u_scratch = TensorList::new(&[&u1, &u2]).unwrap();
+    let mut mom = TensorListMut::from_buffers([&mut m1, &mut m2]).unwrap();
+    let mut vel = TensorListMut::from_buffers([&mut v1, &mut v2]).unwrap();
+    let mut u_scratch = TensorListMut::from_buffers([&mut u1, &mut u2]).unwrap();
 
     // Stage the u_scratch device-pointer array.
     let u_ptrs = u_scratch.pointer_snapshot_u64();
@@ -143,17 +143,19 @@ fn lamb_f32_two_tensors_trust_ratio() {
     let mut w_norm_dev = DeviceBuffer::<f32>::zeros(&ctx, 2).unwrap();
     let mut u_norm_dev = DeviceBuffer::<f32>::zeros(&ctx, 2).unwrap();
 
-    let cfg = LambConfig {
-        lr: 1e-3,
-        beta1: 0.9,
-        beta2: 0.999,
-        epsilon: 1e-6,
-        weight_decay: 0.01,
-        bias_correction: true,
-        mode: AdamMode::Decoupled,
-        max_global_grad_norm: f32::INFINITY, // disable global clip for this test
-        trust_lr_lower_bound: 0.0,
-        trust_lr_upper_bound: 10.0,
+    let cfg = {
+        let mut c = LambConfig::default();
+        c.lr = 1e-3;
+        c.beta1 = 0.9;
+        c.beta2 = 0.999;
+        c.epsilon = 1e-6;
+        c.weight_decay = 0.01;
+        c.bias_correction = true;
+        c.mode = AdamMode::Decoupled;
+        c.max_global_grad_norm = f32::INFINITY; // disable global clip for this test
+        c.trust_lr_lower_bound = 0.0;
+        c.trust_lr_upper_bound = 10.0;
+        c
     };
 
     // Caller computes the global grad norm — here we set it to 0
@@ -162,11 +164,11 @@ fn lamb_f32_two_tensors_trust_ratio() {
 
     LambStepPlan::new(cfg)
         .step(
-            &params,
+            &mut params,
             &grads,
-            &mom,
-            &vel,
-            &u_scratch,
+            &mut mom,
+            &mut vel,
+            &mut u_scratch,
             &u_ptrs_dev,
             &mut w_norm_dev,
             &mut u_norm_dev,

@@ -24,7 +24,9 @@
 use std::time::Instant;
 
 use baracuda_driver::{Context, Device, DeviceBuffer};
-use baracuda_optim::{AdamConfig, AdamStepPlan, MultiTensorApplyContext, TensorList};
+use baracuda_optim::{
+    AdamConfig, AdamStepPlan, MultiTensorApplyContext, TensorList, TensorListMut,
+};
 
 const NUM_TENSORS: usize = 1000;
 const PER_TENSOR_ELEMS: usize = 256;
@@ -59,32 +61,29 @@ fn multi_tensor_dispatch_outperforms_individual_launches() {
     let plan = AdamStepPlan::<f32>::new(AdamConfig::default());
 
     // Warmup — first launch carries one-time module load latency.
-    let warm_p = TensorList::new(&[&params[0]]).unwrap();
+    let mut warm_p = TensorListMut::from_buffers([&mut params[0]]).unwrap();
     let warm_g = TensorList::new(&[&grads[0]]).unwrap();
-    let warm_m = TensorList::new(&[&moms[0]]).unwrap();
-    let warm_v = TensorList::new(&[&vels[0]]).unwrap();
-    plan.step(&warm_p, &warm_g, &warm_m, &warm_v, 1, &stream)
+    let mut warm_m = TensorListMut::from_buffers([&mut moms[0]]).unwrap();
+    let mut warm_v = TensorListMut::from_buffers([&mut vels[0]]).unwrap();
+    plan.step(&mut warm_p, &warm_g, &mut warm_m, &mut warm_v, 1, &stream)
         .unwrap();
     stream.synchronize().unwrap();
 
     // ============================================================
     // Path A: one batched call over all 1000 tensors.
     // ============================================================
-    let p_refs: Vec<&DeviceBuffer<f32>> = params.iter().collect();
     let g_refs: Vec<&DeviceBuffer<f32>> = grads.iter().collect();
-    let m_refs: Vec<&DeviceBuffer<f32>> = moms.iter().collect();
-    let v_refs: Vec<&DeviceBuffer<f32>> = vels.iter().collect();
-    let p_list = TensorList::new(&p_refs).unwrap();
+    let mut p_list = TensorListMut::from_buffers(params.iter_mut()).unwrap();
     let g_list = TensorList::new(&g_refs).unwrap();
-    let m_list = TensorList::new(&m_refs).unwrap();
-    let v_list = TensorList::new(&v_refs).unwrap();
+    let mut m_list = TensorListMut::from_buffers(moms.iter_mut()).unwrap();
+    let mut v_list = TensorListMut::from_buffers(vels.iter_mut()).unwrap();
 
     // Time the batched step. The Adam kernel splits the 1000 tensors
     // across multiple launches (MAX_TENSORS_PER_LAUNCH = 110 per Apex)
     // so this is ~9-10 launches, NOT 1000.
     stream.synchronize().unwrap();
     let t0 = Instant::now();
-    plan.step(&p_list, &g_list, &m_list, &v_list, 2, &stream)
+    plan.step(&mut p_list, &g_list, &mut m_list, &mut v_list, 2, &stream)
         .expect("batched step");
     stream.synchronize().unwrap();
     let batched_time = t0.elapsed();
@@ -99,11 +98,12 @@ fn multi_tensor_dispatch_outperforms_individual_launches() {
     stream.synchronize().unwrap();
     let t1 = Instant::now();
     for i in 0..NUM_TENSORS {
-        let p = TensorList::new(&[&params[i]]).unwrap();
+        let mut p = TensorListMut::from_buffers([&mut params[i]]).unwrap();
         let g = TensorList::new(&[&grads[i]]).unwrap();
-        let m = TensorList::new(&[&moms[i]]).unwrap();
-        let v = TensorList::new(&[&vels[i]]).unwrap();
-        plan.step(&p, &g, &m, &v, 3, &stream).expect("solo step");
+        let mut m = TensorListMut::from_buffers([&mut moms[i]]).unwrap();
+        let mut v = TensorListMut::from_buffers([&mut vels[i]]).unwrap();
+        plan.step(&mut p, &g, &mut m, &mut v, 3, &stream)
+            .expect("solo step");
     }
     stream.synchronize().unwrap();
     let individual_time = t1.elapsed();

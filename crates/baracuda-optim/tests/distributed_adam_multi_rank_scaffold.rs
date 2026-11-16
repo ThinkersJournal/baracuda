@@ -38,7 +38,7 @@
 
 use baracuda_driver::{Context, Device, DeviceBuffer, require_optional};
 use baracuda_nccl::Communicator;
-use baracuda_optim::{AdamConfig, AdamMode, DistributedAdamStepPlan, TensorList};
+use baracuda_optim::{AdamConfig, AdamMode, DistributedAdamStepPlan, TensorListMut};
 
 /// Try to bring up a 2-GPU intra-process communicator pair.
 /// Returns `None` (with a printed skip message) if NCCL isn't
@@ -77,14 +77,16 @@ fn distributed_adam_two_ranks_all_reduce_then_step_then_all_gather() {
     );
     assert_eq!(comms.len(), 2);
 
-    let cfg = AdamConfig {
-        lr: 1e-2,
-        beta1: 0.9,
-        beta2: 0.999,
-        epsilon: 1e-8,
-        weight_decay: 0.0,
-        bias_correction: true,
-        mode: AdamMode::Classic,
+    let cfg = {
+        let mut c = AdamConfig::default();
+        c.lr = 1e-2;
+        c.beta1 = 0.9;
+        c.beta2 = 0.999;
+        c.epsilon = 1e-8;
+        c.weight_decay = 0.0;
+        c.bias_correction = true;
+        c.mode = AdamMode::Classic;
+        c
     };
 
     // Single 1024-element tensor; world_size=2 → each rank's shard
@@ -122,17 +124,17 @@ fn distributed_adam_two_ranks_all_reduce_then_step_then_all_gather() {
     // Synchronously drive the plan on each rank. (Production
     // multi-process / threaded harness lives outside this scaffold.)
     for (rank_idx, (_ctx, stream, p, g, m, v)) in rank_state.iter_mut().enumerate() {
-        // Moments use TensorList (not touched by collectives).
-        let mom = TensorList::new(&[&*m]).unwrap();
-        let vel = TensorList::new(&[&*v]).unwrap();
+        // Moments use TensorListMut (not touched by collectives).
+        let mut mom = TensorListMut::from_buffers([&mut *m]).unwrap();
+        let mut vel = TensorListMut::from_buffers([&mut *v]).unwrap();
         let plan = DistributedAdamStepPlan::<f32>::new(cfg, &comms[rank_idx]);
         let mut pbufs_storage: [&mut DeviceBuffer<f32>; 1] = [p];
         let mut gbufs_storage: [&mut DeviceBuffer<f32>; 1] = [g];
         plan.step(
             &mut pbufs_storage,
             &mut gbufs_storage,
-            &mom,
-            &vel,
+            &mut mom,
+            &mut vel,
             1,
             stream,
         )
