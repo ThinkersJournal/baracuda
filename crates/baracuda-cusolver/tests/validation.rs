@@ -1,6 +1,6 @@
 //! The dense functions return an error for buffers that are too small for the
-//! sizes they are given, instead of handing cuSOLVER a pointer it would write
-//! past. Before this check `getrf::<f32>(.., 1000, 1000, &mut a, 1000, ..)`
+//! sizes they are given (the matrix arguments, by LAPACK's rules), instead of
+//! handing cuSOLVER a pointer it would write past. Before this check `getrf::<f32>(.., 1000, 1000, &mut a, 1000, ..)`
 //! over a 4-element `a` was accepted by the safe API.
 #![cfg(feature = "device-tests")]
 
@@ -21,15 +21,6 @@ fn getrf_rejects_a_matrix_larger_than_its_buffer() {
     let mut info: DeviceBuffer<i32> = DeviceBuffer::zeros(&ctx, 1).unwrap();
     let r = getrf::<f32>(&h, 1000, 1000, &mut a, 1000, &mut ipiv, &mut info);
     assert!(r.is_err(), "{r:?}");
-}
-
-#[test]
-fn getrf_rejects_a_short_pivot_buffer() {
-    let (ctx, h) = setup();
-    let mut a: DeviceBuffer<f32> = DeviceBuffer::zeros(&ctx, 16).unwrap();
-    let mut ipiv: DeviceBuffer<i32> = DeviceBuffer::zeros(&ctx, 2).unwrap(); // needs 4
-    let mut info: DeviceBuffer<i32> = DeviceBuffer::zeros(&ctx, 1).unwrap();
-    assert!(getrf::<f32>(&h, 4, 4, &mut a, 4, &mut ipiv, &mut info).is_err());
 }
 
 #[test]

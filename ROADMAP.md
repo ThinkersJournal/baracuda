@@ -2655,3 +2655,5 @@ Not phase-specific; tracked here so they don't fall off the radar.
   `feedback_readme_badges_on_publish` memory entry captures the
   "bump README badges on release" gotcha. A pre-commit hook or
   release script could automate this rather than relying on memory.
+
+- **baracuda-cusolver per-function extents (R6 follow-up, 2026-11-16).** Only the LAPACK matrix-argument checks exist (README, "What is checked"). Add `ipiv`/`tau`/`w`/`s`/`info`, the Jacobi, batched, `gels` and multi-GPU extents once NVIDIA's cuSOLVER documentation can be read (docs.nvidia.com was refused by the fetch proxy), each tied to its doc section.

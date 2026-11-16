@@ -66,26 +66,7 @@ fn matrix_extent(rows: i32, cols: i32, ld: i32) -> Result<i64> {
 /// `len` elements are enough for the matrix, as a safe API must verify: the
 /// pointer goes to cuSOLVER, which reads and writes `matrix_extent` elements.
 fn check_matrix(len: usize, rows: i32, cols: i32, ld: i32) -> Result<()> {
-    check_len(len, matrix_extent(rows, cols, ld)?)
-}
-
-/// A batch of `batch` matrices laid out `ld * cols` apart.
-fn check_batched(len: usize, rows: i32, cols: i32, ld: i32, batch: i32) -> Result<()> {
-    if batch < 0 {
-        return Err(bad_arg());
-    }
-    let one = matrix_extent(rows, cols, ld)?;
-    if batch == 0 || one == 0 {
-        return Ok(());
-    }
-    check_len(
-        len,
-        (i64::from(batch) - 1) * i64::from(ld) * i64::from(cols) + one,
-    )
-}
-
-fn check_len(len: usize, need: i64) -> Result<()> {
-    if need < 0 || (len as i64) < need {
+    if (len as i64) < matrix_extent(rows, cols, ld)? {
         return Err(bad_arg());
     }
     Ok(())
@@ -1016,10 +997,12 @@ complex_impl!(
 
 /// In-place LU factorization of a column-major matrix. Overwrites `a`.
 ///
-/// Every dense function checks its buffers against the sizes it is given
-/// (`lda >= max(1, rows)`, `len >= lda * (cols - 1) + rows`, `ipiv`/`tau`/`w`
-/// lengths, `info.len() >= 1`) and returns `INVALID_VALUE` before any cuSOLVER
-/// call when they do not fit.
+/// The functions `getrf`, `getrs`, `geqrf`, `potrf`, `potrs`, `gesvd`, `syevd`,
+/// `orgqr`, `ormqr` and `potri` check each matrix argument against LAPACK's
+/// rules for it (`lda >= max(1, rows)` and `len >= lda * (cols - 1) + rows`)
+/// and return `INVALID_VALUE` before any cuSOLVER call when it does not fit.
+/// No other extent is checked (`ipiv`, `tau`, `w`, `s`, `info`, the Jacobi,
+/// batched, `gels` and multi-GPU functions): those are the caller's contract.
 ///
 /// On return `a` holds `L` (unit-diagonal lower) and `U` (upper) packed
 /// together; `ipiv` holds the row-pivot permutation (length = `min(m, n)`);
@@ -1058,8 +1041,6 @@ pub fn getrf<T: SolverScalar>(
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
     check_matrix(a.len(), m, n, lda)?;
-    check_len(ipiv.len(), i64::from(m.min(n)))?;
-    check_len(info.len(), 1)?;
     let mut lwork: c_int = 0;
     check(unsafe {
         T::getrf_buf(
@@ -1102,9 +1083,7 @@ pub fn getrs<T: SolverScalar>(
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
     check_matrix(a.len(), n, n, lda)?;
-    check_len(ipiv.len(), i64::from(n))?;
     check_matrix(b.len(), n, nrhs, ldb)?;
-    check_len(info.len(), 1)?;
     check(unsafe {
         T::getrs(
             sealed::Token::new(),
@@ -1159,8 +1138,6 @@ pub fn geqrf<T: SolverScalar>(
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
     check_matrix(a.len(), m, n, lda)?;
-    check_len(tau.len(), i64::from(m.min(n)))?;
-    check_len(info.len(), 1)?;
     let mut lwork: c_int = 0;
     check(unsafe {
         T::geqrf_buf(
@@ -1225,7 +1202,6 @@ pub fn potrf<T: SolverScalar>(
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
     check_matrix(a.len(), n, n, lda)?;
-    check_len(info.len(), 1)?;
     let mut lwork: c_int = 0;
     check(unsafe {
         T::potrf_buf(
@@ -1268,7 +1244,6 @@ pub fn potrs<T: SolverScalar>(
 ) -> Result<()> {
     check_matrix(a.len(), n, n, lda)?;
     check_matrix(b.len(), n, nrhs, ldb)?;
-    check_len(info.len(), 1)?;
     check(unsafe {
         T::potrs(
             sealed::Token::new(),
@@ -1291,9 +1266,8 @@ pub fn potrs<T: SolverScalar>(
 /// `rwork` must be provided for complex element types; pass a one-element
 /// buffer for real types (the pointer must be non-null; cuSOLVER ignores it).
 ///
-/// `a`, `s`, `u`, `vt` and `info` are checked against `m`, `n`, the leading
-/// dimensions and `jobu` / `jobvt`; a buffer that is too short returns
-/// `INVALID_VALUE` instead of reaching cuSOLVER.
+/// `a`, `u` and `vt` are checked against `m`, `n`, the leading dimensions and
+/// `jobu` / `jobvt` (LAPACK xGESVD); `s`, `rwork` and `info` are not.
 ///
 /// # Example
 ///
@@ -1344,9 +1318,8 @@ pub fn gesvd<T: SolverScalar>(
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
     check_matrix(a.len(), m, n, lda)?;
-    check_len(s.len(), i64::from(m.min(n)))?;
-    // `jobu` / `jobvt` select how many columns of U / rows of V^T are written
-    // (b'A' all, b'S' min(m, n), anything else none); any other byte is left
+    // LAPACK xGESVD: JOBU / JOBVT 'A' returns all m columns of U / n rows of
+    // V^T, 'S' the first min(m, n), anything else none; other bytes are left
     // for cuSOLVER to reject.
     let k = m.min(n);
     match jobu {
@@ -1359,7 +1332,6 @@ pub fn gesvd<T: SolverScalar>(
         b'S' => check_matrix(vt.len(), k, n, ldvt)?,
         _ => {}
     }
-    check_len(info.len(), 1)?;
     let mut lwork: c_int = 0;
     check(unsafe { T::gesvd_buf(sealed::Token::new(), handle.handle, m, n, &mut lwork) })?;
     let workspace = DeviceBuffer::<T>::new(a.context(), lwork as usize).map_err(alloc_fail)?;
@@ -1398,8 +1370,6 @@ pub fn syevd<T: SolverScalar>(
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
     check_matrix(a.len(), n, n, lda)?;
-    check_len(w.len(), i64::from(n))?;
-    check_len(info.len(), 1)?;
     let mut lwork: c_int = 0;
     check(unsafe {
         T::syevd_buf(
@@ -1529,9 +1499,6 @@ pub fn syevj<T: SolverScalar>(
     info: &mut DeviceBuffer<i32>,
     params: &SyevjInfo,
 ) -> Result<()> {
-    check_matrix(a.len(), n, n, lda)?;
-    check_len(w.len(), i64::from(n))?;
-    check_len(info.len(), 1)?;
     use baracuda_cusolver_sys::{cuComplex, cuDoubleComplex};
     use core::mem;
 
@@ -1650,14 +1617,6 @@ pub fn gesvdj<T: SolverScalar>(
     info: &mut DeviceBuffer<i32>,
     params: &GesvdjInfo,
 ) -> Result<()> {
-    check_matrix(a.len(), m, n, lda)?;
-    check_len(s.len(), i64::from(m.min(n)))?;
-    if jobz == EigMode::Vector {
-        let k = m.min(n);
-        check_matrix(u.len(), m, if econ { k } else { m }, ldu)?;
-        check_matrix(v.len(), n, if econ { k } else { n }, ldv)?;
-    }
-    check_len(info.len(), 1)?;
     use baracuda_cusolver_sys::{cuComplex, cuDoubleComplex};
     use core::mem;
 
@@ -1793,8 +1752,6 @@ pub fn orgqr<T: SolverScalar>(
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
     check_matrix(a.len(), m, n, lda)?;
-    check_len(tau.len(), i64::from(k))?;
-    check_len(info.len(), 1)?;
     use baracuda_cusolver_sys::{cuComplex, cuDoubleComplex};
     use core::mem;
 
@@ -1888,12 +1845,10 @@ pub fn ormqr<T: SolverScalar>(
     ldc: i32,
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
-    // `A` holds `k` reflectors of length `m` (Left) or `n` (Right).
+    // LAPACK xORMQR: A is (lda, k) holding k reflectors of length m (Left) or n (Right).
     let a_rows = if matches!(side, Side::Left) { m } else { n };
     check_matrix(a.len(), a_rows, k, lda)?;
-    check_len(tau.len(), i64::from(k))?;
     check_matrix(c_mat.len(), m, n, ldc)?;
-    check_len(info.len(), 1)?;
     use baracuda_cusolver_sys::{cuComplex, cuDoubleComplex};
     use core::mem;
 
@@ -1981,10 +1936,6 @@ pub fn gels<T: SolverScalar>(
     ldx: i32,
     info: &mut DeviceBuffer<i32>,
 ) -> Result<i32> {
-    check_matrix(a.len(), m, n, lda)?;
-    check_matrix(b.len(), m, nrhs, ldb)?;
-    check_matrix(x.len(), n, nrhs, ldx)?;
-    check_len(info.len(), 1)?;
     use baracuda_cusolver_sys::{cuComplex, cuDoubleComplex};
     use core::mem;
 
@@ -2070,7 +2021,6 @@ pub fn potri<T: SolverScalar>(
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
     check_matrix(a.len(), n, n, lda)?;
-    check_len(info.len(), 1)?;
     use baracuda_cusolver_sys::{cuComplex, cuDoubleComplex};
     use core::mem;
 
@@ -2143,9 +2093,6 @@ pub fn syevj_batched<T: SolverScalar>(
     params: &SyevjInfo,
     batch_size: i32,
 ) -> Result<()> {
-    check_batched(a.len(), n, n, lda, batch_size)?;
-    check_len(w.len(), i64::from(n) * i64::from(batch_size.max(0)))?;
-    check_len(info.len(), i64::from(batch_size))?;
     use baracuda_cusolver_sys::{cuComplex, cuDoubleComplex};
     use core::mem;
 
@@ -2273,13 +2220,6 @@ pub fn gesvdj_batched<T: SolverScalar>(
     params: &GesvdjInfo,
     batch_size: i32,
 ) -> Result<()> {
-    check_batched(a.len(), m, n, lda, batch_size)?;
-    check_len(s.len(), i64::from(m.min(n)) * i64::from(batch_size.max(0)))?;
-    if jobz == EigMode::Vector {
-        check_batched(u.len(), m, m, ldu, batch_size)?;
-        check_batched(v.len(), n, n, ldv, batch_size)?;
-    }
-    check_len(info.len(), i64::from(batch_size))?;
     use baracuda_cusolver_sys::{cuComplex, cuDoubleComplex};
     use core::mem;
 
@@ -2419,7 +2359,7 @@ pub mod mg {
         cudaDataType, cudaLibMgGrid_t, cudaLibMgMatrixDesc_t, cusolver_mg, cusolverMgHandle_t,
     };
 
-    use super::{EigMode, Fill, Result, alloc_fail, bad_arg, check};
+    use super::{EigMode, Fill, Result, alloc_fail, check};
 
     /// Multi-GPU cuSOLVER handle.
     #[derive(Debug)]
@@ -2478,13 +2418,6 @@ pub mod mg {
             devices: &[i32],
             mapping: i32,
         ) -> Result<Self> {
-            // cuSOLVER reads one device id per grid cell from `devices`.
-            if num_row_devices < 0
-                || num_col_devices < 0
-                || (devices.len() as i64) < i64::from(num_row_devices) * i64::from(num_col_devices)
-            {
-                return Err(bad_arg());
-            }
             let mg = cusolver_mg()?;
             let cu = mg.cusolver_mg_create_device_grid()?;
             let mut raw: cudaLibMgGrid_t = core::ptr::null_mut();
@@ -2786,7 +2719,7 @@ pub mod mg {
     }
 }
 
-// ---- Single-precision shortcuts (convenience over the generic `getrf` / `getrs`) -----------------------------
+// ---- Back-compat: single-precision shortcuts -----------------------------
 
 /// Shortcut for [`getrf`] on `f32`.
 pub fn sgetrf(
@@ -3262,21 +3195,5 @@ mod tests {
         assert!(is_bad(check_matrix(15, 4, 4, 4)));
         assert!(check_matrix(8, 3, 2, 5).is_ok());
         assert!(is_bad(check_matrix(7, 3, 2, 5)));
-    }
-
-    #[test]
-    fn batched_layout_is_checked() {
-        // 2 matrices of 3 x 3, ld 3: stride 9, spans 9 + 9 = 18.
-        assert!(check_batched(18, 3, 3, 3, 2).is_ok());
-        assert!(is_bad(check_batched(17, 3, 3, 3, 2)));
-        assert!(check_batched(0, 3, 3, 3, 0).is_ok());
-        assert!(is_bad(check_batched(100, 3, 3, 3, -1)));
-    }
-
-    #[test]
-    fn check_len_rejects_short_and_negative() {
-        assert!(check_len(1, 1).is_ok());
-        assert!(is_bad(check_len(0, 1)));
-        assert!(is_bad(check_len(10, -1)));
     }
 }
