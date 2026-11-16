@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.164 - 2026-11-16
+
+Declare the ARC-003/004/006/007/012 inputs in `.coderipper.toml` so those five rules run instead of reporting "not run" (which fails the portfolio job). Policy components: baracuda-types, baracuda-cuda-vocab; infrastructure: the 29 `-sys` crates and baracuda-driver; composition root: the `baracuda` facade; API budgets 130 and 50; owned data: the PyTorch baseline JSON of baracuda-kernels-bench.
+
 ## 0.1.0-alpha.163 - 2026-11-15
 
 ci: `.coderipper.toml` declares `baracuda-kernels-bench` a `[[skip_member]]` while `nvcc` is absent, so the advisory portfolio job no longer fails on OPS-011 (the bench binary cannot link on a runner without nvcc). No code change.
