@@ -2,15 +2,18 @@
 # Macro-expansion pass for the census (run before `pubinv <repo> <out> <expanded-dir>`).
 # For every library crate: `rustc -Zunpretty=expanded` (nightly) of its lib target into <out-dir>/<crate>.rs.
 # DOCS_RS=1 makes the nvcc build scripts skip, RUSTC_WRAPPER= bypasses sccache (it chokes on -Zunpretty).
-# Default features only: items a macro emits under a non-default feature are not counted (stated limit).
-# usage: expand.sh <repo> <out-dir> <crate-list-file>   (one crate name per line; crates-scanned.tsv LIB rows)
+# Default features only, except the crates named in the optional features file: items a macro emits under a non-default feature are
+# counted only for those (baracuda-cuvs-sys: the whole `Cuvs` loader sits behind `cuvs`).
+# usage: expand.sh <repo> <out-dir> <crate-list-file> [<features-file>]   (crate list: one name per line, crates-scanned.tsv LIB rows;
+#        features file: `crate feat1,feat2` per line, see expand-features.txt)
 set -u
 export PATH=/c/rust/bin:$PATH CARGO_BUILD_JOBS=2 RUSTC_WRAPPER= DOCS_RS=1
 unset CARGO_TARGET_DIR
-repo=$1; out=$2; list=$3
+repo=$1; out=$2; list=$3; feats=${4:-/dev/null}
 mkdir -p "$out"; cd "$repo" || exit 1
 for c in $(cat "$list"); do
-  if timeout 1500 cargo +nightly rustc --locked --target-dir "$out/tgt" -p "$c" --lib -- -Zunpretty=expanded > "$out/$c.rs" 2> "$out/$c.err"; then
+  f=$(awk -v c="$c" '$1==c{print $2}' "$feats"); fa=(); [ -n "$f" ] && fa=(--features "$f")
+  if timeout 1500 cargo +nightly rustc --locked --target-dir "$out/tgt" -p "$c" "${fa[@]}" --lib -- -Zunpretty=expanded > "$out/$c.rs" 2> "$out/$c.err"; then
     echo "OK $c $(wc -l < "$out/$c.rs")"
   else
     echo "FAIL $c"; rm -f "$out/$c.rs"
