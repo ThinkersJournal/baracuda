@@ -29,7 +29,7 @@ inference-only consumers don't pay the FFI surface cost.
 | `AdamStepPlan` | classic Adam or AdamW (mode flag) | f32 / f16 / bf16 |
 | `LambStepPlan` | LAMB (Adam + per-layer trust ratio) | f32 (Phase 49) |
 | `SgdStepPlan` | SGD + momentum + Nesterov + weight decay | f32 / f16 / bf16 |
-| `DistributedAdamStepPlan` | ZeRO-1-style sharded Adam (behind `distributed_optim`) | f32 / f16 / bf16 |
+| `DistributedAdamStepPlan` | experimental data-parallel Adam over NCCL (behind `distributed_optim`; not ZeRO-1, see below) | f32 / f16 / bf16 |
 
 Mixed-precision wiring: when param/grad is f16/bf16, the moments
 (`exp_avg` / `exp_avg_sq` / momentum_buf) **must** stay in f32 —
@@ -38,22 +38,38 @@ half-precision moments lose precision catastrophically.
 ## Quick example
 
 ```rust,no_run
-# fn demo(stream: &baracuda_driver::Stream) -> Result<(), Box<dyn std::error::Error>> {
-use baracuda_driver::DeviceBuffer;
-use baracuda_optim::AdamStepPlan;
-
-let plan = AdamStepPlan::<f32>::new()
-    .with_lr(1e-3)
-    .with_betas(0.9, 0.999)
-    .with_eps(1e-8)
-    .with_weight_decay(0.01)
-    .with_adamw_mode(true);
+# use baracuda_driver::{DeviceBuffer, Stream};
+# use baracuda_optim::{AdamConfig, AdamMode, AdamStepPlan, TensorList};
+# fn demo(
+#     stream: &Stream,
+#     params: &[&DeviceBuffer<f32>],
+#     grads: &[&DeviceBuffer<f32>],
+#     exp_avg: &[&DeviceBuffer<f32>],
+#     exp_avg_sq: &[&DeviceBuffer<f32>],
+# ) -> Result<(), Box<dyn std::error::Error>> {
+let plan = AdamStepPlan::<f32>::new(AdamConfig {
+    lr: 1e-3,
+    weight_decay: 0.01,
+    mode: AdamMode::Decoupled,
+    ..AdamConfig::default()
+});
 
 // One `step` call updates ALL parameter tensors in a single launch
-// (up to the 110-tensor per-launch cap).
-plan.step(stream, &mut params, &grads, &mut exp_avg, &mut exp_avg_sq, /* step = */ 1)?;
+// (up to the 110-tensor per-launch cap). Step indices start at 1.
+plan.step(
+    &TensorList::new(params)?,
+    &TensorList::new(grads)?,
+    &TensorList::new(exp_avg)?,
+    &TensorList::new(exp_avg_sq)?,
+    1,
+    stream,
+)?;
 # Ok(()) }
 ```
+
+On a half-precision plan (`AdamStepPlan::<half::f16>`) the moments stay in
+`f32` and go through `step_with_f32_state`; `step` returns
+`Error::InvalidArgument` there.
 
 ## Cargo features
 
@@ -62,7 +78,7 @@ plan.step(stream, &mut params, &grads, &mut exp_avg, &mut exp_avg_sq, /* step = 
 | `sm80` | no | Build the Ampere-baseline kernel set. Forward-compatible to Ada / Hopper. |
 | `sm89` | no | Build the Ada Lovelace specializations. |
 | `sm90a` | no | Build the Hopper-specialized kernels. |
-| `distributed_optim` | no | Enable `DistributedAdamStepPlan` (ZeRO-1-style sharded optimizer state on top of NCCL collectives). Pulls in `baracuda-nccl` (which dynamically loads `libnccl`; first `nccl()` call returns `LoaderError::LibraryNotFound` on hosts without it). Default OFF — inference-only and single-GPU training consumers don't pay the dep cost. |
+| `distributed_optim` | no | Enable `DistributedAdamStepPlan` (**experimental, outside the API freeze**: all-reduce of the gradients, a full-tensor Adam step on every rank, then an in-place all-gather; the optimizer state is not sharded). Pulls in `baracuda-nccl` (which dynamically loads `libnccl`; first `nccl()` call returns `LoaderError::LibraryNotFound` on hosts without it). Default OFF — inference-only and single-GPU training consumers don't pay the dep cost. |
 
 Pick exactly one of `sm80` / `sm89` / `sm90a`; the build script picks
 `sm90a > sm89 > sm80` when multiple are on.
@@ -70,8 +86,10 @@ Pick exactly one of `sm80` / `sm89` / `sm90a`; the build script picks
 ## Status / scope
 
 - Phase 49 — initial Adam / SGD / LAMB fanout.
-- Phase 58 — `DistributedAdamStepPlan` (ZeRO-1). Single-rank
-  degenerate case reduces to `AdamStepPlan` bit-exactly.
+- Phase 58 — `DistributedAdamStepPlan`, **experimental**: it does not
+  shard the optimizer state, so it gives no ZeRO-1 memory saving, and the
+  multi-rank path has not been run (it needs 2 GPUs). Single-rank degenerate
+  case reduces to `AdamStepPlan`.
 
 ## Related crates
 

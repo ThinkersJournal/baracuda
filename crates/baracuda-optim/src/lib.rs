@@ -54,6 +54,13 @@
 
 #![deny(missing_docs)]
 
+// The README's code blocks are compiled as doctests, so the example cannot
+// drift from the API again.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+#[allow(dead_code, reason = "doctest carrier for README.md; never constructed")]
+struct ReadmeDoctests;
+
 use core::ffi::c_void;
 use core::marker::PhantomData;
 
@@ -61,7 +68,7 @@ use baracuda_driver::{DeviceBuffer, Stream};
 use baracuda_types::DeviceRepr;
 use thiserror::Error;
 
-// Phase 58 — ZeRO-1-style sharded distributed optimizer plans.
+// Phase 58 — distributed optimizer plan (experimental; not ZeRO-1, see its module docs).
 // Behind `distributed_optim` cargo feature (default OFF; pulls
 // `baracuda-nccl` as an optional dep). Single-rank degenerate case
 // reduces to AdamStepPlan bit-exactly.
@@ -290,15 +297,8 @@ impl<'a, T: DeviceRepr> TensorList<'a, T> {
         }
         let sizes: Vec<i32> = buffers
             .iter()
-            .map(|b| {
-                let n = b.len();
-                debug_assert!(
-                    n <= i32::MAX as usize,
-                    "TensorList tensor element count {n} exceeds i32::MAX"
-                );
-                n as i32
-            })
-            .collect();
+            .map(|b| element_count_i32(b.len()))
+            .collect::<Result<_>>()?;
         let ptrs: Vec<*mut c_void> = buffers
             .iter()
             .map(|b| b.as_raw().0 as *mut c_void)
@@ -316,7 +316,10 @@ impl<'a, T: DeviceRepr> TensorList<'a, T> {
         if buffers.is_empty() {
             return Err(Error::EmptyTensorList);
         }
-        let sizes: Vec<i32> = buffers.iter().map(|b| b.len() as i32).collect();
+        let sizes: Vec<i32> = buffers
+            .iter()
+            .map(|b| element_count_i32(b.len()))
+            .collect::<Result<_>>()?;
         let ptrs: Vec<*mut c_void> = buffers
             .iter()
             .map(|b| b.as_raw().0 as *mut c_void)
@@ -645,6 +648,8 @@ impl<T: AdamParamDtype> AdamStepPlan<T> {
         step_index: i32,
         stream: &Stream,
     ) -> Result<()> {
+        require_f32_state::<T>()?;
+        check_step_index(self.cfg.bias_correction, step_index)?;
         validate_quadruple(params, grads, exp_avg, exp_avg_sq)?;
         let n_tensors = params.len() as i32;
         // SAFETY: pointer arrays are valid for the launch duration
@@ -690,14 +695,8 @@ impl<T: AdamParamDtype> AdamStepPlan<T> {
         step_index: i32,
         stream: &Stream,
     ) -> Result<()> {
-        if params.len() != grads.len()
-            || params.len() != exp_avg.len()
-            || params.len() != exp_avg_sq.len()
-        {
-            return Err(Error::LengthMismatch(
-                "params/grads/exp_avg/exp_avg_sq tensor counts differ",
-            ));
-        }
+        check_step_index(self.cfg.bias_correction, step_index)?;
+        validate_quadruple(params, grads, exp_avg, exp_avg_sq)?;
         let n_tensors = params.len() as i32;
         let status = unsafe {
             let f = T::adam_ffi().0;
@@ -812,11 +811,8 @@ impl<T: SgdParamDtype> SgdStepPlan<T> {
         first_step: bool,
         stream: &Stream,
     ) -> Result<()> {
-        if params.len() != grads.len() || params.len() != momentum.len() {
-            return Err(Error::LengthMismatch(
-                "params/grads/momentum tensor counts differ",
-            ));
-        }
+        require_f32_state::<T>()?;
+        validate_triple(params, grads, momentum)?;
         let n_tensors = params.len() as i32;
         let status = unsafe {
             let f = T::sgd_ffi().0;
@@ -858,11 +854,7 @@ impl<T: SgdParamDtype> SgdStepPlan<T> {
         first_step: bool,
         stream: &Stream,
     ) -> Result<()> {
-        if params.len() != grads.len() || params.len() != momentum.len() {
-            return Err(Error::LengthMismatch(
-                "params/grads/momentum tensor counts differ",
-            ));
-        }
+        validate_triple(params, grads, momentum)?;
         let n_tensors = params.len() as i32;
         let status = unsafe {
             let f = T::sgd_ffi().0;
@@ -976,12 +968,9 @@ impl LambStepPlan {
         global_grad_norm: f32,
         stream: &Stream,
     ) -> Result<()> {
+        check_step_index(self.cfg.bias_correction, step_index)?;
         validate_quadruple(params, grads, exp_avg, exp_avg_sq)?;
-        if params.len() != u_scratch_tensors.len() {
-            return Err(Error::LengthMismatch(
-                "params and u_scratch_tensors have different counts",
-            ));
-        }
+        validate_pair(params, u_scratch_tensors)?;
         if u_scratch_ptr_dev.len() < params.len() {
             return Err(Error::InvalidArgument(
                 "u_scratch_ptr_dev shorter than params count",
@@ -1048,25 +1037,133 @@ impl LambStepPlan {
 // Shared helpers
 // ============================================================================
 
-fn validate_quadruple<T: DeviceRepr>(
-    a: &TensorList<'_, T>,
-    b: &TensorList<'_, T>,
-    c: &TensorList<'_, T>,
-    d: &TensorList<'_, T>,
-) -> Result<()> {
-    if a.len() != b.len() || a.len() != c.len() || a.len() != d.len() {
+/// The tensor lists a step reads and writes must agree on the tensor count
+/// and, tensor by tensor, on the element count: the shim launches over the
+/// first list's sizes for every list, so a shorter tensor elsewhere is an
+/// out-of-bounds device access.
+fn check_sizes(lists: &[&[i32]]) -> Result<()> {
+    let first = lists[0];
+    if lists.iter().any(|l| l.len() != first.len()) {
         return Err(Error::LengthMismatch(
-            "the four tensor lists must have the same length",
+            "the tensor lists must have the same length",
         ));
     }
-    // Per-tensor element-count check.
-    for i in 0..a.len() {
-        let s = a.sizes[i];
-        if b.sizes[i] != s || c.sizes[i] != s || d.sizes[i] != s {
-            return Err(Error::LengthMismatch(
-                "per-tensor element counts differ across the four lists",
-            ));
-        }
+    if lists.iter().any(|l| *l != first) {
+        return Err(Error::LengthMismatch(
+            "per-tensor element counts differ across the lists",
+        ));
     }
     Ok(())
+}
+
+fn validate_pair<A: DeviceRepr, B: DeviceRepr>(
+    a: &TensorList<'_, A>,
+    b: &TensorList<'_, B>,
+) -> Result<()> {
+    check_sizes(&[&a.sizes, &b.sizes])
+}
+
+fn validate_triple<A: DeviceRepr, B: DeviceRepr, C: DeviceRepr>(
+    a: &TensorList<'_, A>,
+    b: &TensorList<'_, B>,
+    c: &TensorList<'_, C>,
+) -> Result<()> {
+    check_sizes(&[&a.sizes, &b.sizes, &c.sizes])
+}
+
+fn validate_quadruple<A: DeviceRepr, B: DeviceRepr, C: DeviceRepr, D: DeviceRepr>(
+    a: &TensorList<'_, A>,
+    b: &TensorList<'_, B>,
+    c: &TensorList<'_, C>,
+    d: &TensorList<'_, D>,
+) -> Result<()> {
+    check_sizes(&[&a.sizes, &b.sizes, &c.sizes, &d.sizes])
+}
+
+/// Per-tensor element counts travel to the shim as `i32`; a larger tensor
+/// is an error, not a wrapped count.
+fn element_count_i32(n: usize) -> Result<i32> {
+    i32::try_from(n).map_err(|_| Error::InvalidArgument("tensor element count exceeds i32::MAX"))
+}
+
+/// The shim reads the moment / momentum buffers as `f32` for every parameter
+/// dtype. `step` takes them as `TensorList<T>`, so on a half-precision plan
+/// it would hand `f16` buffers to a kernel that reads `f32`: refuse, and
+/// point at the `_with_f32_*` methods.
+fn require_f32_state<T>() -> Result<()> {
+    if core::mem::size_of::<T>() != core::mem::size_of::<f32>() {
+        return Err(Error::InvalidArgument(
+            "half-precision plans keep moments in f32: use step_with_f32_state / step_with_f32_momentum",
+        ));
+    }
+    Ok(())
+}
+
+/// With bias correction the shim divides by `1 - beta^step`, which is 0 at
+/// step 0 and negative below it: the parameters would become NaN.
+fn check_step_index(bias_correction: bool, step_index: i32) -> Result<()> {
+    if bias_correction && step_index < 1 {
+        return Err(Error::InvalidArgument(
+            "step_index must be >= 1 when bias_correction is on",
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sizes_must_match_per_tensor_not_only_in_count() {
+        assert!(check_sizes(&[&[4, 8], &[4, 8], &[4, 8]]).is_ok());
+        // Same count, one shorter tensor: the old count-only check accepted this.
+        assert!(matches!(
+            check_sizes(&[&[4, 8], &[4, 8], &[4, 7]]),
+            Err(Error::LengthMismatch(_))
+        ));
+        assert!(matches!(
+            check_sizes(&[&[4, 8], &[4]]),
+            Err(Error::LengthMismatch(_))
+        ));
+    }
+
+    #[test]
+    fn element_count_does_not_wrap() {
+        assert_eq!(element_count_i32(0).unwrap(), 0);
+        assert_eq!(element_count_i32(i32::MAX as usize).unwrap(), i32::MAX);
+        #[cfg(target_pointer_width = "64")]
+        assert!(matches!(
+            element_count_i32(i32::MAX as usize + 1),
+            Err(Error::InvalidArgument(_))
+        ));
+    }
+
+    #[test]
+    fn half_precision_plans_refuse_half_moments() {
+        assert!(require_f32_state::<f32>().is_ok());
+        assert!(matches!(
+            require_f32_state::<half::f16>(),
+            Err(Error::InvalidArgument(_))
+        ));
+        assert!(matches!(
+            require_f32_state::<half::bf16>(),
+            Err(Error::InvalidArgument(_))
+        ));
+    }
+
+    #[test]
+    fn step_zero_with_bias_correction_is_an_error() {
+        assert!(check_step_index(true, 1).is_ok());
+        assert!(matches!(
+            check_step_index(true, 0),
+            Err(Error::InvalidArgument(_))
+        ));
+        assert!(matches!(
+            check_step_index(true, -3),
+            Err(Error::InvalidArgument(_))
+        ));
+        // Without bias correction the step index is not used by the shim.
+        assert!(check_step_index(false, 0).is_ok());
+    }
 }

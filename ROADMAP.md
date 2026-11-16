@@ -1053,7 +1053,7 @@ Out of scope for Phase 52 (deferred to Phase 53+):
   with how every other `baracuda-*-sys` crate behaves on hosts
   without the underlying library.
 
-## Phase 58 — DistributedAdam (ZeRO-1 sharded optimizer state, complete; alpha.57, 2026-05-28)
+## Phase 58 — DistributedAdam (data-parallel Adam over NCCL; experimental, optimizer state NOT sharded; alpha.57, 2026-05-28)
 
 **Builds on Phase 49 (Adam) + Phase 52 (NCCL).** First consumer plan
 on `baracuda-optim` for the distributed-roadmap (Phase 52 was the
@@ -1067,11 +1067,11 @@ FFI**. Behind the new `distributed_optim` cargo feature on
   Dtypes: f32 / f16 / bf16 (matching Phase 49). AdamW + classic mode
   (inherited via the wrapped config). Mixed-precision variant
   (`step_with_f32_state`) for half-param + f32-moment training.
-- **ZeRO-1 protocol** (per step):
+- **Protocol** (per step; the ZeRO-1 sharding this phase named is not implemented, corrected 2026-11-16):
   1. `all_reduce(grads, Sum, in-place)` across all ranks.
-  2. Local Adam step on this rank's `1/world_size` shard of every
-     (param, grad, exp_avg, exp_avg_sq) tuple — uses the inner Phase 49
-     plan unchanged.
+  2. Local Adam step over the full (param, grad, exp_avg, exp_avg_sq)
+     tuples — uses the inner Phase 49 plan unchanged, which compares the
+     moment sizes with the params', so the moments are not sharded.
   3. `all_gather(updated_params, in-place)` reassembles the full
      updated tensor on every rank.
 - **Single-rank degenerate case**: when `world_size == 1` both
