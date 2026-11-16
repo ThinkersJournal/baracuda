@@ -1,0 +1,26 @@
+# Usage: python -I census-macro-test.py <api-freeze-dir>   (exit 1 on failure)
+# Regression for the R6 baracuda-tensorrt-builder finding: its 9 `trt_enum!` enums (72 variants) sit behind the non-default `shim`
+# feature, so a default-feature expansion drops the whole `api` module's macro output. The committed census must count them, and
+# `tool/expand-features.txt` must expand the crate with `shim`. Fails on the census before the fix (0 enum rows, 0 variant rows).
+import csv, os, sys
+d = sys.argv[1]
+rows = list(csv.DictReader(open(os.path.join(d, "items.tsv"), newline=""), delimiter="\t"))
+feats = {l.split()[0]: l.split()[1:] for l in open(os.path.join(d, "tool", "expand-features.txt")) if l.strip()}
+CRATE = "baracuda-tensorrt-builder"
+ENUMS = {"ElementWiseOp": 14, "Activation": 14, "UnaryOp": 21, "ReduceOp": 5, "MatrixOp": 3, "InterpolationMode": 3,
+         "PoolingType": 3, "MemoryPool": 5, "BuilderFlag": 4}
+mine = [r for r in rows if r["crate"] == CRATE]
+bad = 0
+def check(ok, what):
+    global bad
+    print(("ok  " if ok else "FAIL"), what)
+    bad += not ok
+have_enum = {r["name"] for r in mine if r["kind"] == "enum"}
+for e, n in ENUMS.items():
+    got = sum(1 for r in mine if r["kind"] == "variant" and r["name"].startswith(e + "::"))
+    check(e in have_enum and got == n, f"{CRATE}: enum {e} counted with {n} variants (got variants {got}, enum row {e in have_enum})")
+check(sum(ENUMS.values()) == 72 and len(ENUMS) == 9, "expected set is 9 enums / 72 variants")
+check("shim" in ",".join(feats.get(CRATE, [])).split(","), f"expand-features.txt expands {CRATE} with `shim`")
+# control: the macro-free rows of the same crate are still there (this test reads the census it thinks it reads)
+check(any(r["kind"] == "method" and r["name"] == "Builder::build_serialized" for r in mine), f"control: {CRATE} method Builder::build_serialized present")
+sys.exit(1 if bad else 0)
