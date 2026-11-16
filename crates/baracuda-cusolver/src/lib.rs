@@ -7,7 +7,7 @@
 //! - SVD: `gesvd`
 //! - Symmetric / Hermitian eigendecomposition: `syevd` / `heevd`
 //!
-//! The generic 64-bit X… API (`xgetrf`, `xgeqrf`, `xpotrf`) gives
+//! The generic 64-bit X… API (`xgetrf`, `xgetrs`, `xpotrs`) gives
 //! type-erased data pointers and is exposed under [`xapi`]. The sparse API
 //! (`cusolverSp*`) is under [`sparse`]. The refactor API (`cusolverRf*`) is
 //! under [`refactor`].
@@ -41,6 +41,35 @@ fn alloc_fail<E>(_e: E) -> Error {
     Error::Status {
         status: cusolverStatus_t::ALLOC_FAILED,
     }
+}
+
+/// The status cuSOLVER itself reports for an argument it rejects.
+fn bad_arg() -> Error {
+    Error::Status {
+        status: cusolverStatus_t::INVALID_VALUE,
+    }
+}
+
+/// Elements a column-major `rows x cols` matrix with leading dimension `ld`
+/// spans: `ld * (cols - 1) + rows`, or 0 for an empty matrix. Rejects negative
+/// sizes and `ld < max(1, rows)`, which cuSOLVER rejects too.
+fn matrix_extent(rows: i32, cols: i32, ld: i32) -> Result<i64> {
+    if rows < 0 || cols < 0 || ld < rows.max(1) {
+        return Err(bad_arg());
+    }
+    if rows == 0 || cols == 0 {
+        return Ok(0);
+    }
+    Ok(i64::from(ld) * (i64::from(cols) - 1) + i64::from(rows))
+}
+
+/// `len` elements are enough for the matrix, as a safe API must verify: the
+/// pointer goes to cuSOLVER, which reads and writes `matrix_extent` elements.
+fn check_matrix(len: usize, rows: i32, cols: i32, ld: i32) -> Result<()> {
+    if (len as i64) < matrix_extent(rows, cols, ld)? {
+        return Err(bad_arg());
+    }
+    Ok(())
 }
 
 // ---- Handle -------------------------------------------------------------
@@ -120,6 +149,7 @@ impl Drop for DnHandle {
 
 /// Transposition selector for solve-step calls.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Default)]
+#[non_exhaustive]
 pub enum Op {
     /// No transpose.
     #[default]
@@ -143,6 +173,21 @@ impl Op {
 // ---- Trait framework ----------------------------------------------------
 
 /// Scalars supported by cuSOLVER's Dn S/D/C/Z API.
+///
+/// Sealed: only `f32`, `f64`, `Complex32` and `Complex64` implement it. The
+/// per-scalar cuSOLVER entry points it carries are crate-internal (each takes
+/// a token that cannot be built outside this crate), so they cannot be called
+/// from here:
+///
+/// ```compile_fail
+/// use baracuda_cusolver::SolverScalar;
+/// let mut lwork = 0;
+/// let _ = unsafe {
+///     <f32 as SolverScalar>::getrf_buf(
+///         core::ptr::null_mut(), 1, 1, core::ptr::null_mut(), 1, &mut lwork,
+///     )
+/// };
+/// ```
 pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// Real-valued associate type for ops that mix scalar and norm
     /// (f32 → f32, f64 → f64, Complex32 → f32, Complex64 → f64).
@@ -151,6 +196,7 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// LU buffer size.
     #[doc(hidden)]
     unsafe fn getrf_buf(
+        _t: sealed::Token,
         h: cusolverDnHandle_t,
         m: c_int,
         n: c_int,
@@ -162,6 +208,7 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// LU factorization.
     #[doc(hidden)]
     unsafe fn getrf(
+        _t: sealed::Token,
         h: cusolverDnHandle_t,
         m: c_int,
         n: c_int,
@@ -175,6 +222,7 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// LU solve.
     #[doc(hidden)]
     unsafe fn getrs(
+        _t: sealed::Token,
         h: cusolverDnHandle_t,
         trans: cublasOperation_t,
         n: c_int,
@@ -190,6 +238,7 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// QR factorization buffer size.
     #[doc(hidden)]
     unsafe fn geqrf_buf(
+        _t: sealed::Token,
         h: cusolverDnHandle_t,
         m: c_int,
         n: c_int,
@@ -201,6 +250,7 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// QR factorization.
     #[doc(hidden)]
     unsafe fn geqrf(
+        _t: sealed::Token,
         h: cusolverDnHandle_t,
         m: c_int,
         n: c_int,
@@ -215,6 +265,7 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// Cholesky buffer size.
     #[doc(hidden)]
     unsafe fn potrf_buf(
+        _t: sealed::Token,
         h: cusolverDnHandle_t,
         uplo: cublasFillMode_t,
         n: c_int,
@@ -226,6 +277,7 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// Cholesky factorization.
     #[doc(hidden)]
     unsafe fn potrf(
+        _t: sealed::Token,
         h: cusolverDnHandle_t,
         uplo: cublasFillMode_t,
         n: c_int,
@@ -239,6 +291,7 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// Cholesky solve.
     #[doc(hidden)]
     unsafe fn potrs(
+        _t: sealed::Token,
         h: cusolverDnHandle_t,
         uplo: cublasFillMode_t,
         n: c_int,
@@ -253,6 +306,7 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// SVD buffer size.
     #[doc(hidden)]
     unsafe fn gesvd_buf(
+        _t: sealed::Token,
         h: cusolverDnHandle_t,
         m: c_int,
         n: c_int,
@@ -262,6 +316,7 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// SVD (generic, taking real-valued S + rwork for complex variants).
     #[doc(hidden)]
     unsafe fn gesvd(
+        _t: sealed::Token,
         h: cusolverDnHandle_t,
         jobu: u8,
         jobvt: u8,
@@ -283,6 +338,7 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// syevd / heevd buffer size.
     #[doc(hidden)]
     unsafe fn syevd_buf(
+        _t: sealed::Token,
         h: cusolverDnHandle_t,
         jobz: cusolverEigMode_t,
         uplo: cublasFillMode_t,
@@ -296,6 +352,7 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
     /// syevd / heevd.
     #[doc(hidden)]
     unsafe fn syevd(
+        _t: sealed::Token,
         h: cusolverDnHandle_t,
         jobz: cusolverEigMode_t,
         uplo: cublasFillMode_t,
@@ -312,6 +369,18 @@ pub trait SolverScalar: DeviceRepr + Copy + 'static + sealed::Sealed {
 mod sealed {
     use baracuda_types::{Complex32, Complex64};
     pub trait Sealed {}
+
+    /// Proof of being inside this crate: it cannot be named or built outside
+    /// it, so the `SolverScalar` members that take one cannot be called from
+    /// outside it either, although they are trait items.
+    #[derive(Debug)]
+    pub struct Token(());
+
+    impl Token {
+        pub(crate) fn new() -> Self {
+            Token(())
+        }
+    }
     impl Sealed for f32 {}
     impl Sealed for f64 {}
     impl Sealed for Complex32 {}
@@ -328,6 +397,7 @@ macro_rules! real_impl {
             type Real = $t;
 
             unsafe fn getrf_buf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 m: c_int,
                 n: c_int,
@@ -343,6 +413,7 @@ macro_rules! real_impl {
                 }
             }
             unsafe fn getrf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 m: c_int,
                 n: c_int,
@@ -360,6 +431,7 @@ macro_rules! real_impl {
                 }
             }
             unsafe fn getrs(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 trans: cublasOperation_t,
                 n: c_int,
@@ -379,6 +451,7 @@ macro_rules! real_impl {
                 }
             }
             unsafe fn geqrf_buf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 m: c_int,
                 n: c_int,
@@ -394,6 +467,7 @@ macro_rules! real_impl {
                 }
             }
             unsafe fn geqrf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 m: c_int,
                 n: c_int,
@@ -412,6 +486,7 @@ macro_rules! real_impl {
                 }
             }
             unsafe fn potrf_buf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 uplo: cublasFillMode_t,
                 n: c_int,
@@ -427,6 +502,7 @@ macro_rules! real_impl {
                 }
             }
             unsafe fn potrf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 uplo: cublasFillMode_t,
                 n: c_int,
@@ -444,6 +520,7 @@ macro_rules! real_impl {
                 }
             }
             unsafe fn potrs(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 uplo: cublasFillMode_t,
                 n: c_int,
@@ -462,6 +539,7 @@ macro_rules! real_impl {
                 }
             }
             unsafe fn gesvd_buf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 m: c_int,
                 n: c_int,
@@ -475,6 +553,7 @@ macro_rules! real_impl {
                 }
             }
             unsafe fn gesvd(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 jobu: u8,
                 jobvt: u8,
@@ -503,6 +582,7 @@ macro_rules! real_impl {
                 }
             }
             unsafe fn syevd_buf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 jobz: cusolverEigMode_t,
                 uplo: cublasFillMode_t,
@@ -520,6 +600,7 @@ macro_rules! real_impl {
                 }
             }
             unsafe fn syevd(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 jobz: cusolverEigMode_t,
                 uplo: cublasFillMode_t,
@@ -553,6 +634,7 @@ macro_rules! complex_impl {
             type Real = $real;
 
             unsafe fn getrf_buf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 m: c_int,
                 n: c_int,
@@ -568,6 +650,7 @@ macro_rules! complex_impl {
                 }
             }
             unsafe fn getrf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 m: c_int,
                 n: c_int,
@@ -585,6 +668,7 @@ macro_rules! complex_impl {
                 }
             }
             unsafe fn getrs(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 trans: cublasOperation_t,
                 n: c_int,
@@ -615,6 +699,7 @@ macro_rules! complex_impl {
                 }
             }
             unsafe fn geqrf_buf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 m: c_int,
                 n: c_int,
@@ -630,6 +715,7 @@ macro_rules! complex_impl {
                 }
             }
             unsafe fn geqrf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 m: c_int,
                 n: c_int,
@@ -658,6 +744,7 @@ macro_rules! complex_impl {
                 }
             }
             unsafe fn potrf_buf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 uplo: cublasFillMode_t,
                 n: c_int,
@@ -673,6 +760,7 @@ macro_rules! complex_impl {
                 }
             }
             unsafe fn potrf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 uplo: cublasFillMode_t,
                 n: c_int,
@@ -699,6 +787,7 @@ macro_rules! complex_impl {
                 }
             }
             unsafe fn potrs(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 uplo: cublasFillMode_t,
                 n: c_int,
@@ -727,6 +816,7 @@ macro_rules! complex_impl {
                 }
             }
             unsafe fn gesvd_buf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 m: c_int,
                 n: c_int,
@@ -740,6 +830,7 @@ macro_rules! complex_impl {
                 }
             }
             unsafe fn gesvd(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 jobu: u8,
                 jobvt: u8,
@@ -782,6 +873,7 @@ macro_rules! complex_impl {
                 }
             }
             unsafe fn syevd_buf(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 jobz: cusolverEigMode_t,
                 uplo: cublasFillMode_t,
@@ -799,6 +891,7 @@ macro_rules! complex_impl {
                 }
             }
             unsafe fn syevd(
+                _t: sealed::Token,
                 h: cusolverDnHandle_t,
                 jobz: cusolverEigMode_t,
                 uplo: cublasFillMode_t,
@@ -904,6 +997,13 @@ complex_impl!(
 
 /// In-place LU factorization of a column-major matrix. Overwrites `a`.
 ///
+/// The functions `getrf`, `getrs`, `geqrf`, `potrf`, `potrs`, `gesvd`, `syevd`,
+/// `orgqr`, `ormqr` and `potri` check each matrix argument against LAPACK's
+/// rules for it (`lda >= max(1, rows)` and `len >= lda * (cols - 1) + rows`)
+/// and return `INVALID_VALUE` before any cuSOLVER call when it does not fit.
+/// No other extent is checked (`ipiv`, `tau`, `w`, `s`, `info`, the Jacobi,
+/// batched, `gels` and multi-GPU functions): those are the caller's contract.
+///
 /// On return `a` holds `L` (unit-diagonal lower) and `U` (upper) packed
 /// together; `ipiv` holds the row-pivot permutation (length = `min(m, n)`);
 /// `info` is a single-element device int (0 on success, k > 0 means U\[k,k\]
@@ -940,11 +1040,23 @@ pub fn getrf<T: SolverScalar>(
     ipiv: &mut DeviceBuffer<i32>,
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
+    check_matrix(a.len(), m, n, lda)?;
     let mut lwork: c_int = 0;
-    check(unsafe { T::getrf_buf(handle.handle, m, n, a.as_raw().0 as *mut T, lda, &mut lwork) })?;
+    check(unsafe {
+        T::getrf_buf(
+            sealed::Token::new(),
+            handle.handle,
+            m,
+            n,
+            a.as_raw().0 as *mut T,
+            lda,
+            &mut lwork,
+        )
+    })?;
     let workspace = DeviceBuffer::<T>::new(a.context(), lwork as usize).map_err(alloc_fail)?;
     check(unsafe {
         T::getrf(
+            sealed::Token::new(),
             handle.handle,
             m,
             n,
@@ -970,8 +1082,11 @@ pub fn getrs<T: SolverScalar>(
     ldb: i32,
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
+    check_matrix(a.len(), n, n, lda)?;
+    check_matrix(b.len(), n, nrhs, ldb)?;
     check(unsafe {
         T::getrs(
+            sealed::Token::new(),
             handle.handle,
             trans.raw(),
             n,
@@ -1022,11 +1137,23 @@ pub fn geqrf<T: SolverScalar>(
     tau: &mut DeviceBuffer<T>,
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
+    check_matrix(a.len(), m, n, lda)?;
     let mut lwork: c_int = 0;
-    check(unsafe { T::geqrf_buf(handle.handle, m, n, a.as_raw().0 as *mut T, lda, &mut lwork) })?;
+    check(unsafe {
+        T::geqrf_buf(
+            sealed::Token::new(),
+            handle.handle,
+            m,
+            n,
+            a.as_raw().0 as *mut T,
+            lda,
+            &mut lwork,
+        )
+    })?;
     let workspace = DeviceBuffer::<T>::new(a.context(), lwork as usize).map_err(alloc_fail)?;
     check(unsafe {
         T::geqrf(
+            sealed::Token::new(),
             handle.handle,
             m,
             n,
@@ -1074,9 +1201,11 @@ pub fn potrf<T: SolverScalar>(
     lda: i32,
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
+    check_matrix(a.len(), n, n, lda)?;
     let mut lwork: c_int = 0;
     check(unsafe {
         T::potrf_buf(
+            sealed::Token::new(),
             handle.handle,
             uplo,
             n,
@@ -1088,6 +1217,7 @@ pub fn potrf<T: SolverScalar>(
     let workspace = DeviceBuffer::<T>::new(a.context(), lwork as usize).map_err(alloc_fail)?;
     check(unsafe {
         T::potrf(
+            sealed::Token::new(),
             handle.handle,
             uplo,
             n,
@@ -1112,8 +1242,11 @@ pub fn potrs<T: SolverScalar>(
     ldb: i32,
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
+    check_matrix(a.len(), n, n, lda)?;
+    check_matrix(b.len(), n, nrhs, ldb)?;
     check(unsafe {
         T::potrs(
+            sealed::Token::new(),
             handle.handle,
             uplo,
             n,
@@ -1130,8 +1263,11 @@ pub fn potrs<T: SolverScalar>(
 /// Full SVD: `A = U * Σ * Vᵀ`. `jobu`/`jobvt` are LAPACK-style single-byte
 /// selectors (b'A' = all, b'S' = economy, b'N' = none, b'O' = overwrite A).
 ///
-/// `rwork` must be provided for complex element types; pass an empty buffer
-/// for real types (pointer is still non-null; cuSOLVER ignores it).
+/// `rwork` must be provided for complex element types; pass a one-element
+/// buffer for real types (the pointer must be non-null; cuSOLVER ignores it).
+///
+/// `a`, `u` and `vt` are checked against `m`, `n`, the leading dimensions and
+/// `jobu` / `jobvt` (LAPACK xGESVD); `s`, `rwork` and `info` are not.
 ///
 /// # Example
 ///
@@ -1181,11 +1317,27 @@ pub fn gesvd<T: SolverScalar>(
     rwork: &mut DeviceBuffer<T::Real>,
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
+    check_matrix(a.len(), m, n, lda)?;
+    // LAPACK xGESVD: JOBU / JOBVT 'A' returns all m columns of U / n rows of
+    // V^T, 'S' the first min(m, n), anything else none; other bytes are left
+    // for cuSOLVER to reject.
+    let k = m.min(n);
+    match jobu {
+        b'A' => check_matrix(u.len(), m, m, ldu)?,
+        b'S' => check_matrix(u.len(), m, k, ldu)?,
+        _ => {}
+    }
+    match jobvt {
+        b'A' => check_matrix(vt.len(), n, n, ldvt)?,
+        b'S' => check_matrix(vt.len(), k, n, ldvt)?,
+        _ => {}
+    }
     let mut lwork: c_int = 0;
-    check(unsafe { T::gesvd_buf(handle.handle, m, n, &mut lwork) })?;
+    check(unsafe { T::gesvd_buf(sealed::Token::new(), handle.handle, m, n, &mut lwork) })?;
     let workspace = DeviceBuffer::<T>::new(a.context(), lwork as usize).map_err(alloc_fail)?;
     check(unsafe {
         T::gesvd(
+            sealed::Token::new(),
             handle.handle,
             jobu,
             jobvt,
@@ -1217,9 +1369,11 @@ pub fn syevd<T: SolverScalar>(
     w: &mut DeviceBuffer<T::Real>,
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
+    check_matrix(a.len(), n, n, lda)?;
     let mut lwork: c_int = 0;
     check(unsafe {
         T::syevd_buf(
+            sealed::Token::new(),
             handle.handle,
             jobz,
             uplo,
@@ -1233,6 +1387,7 @@ pub fn syevd<T: SolverScalar>(
     let workspace = DeviceBuffer::<T>::new(a.context(), lwork as usize).map_err(alloc_fail)?;
     check(unsafe {
         T::syevd(
+            sealed::Token::new(),
             handle.handle,
             jobz,
             uplo,
@@ -1596,6 +1751,7 @@ pub fn orgqr<T: SolverScalar>(
     tau: &DeviceBuffer<T>,
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
+    check_matrix(a.len(), m, n, lda)?;
     use baracuda_cusolver_sys::{cuComplex, cuDoubleComplex};
     use core::mem;
 
@@ -1689,6 +1845,10 @@ pub fn ormqr<T: SolverScalar>(
     ldc: i32,
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
+    // LAPACK xORMQR: A is (lda, k) holding k reflectors of length m (Left) or n (Right).
+    let a_rows = if matches!(side, Side::Left) { m } else { n };
+    check_matrix(a.len(), a_rows, k, lda)?;
+    check_matrix(c_mat.len(), m, n, ldc)?;
     use baracuda_cusolver_sys::{cuComplex, cuDoubleComplex};
     use core::mem;
 
@@ -1860,6 +2020,7 @@ pub fn potri<T: SolverScalar>(
     lda: i32,
     info: &mut DeviceBuffer<i32>,
 ) -> Result<()> {
+    check_matrix(a.len(), n, n, lda)?;
     use baracuda_cusolver_sys::{cuComplex, cuDoubleComplex};
     use core::mem;
 
@@ -3000,5 +3161,39 @@ pub mod refactor {
                 let _ = unsafe { cu(self.raw) };
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn is_bad<T: core::fmt::Debug>(r: Result<T>) -> bool {
+        matches!(
+            r,
+            Err(Error::Status {
+                status: cusolverStatus_t::INVALID_VALUE
+            })
+        )
+    }
+
+    #[test]
+    fn matrix_extent_is_lapack_shaped() {
+        assert_eq!(matrix_extent(4, 4, 4).unwrap(), 16);
+        assert_eq!(matrix_extent(3, 2, 5).unwrap(), 8); // 5 * (2 - 1) + 3
+        assert_eq!(matrix_extent(0, 7, 1).unwrap(), 0);
+        assert!(is_bad(matrix_extent(4, 4, 3))); // lda < rows
+        assert!(is_bad(matrix_extent(-1, 4, 4)));
+        assert!(is_bad(matrix_extent(0, 4, 0))); // lda must be >= 1 even when empty
+    }
+
+    #[test]
+    fn a_short_buffer_is_rejected_not_passed_on() {
+        // The case the old safe API accepted: 1000 x 1000 over 4 elements.
+        assert!(is_bad(check_matrix(4, 1000, 1000, 1000)));
+        assert!(check_matrix(16, 4, 4, 4).is_ok());
+        assert!(is_bad(check_matrix(15, 4, 4, 4)));
+        assert!(check_matrix(8, 3, 2, 5).is_ok());
+        assert!(is_bad(check_matrix(7, 3, 2, 5)));
     }
 }

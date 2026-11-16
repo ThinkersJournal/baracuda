@@ -16,6 +16,46 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.169 - 2026-11-16
+
+baracuda-cusolver, from the R6 review (docs/planning/api-freeze/r6/cusolver.md, findings 1, 2, 5, 8, 9). Behaviour that changes:
+
+- `getrf`, `getrs`, `geqrf`, `potrf`, `potrs`, `gesvd`, `syevd`, `orgqr`, `ormqr` and `potri` check each matrix argument against LAPACK's rule for it (`lda >= max(1, rows)`, `len >= lda * (cols - 1) + rows`; `gesvd`'s `U`/`V^T` by `jobu`/`jobvt`) and return `INVALID_VALUE` before any cuSOLVER call. Nothing else is checked (`ipiv`, `tau`, `w`, `s`, `info`, Jacobi, batched, `gels`, multi-GPU): that stays the caller's contract until the NVIDIA documentation can be read.
+- The 12 `#[doc(hidden)]` members of `SolverScalar` take a token that cannot be built outside the crate, so `<f32 as SolverScalar>::getrf(..)` no longer compiles outside it.
+- `Op` is `#[non_exhaustive]`.
+- README and crate docs no longer claim `Xgeqrf`, `Xpotrf`, `Xsyevd` or a "full Rf API"; the `Cargo.toml` description no longer says "dense LU factorization at v0.1"; `gesvd` documents `rwork` correctly.
+- Removed the unused dependencies `thiserror` and `baracuda-cuda-sys`.
+- `sgetrf` / `sgetrs` kept as convenience wrappers.
+
+## 0.1.0-alpha.168 - 2026-11-16
+
+Waive `version-consistency` for `baracuda-cuda-seam`, which carries the Unpopped MAJOR.MINOR (0.47.1) like `baracuda-cuda-emit` and `baracuda-cuda-parse`; #395 repinned it without the waiver, so the portfolio job reports a High finding for it.
+
+## 0.1.0-alpha.167 - 2026-11-16
+
+baracuda-optim, from the R6 review (docs/planning/api-freeze/r6/optim.md, findings 1, 2, 4, 5, 8, 9). Calls that used to launch, or return `Ok(())` with wrong results, now return an error:
+
+- `AdamStepPlan::step_with_f32_state`, `SgdStepPlan::step` and `SgdStepPlan::step_with_f32_momentum` compared tensor counts only; they now compare every tensor's element count (`Error::LengthMismatch`), as `AdamStepPlan::step` and `LambStepPlan::step` already did. `LambStepPlan::step` also compares `u_scratch_tensors`.
+- `AdamStepPlan::<f16/bf16>::step` and `SgdStepPlan::<f16/bf16>::step` take half-precision moments that the shim reads as `f32`; they now return `Error::InvalidArgument` (use `step_with_f32_state` / `step_with_f32_momentum`).
+- With `bias_correction`, a `step_index` below 1 (the shim divided by `1 - beta^0 = 0` and wrote NaN) returns `Error::InvalidArgument`.
+- `TensorList::new` / `new_mut` return `Error::InvalidArgument` for a tensor over `i32::MAX` elements instead of wrapping in a release build.
+- `DistributedAdamStepPlan` is documented as experimental and outside the API freeze; its ZeRO-1 claims (README, ROADMAP Phase 58, module docs) are corrected: the optimizer state is not sharded.
+- The crate README example now compiles (it is a doctest) and uses the real API.
+
+Verified: 4 new unit tests and the README doctest run without a GPU (the doctest fails on the old README); 4 new device tests in `tests/step_validation.rs` guard the step-function behaviour and were compiled, not run (GPU work is off until the Defender fix).
+
+## 0.1.0-alpha.166 - 2026-11-16
+
+R6 API-freeze review of baracuda-optim: 85 rows, 10 findings (count-only validation in 4 of 6 safe step functions, unenforced f32 moment type on half plans, unvalidated step index, closed config structs, distributed plan contradicts its docs).
+
+## 0.1.0-alpha.165 - 2026-11-16
+
+R6 API-freeze review of baracuda-cusolver: 95 rows, 10 findings (unchecked dimensions in safe fns, hidden-but-callable SolverScalar members, size_of dispatch, vendor types in the API, doc drift, 2 unused dependencies).
+
+## 0.1.0-alpha.164 - 2026-11-16
+
+Declare the ARC-003/004/006/007/012 inputs in `.coderipper.toml` so those five rules run instead of reporting "not run" (which fails the portfolio job). Policy components: baracuda-types, baracuda-cuda-vocab; infrastructure: the 29 `-sys` crates and baracuda-driver; composition root: the `baracuda` facade; API budgets 130 and 50; owned data: the PyTorch baseline JSON of baracuda-kernels-bench.
+
 ## 0.1.0-alpha.163 - 2026-11-15
 
 ci: `.coderipper.toml` declares `baracuda-kernels-bench` a `[[skip_member]]` while `nvcc` is absent, so the advisory portfolio job no longer fails on OPS-011 (the bench binary cannot link on a runner without nvcc). No code change.
