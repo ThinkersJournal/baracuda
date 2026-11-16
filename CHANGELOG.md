@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.168 - 2026-11-16
+
+Waive `version-consistency` for `baracuda-cuda-seam`, which carries the Unpopped MAJOR.MINOR (0.47.1) like `baracuda-cuda-emit` and `baracuda-cuda-parse`; #395 repinned it without the waiver, so the portfolio job reports a High finding for it.
+
 ## 0.1.0-alpha.167 - 2026-11-16
 
 baracuda-optim, from the R6 review (docs/planning/api-freeze/r6/optim.md, findings 1, 2, 4, 5, 8, 9). Calls that used to launch, or return `Ok(())` with wrong results, now return an error:
