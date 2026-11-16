@@ -17,6 +17,7 @@ baracuda-nvml-sys	204	0	0	0	204	0	0	0	0	0
 baracuda-cvcuda	202	202	0	0	0	0	0	0	0	0
 baracuda-cupti-sys	193	0	0	0	193	0	0	0	0	0
 baracuda-cusparse-sys	191	0	0	0	191	0	0	0	0	0
+baracuda-tensorrt-builder	180	180	0	0	0	0	0	0	0	0
 baracuda-cublas	176	139	0	0	0	28	9	0	0	0
 baracuda-cutensor-sys	176	0	0	0	176	0	0	0	0	0
 baracuda-nvjpeg-sys	140	0	0	0	140	0	0	0	0	0
@@ -27,7 +28,6 @@ baracuda-kernels-bench	115	0	115	0	0	0	0	0	0	0
 baracuda-cufft-sys	113	0	0	0	113	0	0	0	0	0
 baracuda-cutlass	110	110	0	0	0	0	0	0	0	0
 baracuda-cutensor	103	103	0	0	0	0	0	0	0	0
-baracuda-tensorrt-builder	99	99	0	0	0	0	0	0	0	0
 baracuda-cusolver	95	82	0	0	0	12	1	0	0	0
 baracuda-nccl-sys	94	0	0	0	94	0	0	0	0	0
 baracuda-curand-sys	89	0	0	0	89	0	0	0	0	0
@@ -74,4 +74,4 @@ baracuda-cuda-parse	2	2	0	0	0	0	0	0	0	0
 baracuda-cuda-seam	2	2	0	0	0	0	0	0	0	0
 baracuda-flashinfer-sys	1	0	0	0	1	0	0	0	0	0
 baracuda-types-derive	1	1	0	0	0	0	0	0	0	0
-TOTAL	22528	10183	173	5725	6368	56	21	0	2	0
+TOTAL	22609	10264	173	5725	6368	56	21	0	2	0
