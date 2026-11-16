@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.165 - 2026-11-16
+
+R6 API-freeze review of baracuda-cusolver: 95 rows, 10 findings (unchecked dimensions in safe fns, hidden-but-callable SolverScalar members, size_of dispatch, vendor types in the API, doc drift, 2 unused dependencies).
+
 ## 0.1.0-alpha.164 - 2026-11-16
 
 Declare the ARC-003/004/006/007/012 inputs in `.coderipper.toml` so those five rules run instead of reporting "not run" (which fails the portfolio job). Policy components: baracuda-types, baracuda-cuda-vocab; infrastructure: the 29 `-sys` crates and baracuda-driver; composition root: the `baracuda` facade; API budgets 130 and 50; owned data: the PyTorch baseline JSON of baracuda-kernels-bench.
