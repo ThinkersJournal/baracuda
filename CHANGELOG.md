@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.166 - 2026-11-16
+
+R6 API-freeze review of baracuda-optim: 85 rows, 10 findings (count-only validation in 4 of 6 safe step functions, unenforced f32 moment type on half plans, unvalidated step index, closed config structs, distributed plan contradicts its docs).
+
 ## 0.1.0-alpha.165 - 2026-11-16
 
 R6 API-freeze review of baracuda-cusolver: 95 rows, 10 findings (unchecked dimensions in safe fns, hidden-but-callable SolverScalar members, size_of dispatch, vendor types in the API, doc drift, 2 unused dependencies).
