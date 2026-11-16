@@ -13,7 +13,9 @@
 #![cfg(feature = "device-tests")]
 
 use baracuda_driver::{Context, Device, DeviceBuffer, Stream};
-use baracuda_optim::{AdamConfig, AdamStepPlan, Error, SgdConfig, SgdStepPlan, TensorList};
+use baracuda_optim::{
+    AdamConfig, AdamStepPlan, Error, SgdConfig, SgdStepPlan, TensorList, TensorListMut,
+};
 use half::f16;
 
 fn setup() -> (Context, Stream) {
@@ -30,17 +32,17 @@ fn zeros<T: baracuda_types::DeviceRepr>(ctx: &Context, n: usize) -> DeviceBuffer
 #[test]
 fn adam_f32_state_rejects_a_shorter_moment_tensor() {
     let (ctx, stream) = setup();
-    let (p0, p1) = (zeros::<f32>(&ctx, 8), zeros::<f32>(&ctx, 8));
+    let (mut p0, mut p1) = (zeros::<f32>(&ctx, 8), zeros::<f32>(&ctx, 8));
     let (g0, g1) = (zeros::<f32>(&ctx, 8), zeros::<f32>(&ctx, 8));
-    let (m0, m1) = (zeros::<f32>(&ctx, 8), zeros::<f32>(&ctx, 8));
+    let (mut m0, mut m1) = (zeros::<f32>(&ctx, 8), zeros::<f32>(&ctx, 8));
     // Same count as the others, one tensor shorter: the old count-only check accepted this.
-    let (v0, v1) = (zeros::<f32>(&ctx, 8), zeros::<f32>(&ctx, 4));
+    let (mut v0, mut v1) = (zeros::<f32>(&ctx, 8), zeros::<f32>(&ctx, 4));
     let plan = AdamStepPlan::<f32>::new(AdamConfig::default());
     let r = plan.step_with_f32_state(
-        &TensorList::new(&[&p0, &p1]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut p0, &mut p1]).unwrap(),
         &TensorList::new(&[&g0, &g1]).unwrap(),
-        &TensorList::new(&[&m0, &m1]).unwrap(),
-        &TensorList::new(&[&v0, &v1]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut m0, &mut m1]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut v0, &mut v1]).unwrap(),
         1,
         &stream,
     );
@@ -50,14 +52,14 @@ fn adam_f32_state_rejects_a_shorter_moment_tensor() {
 #[test]
 fn sgd_rejects_a_shorter_momentum_tensor() {
     let (ctx, stream) = setup();
-    let (p0, p1) = (zeros::<f32>(&ctx, 8), zeros::<f32>(&ctx, 8));
+    let (mut p0, mut p1) = (zeros::<f32>(&ctx, 8), zeros::<f32>(&ctx, 8));
     let (g0, g1) = (zeros::<f32>(&ctx, 8), zeros::<f32>(&ctx, 8));
-    let (b0, b1) = (zeros::<f32>(&ctx, 8), zeros::<f32>(&ctx, 4));
+    let (mut b0, mut b1) = (zeros::<f32>(&ctx, 8), zeros::<f32>(&ctx, 4));
     let plan = SgdStepPlan::<f32>::new(SgdConfig::default());
     let r = plan.step(
-        &TensorList::new(&[&p0, &p1]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut p0, &mut p1]).unwrap(),
         &TensorList::new(&[&g0, &g1]).unwrap(),
-        &TensorList::new(&[&b0, &b1]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut b0, &mut b1]).unwrap(),
         true,
         &stream,
     );
@@ -67,14 +69,14 @@ fn sgd_rejects_a_shorter_momentum_tensor() {
 #[test]
 fn half_precision_step_rejects_half_moments() {
     let (ctx, stream) = setup();
-    let (p, g) = (zeros::<f16>(&ctx, 8), zeros::<f16>(&ctx, 8));
-    let (m, v) = (zeros::<f16>(&ctx, 8), zeros::<f16>(&ctx, 8));
+    let (mut p, g) = (zeros::<f16>(&ctx, 8), zeros::<f16>(&ctx, 8));
+    let (mut m, mut v) = (zeros::<f16>(&ctx, 8), zeros::<f16>(&ctx, 8));
     let plan = AdamStepPlan::<f16>::new(AdamConfig::default());
     let r = plan.step(
-        &TensorList::new(&[&p]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut p]).unwrap(),
         &TensorList::new(&[&g]).unwrap(),
-        &TensorList::new(&[&m]).unwrap(),
-        &TensorList::new(&[&v]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut m]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut v]).unwrap(),
         1,
         &stream,
     );
@@ -84,7 +86,7 @@ fn half_precision_step_rejects_half_moments() {
 #[test]
 fn adam_step_zero_with_bias_correction_is_an_error() {
     let (ctx, stream) = setup();
-    let (p, g, m, v) = (
+    let (mut p, g, mut m, mut v) = (
         zeros::<f32>(&ctx, 8),
         zeros::<f32>(&ctx, 8),
         zeros::<f32>(&ctx, 8),
@@ -92,10 +94,10 @@ fn adam_step_zero_with_bias_correction_is_an_error() {
     );
     let plan = AdamStepPlan::<f32>::new(AdamConfig::default()); // bias_correction: true
     let r = plan.step(
-        &TensorList::new(&[&p]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut p]).unwrap(),
         &TensorList::new(&[&g]).unwrap(),
-        &TensorList::new(&[&m]).unwrap(),
-        &TensorList::new(&[&v]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut m]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut v]).unwrap(),
         0,
         &stream,
     );
