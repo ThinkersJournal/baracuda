@@ -16,6 +16,32 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.171 - 2026-11-16
+
+baracuda-optim, from the R6 review (findings 3, 6, 7) as ruled by the PM:
+
+- New `TensorListMut`, built with `TensorListMut::from_buffers` from `&mut DeviceBuffer`. Every step takes `&mut TensorListMut` for the tensors it writes (parameters, moments, momentum, LAMB scratch) and `&TensorList` for gradients. `TensorList::new_mut` is removed. A read-only list where a written one is needed, and the same buffer in two lists of one call, are now compile errors (it was possible to write through a shared borrow). `DistributedAdamStepPlan::step` follows.
+- `AdamConfig`, `SgdConfig` and `LambConfig` are `#[non_exhaustive]`: build from `Default` and assign fields (a struct expression, even with `..Default::default()`, no longer compiles outside the crate).
+- `AdamParamDtype::adam_ffi` and `SgdParamDtype::sgd_ffi` take a token only this crate can build, and the field of `AdamFfi` / `SgdFfi` is crate-private, so the shim entry points are no longer reachable from outside.
+- ROADMAP Phase 58 gets a tracked list of the distributed plan's open items (sharding, all-gather send pointer, aliasing, multi-rank run).
+
+Verified: 3 new `compile_fail` doctests (each compiles on the previous API, so each guards the change by reasoning; the old tree was not re-run for these) and the README doctest run without a GPU; the 7 device-test files were migrated and type-checked (`cargo check --tests --features device-tests,sm80,distributed_optim`), not run.
+
+## 0.1.0-alpha.170 - 2026-11-16
+
+Move the portfolio workflow pin to coderipper c72a6e03 (0.47.5, was 0.43.49) and migrate the renamed rule id in `.coderipper.toml` (`version-consistency` -> `WSP-010`, 4 waivers). PIN-MOVE-0.47.5.
+
+## 0.1.0-alpha.169 - 2026-11-16
+
+baracuda-cusolver, from the R6 review (docs/planning/api-freeze/r6/cusolver.md, findings 1, 2, 5, 8, 9). Behaviour that changes:
+
+- `getrf`, `getrs`, `geqrf`, `potrf`, `potrs`, `gesvd`, `syevd`, `orgqr`, `ormqr` and `potri` check each matrix argument against LAPACK's rule for it (`lda >= max(1, rows)`, `len >= lda * (cols - 1) + rows`; `gesvd`'s `U`/`V^T` by `jobu`/`jobvt`) and return `INVALID_VALUE` before any cuSOLVER call. Nothing else is checked (`ipiv`, `tau`, `w`, `s`, `info`, Jacobi, batched, `gels`, multi-GPU): that stays the caller's contract until the NVIDIA documentation can be read.
+- The 12 `#[doc(hidden)]` members of `SolverScalar` take a token that cannot be built outside the crate, so `<f32 as SolverScalar>::getrf(..)` no longer compiles outside it.
+- `Op` is `#[non_exhaustive]`.
+- README and crate docs no longer claim `Xgeqrf`, `Xpotrf`, `Xsyevd` or a "full Rf API"; the `Cargo.toml` description no longer says "dense LU factorization at v0.1"; `gesvd` documents `rwork` correctly.
+- Removed the unused dependencies `thiserror` and `baracuda-cuda-sys`.
+- `sgetrf` / `sgetrs` kept as convenience wrappers.
+
 ## 0.1.0-alpha.168 - 2026-11-16
 
 Waive `version-consistency` for `baracuda-cuda-seam`, which carries the Unpopped MAJOR.MINOR (0.47.1) like `baracuda-cuda-emit` and `baracuda-cuda-parse`; #395 repinned it without the waiver, so the portfolio job reports a High finding for it.

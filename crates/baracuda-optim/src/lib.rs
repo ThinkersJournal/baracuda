@@ -273,8 +273,36 @@ unsafe extern "C" {
 /// is the host-side staging buffer the Rust plans use to hand pointer
 /// arrays to the FFI.
 ///
-/// `TensorList::new` borrows the underlying buffers; it does not take
-/// ownership. The plan's `step` call must outlive the borrow.
+/// `TensorList::new` borrows the underlying buffers shared (`&DeviceBuffer`);
+/// it does not take ownership. A `TensorList` is **read-only**: it is what a
+/// step takes for tensors it only reads (the gradients). Tensors a step writes
+/// (parameters, moments, momentum, LAMB scratch) go in a [`TensorListMut`],
+/// which borrows them `&mut`, so the compiler rejects a read-only list where a
+/// written one is needed, and the same buffer in two lists of one call:
+///
+/// ```compile_fail
+/// use baracuda_driver::{DeviceBuffer, Stream};
+/// use baracuda_optim::{AdamConfig, AdamStepPlan, TensorList};
+/// fn demo(
+///     plan: &AdamStepPlan<f32>,
+///     p: &DeviceBuffer<f32>,
+///     g: &DeviceBuffer<f32>,
+///     m: &DeviceBuffer<f32>,
+///     v: &DeviceBuffer<f32>,
+///     stream: &Stream,
+/// ) {
+///     // `params` is written by the step: a shared list is a type error.
+///     plan.step(
+///         &TensorList::new(&[p]).unwrap(),
+///         &TensorList::new(&[g]).unwrap(),
+///         &TensorList::new(&[m]).unwrap(),
+///         &TensorList::new(&[v]).unwrap(),
+///         1,
+///         stream,
+///     )
+///     .unwrap();
+/// }
+/// ```
 #[derive(Debug)]
 pub struct TensorList<'a, T: DeviceRepr> {
     sizes: Vec<i32>,
@@ -292,27 +320,6 @@ impl<'a, T: DeviceRepr> TensorList<'a, T> {
     ///
     /// Returns [`Error::EmptyTensorList`] if the input slice is empty.
     pub fn new(buffers: &[&'a DeviceBuffer<T>]) -> Result<Self> {
-        if buffers.is_empty() {
-            return Err(Error::EmptyTensorList);
-        }
-        let sizes: Vec<i32> = buffers
-            .iter()
-            .map(|b| element_count_i32(b.len()))
-            .collect::<Result<_>>()?;
-        let ptrs: Vec<*mut c_void> = buffers
-            .iter()
-            .map(|b| b.as_raw().0 as *mut c_void)
-            .collect();
-        Ok(Self {
-            sizes,
-            ptrs,
-            _marker: PhantomData,
-        })
-    }
-
-    /// Build a tensor list from a slice of mutable `DeviceBuffer<T>` references.
-    /// Required for buffers the optimizer step writes (params, moments).
-    pub fn new_mut(buffers: &mut [&'a mut DeviceBuffer<T>]) -> Result<Self> {
         if buffers.is_empty() {
             return Err(Error::EmptyTensorList);
         }
@@ -349,10 +356,9 @@ impl<'a, T: DeviceRepr> TensorList<'a, T> {
         self.sizes.iter().map(|&n| n as usize).sum()
     }
 
-    /// Internal: pointer to the size array (i32, length == self.len()).
     #[inline]
-    fn sizes_ptr(&self) -> *const i32 {
-        self.sizes.as_ptr()
+    fn sizes(&self) -> &[i32] {
+        &self.sizes
     }
 
     /// Internal: pointer to the pointer array (`*mut c_void`, length == self.len()).
@@ -364,6 +370,82 @@ impl<'a, T: DeviceRepr> TensorList<'a, T> {
     /// Snapshot of the per-tensor device pointers (as `u64`), suitable
     /// for staging into a `DeviceBuffer<u64>` for kernels that read
     /// `void**`.
+    pub fn pointer_snapshot_u64(&self) -> Vec<u64> {
+        self.ptrs.iter().map(|&p| p as u64).collect()
+    }
+}
+
+/// A list of device tensors a step **writes**, borrowed `&mut` so each buffer
+/// appears once and cannot also be read through another list in the same call.
+/// Build it with [`TensorListMut::from_buffers`].
+#[derive(Debug)]
+pub struct TensorListMut<'a, T: DeviceRepr> {
+    sizes: Vec<i32>,
+    ptrs: Vec<*mut c_void>,
+    _marker: PhantomData<&'a mut T>,
+}
+
+// SAFETY: as for `TensorList`: the pointers are the borrowed buffers' own.
+unsafe impl<T: DeviceRepr + Send> Send for TensorListMut<'_, T> {}
+
+impl<'a, T: DeviceRepr> TensorListMut<'a, T> {
+    /// Build a list from mutable `DeviceBuffer<T>` references.
+    ///
+    /// Returns [`Error::EmptyTensorList`] if there are none and
+    /// [`Error::InvalidArgument`] if a buffer has more than `i32::MAX` elements.
+    pub fn from_buffers(
+        buffers: impl IntoIterator<Item = &'a mut DeviceBuffer<T>>,
+    ) -> Result<Self> {
+        let mut sizes = Vec::new();
+        let mut ptrs = Vec::new();
+        for b in buffers {
+            sizes.push(element_count_i32(b.len())?);
+            ptrs.push(b.as_raw().0 as *mut c_void);
+        }
+        if sizes.is_empty() {
+            return Err(Error::EmptyTensorList);
+        }
+        Ok(Self {
+            sizes,
+            ptrs,
+            _marker: PhantomData,
+        })
+    }
+
+    /// Number of tensors in the list.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.sizes.len()
+    }
+
+    /// True if there are zero tensors (the constructor rejects this).
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.sizes.is_empty()
+    }
+
+    /// Total element count summed across all tensors.
+    pub fn total_elements(&self) -> usize {
+        self.sizes.iter().map(|&n| n as usize).sum()
+    }
+
+    #[inline]
+    fn sizes(&self) -> &[i32] {
+        &self.sizes
+    }
+
+    #[inline]
+    fn sizes_ptr(&self) -> *const i32 {
+        self.sizes.as_ptr()
+    }
+
+    #[inline]
+    fn ptrs_ptr(&self) -> *const *mut c_void {
+        self.ptrs.as_ptr()
+    }
+
+    /// Snapshot of the per-tensor device pointers (as `u64`), for staging into
+    /// a `DeviceBuffer<u64>` (see [`TensorList::pointer_snapshot_u64`]).
     pub fn pointer_snapshot_u64(&self) -> Vec<u64> {
         self.ptrs.iter().map(|&p| p as u64).collect()
     }
@@ -431,7 +513,17 @@ impl AdamMode {
 }
 
 /// Adam hyperparameters.
+///
+/// `#[non_exhaustive]`: build one from `AdamConfig::default()` and assign the
+/// fields you change (a struct expression, even with `..Default::default()`,
+/// is rejected outside this crate):
+///
+/// ```compile_fail
+/// use baracuda_optim::AdamConfig;
+/// let _ = AdamConfig { lr: 1e-4, ..AdamConfig::default() };
+/// ```
 #[derive(Copy, Clone, Debug)]
+#[non_exhaustive]
 pub struct AdamConfig {
     /// Learning rate.
     pub lr: f32,
@@ -468,6 +560,7 @@ impl Default for AdamConfig {
 
 /// SGD hyperparameters.
 #[derive(Copy, Clone, Debug)]
+#[non_exhaustive]
 pub struct SgdConfig {
     /// Learning rate.
     pub lr: f32,
@@ -505,6 +598,7 @@ impl Default for SgdConfig {
 
 /// LAMB hyperparameters.
 #[derive(Copy, Clone, Debug)]
+#[non_exhaustive]
 pub struct LambConfig {
     /// Learning rate.
     pub lr: f32,
@@ -555,22 +649,40 @@ impl Default for LambConfig {
 
 mod sealed {
     pub trait Sealed {}
+
+    /// Proof of being inside this crate: it cannot be named or built outside
+    /// it, so the `*_ffi` members that take one cannot be called from outside.
+    #[derive(Debug)]
+    pub struct Token(());
+
+    impl Token {
+        pub(crate) fn new() -> Self {
+            Token(())
+        }
+    }
     impl Sealed for f32 {}
     impl Sealed for half::f16 {}
     impl Sealed for half::bf16 {}
 }
 
 /// Sealed trait identifying which Adam FFI entry point services a given
-/// parameter dtype. Implemented for `f32`, `half::f16`, `half::bf16`.
+/// parameter dtype. Implemented for `f32`, `half::f16`, `half::bf16`. Its
+/// dispatch member is crate-internal (it takes a token that cannot be built
+/// outside this crate):
+///
+/// ```compile_fail
+/// use baracuda_optim::AdamParamDtype;
+/// let _ffi = <f32 as AdamParamDtype>::adam_ffi();
+/// ```
 pub trait AdamParamDtype: sealed::Sealed + DeviceRepr {
     #[doc(hidden)]
-    fn adam_ffi() -> AdamFfi;
+    fn adam_ffi(_t: sealed::Token) -> AdamFfi;
 }
 
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct AdamFfi(
-    pub  unsafe extern "C" fn(
+    pub(crate)  unsafe extern "C" fn(
         i32,
         *const i32,
         *const *mut c_void,
@@ -590,19 +702,19 @@ pub struct AdamFfi(
 );
 
 impl AdamParamDtype for f32 {
-    fn adam_ffi() -> AdamFfi {
+    fn adam_ffi(_t: sealed::Token) -> AdamFfi {
         AdamFfi(baracuda_optim_adam_f32_run)
     }
 }
 
 impl AdamParamDtype for half::f16 {
-    fn adam_ffi() -> AdamFfi {
+    fn adam_ffi(_t: sealed::Token) -> AdamFfi {
         AdamFfi(baracuda_optim_adam_f16_run)
     }
 }
 
 impl AdamParamDtype for half::bf16 {
-    fn adam_ffi() -> AdamFfi {
+    fn adam_ffi(_t: sealed::Token) -> AdamFfi {
         AdamFfi(baracuda_optim_adam_bf16_run)
     }
 }
@@ -641,23 +753,28 @@ impl<T: AdamParamDtype> AdamStepPlan<T> {
     ///   (`1 - beta^step`).
     pub fn step(
         &self,
-        params: &TensorList<'_, T>,
+        params: &mut TensorListMut<'_, T>,
         grads: &TensorList<'_, T>,
-        exp_avg: &TensorList<'_, T>,
-        exp_avg_sq: &TensorList<'_, T>,
+        exp_avg: &mut TensorListMut<'_, T>,
+        exp_avg_sq: &mut TensorListMut<'_, T>,
         step_index: i32,
         stream: &Stream,
     ) -> Result<()> {
         require_f32_state::<T>()?;
         check_step_index(self.cfg.bias_correction, step_index)?;
-        validate_quadruple(params, grads, exp_avg, exp_avg_sq)?;
+        check_sizes(&[
+            params.sizes(),
+            grads.sizes(),
+            exp_avg.sizes(),
+            exp_avg_sq.sizes(),
+        ])?;
         let n_tensors = params.len() as i32;
         // SAFETY: pointer arrays are valid for the launch duration
         // (the TensorList borrows outlive this synchronous call); stream
         // is borrowed from a live Stream; the FFI does host-side
         // validation on n_tensors > 0.
         let status = unsafe {
-            let f = T::adam_ffi().0;
+            let f = T::adam_ffi(sealed::Token::new()).0;
             f(
                 n_tensors,
                 params.sizes_ptr(),
@@ -688,18 +805,23 @@ impl<T: AdamParamDtype> AdamStepPlan<T> {
     /// / `AdamStepPlan::<bf16>`).
     pub fn step_with_f32_state(
         &self,
-        params: &TensorList<'_, T>,
+        params: &mut TensorListMut<'_, T>,
         grads: &TensorList<'_, T>,
-        exp_avg: &TensorList<'_, f32>,
-        exp_avg_sq: &TensorList<'_, f32>,
+        exp_avg: &mut TensorListMut<'_, f32>,
+        exp_avg_sq: &mut TensorListMut<'_, f32>,
         step_index: i32,
         stream: &Stream,
     ) -> Result<()> {
         check_step_index(self.cfg.bias_correction, step_index)?;
-        validate_quadruple(params, grads, exp_avg, exp_avg_sq)?;
+        check_sizes(&[
+            params.sizes(),
+            grads.sizes(),
+            exp_avg.sizes(),
+            exp_avg_sq.sizes(),
+        ])?;
         let n_tensors = params.len() as i32;
         let status = unsafe {
-            let f = T::adam_ffi().0;
+            let f = T::adam_ffi(sealed::Token::new()).0;
             f(
                 n_tensors,
                 params.sizes_ptr(),
@@ -734,13 +856,13 @@ impl<T: AdamParamDtype> AdamStepPlan<T> {
 /// parameter dtype.
 pub trait SgdParamDtype: sealed::Sealed + DeviceRepr {
     #[doc(hidden)]
-    fn sgd_ffi() -> SgdFfi;
+    fn sgd_ffi(_t: sealed::Token) -> SgdFfi;
 }
 
 #[doc(hidden)]
 #[derive(Debug)]
 pub struct SgdFfi(
-    pub  unsafe extern "C" fn(
+    pub(crate)  unsafe extern "C" fn(
         i32,
         *const i32,
         *const *mut c_void,
@@ -759,19 +881,19 @@ pub struct SgdFfi(
 );
 
 impl SgdParamDtype for f32 {
-    fn sgd_ffi() -> SgdFfi {
+    fn sgd_ffi(_t: sealed::Token) -> SgdFfi {
         SgdFfi(baracuda_optim_sgd_f32_run)
     }
 }
 
 impl SgdParamDtype for half::f16 {
-    fn sgd_ffi() -> SgdFfi {
+    fn sgd_ffi(_t: sealed::Token) -> SgdFfi {
         SgdFfi(baracuda_optim_sgd_f16_run)
     }
 }
 
 impl SgdParamDtype for half::bf16 {
-    fn sgd_ffi() -> SgdFfi {
+    fn sgd_ffi(_t: sealed::Token) -> SgdFfi {
         SgdFfi(baracuda_optim_sgd_bf16_run)
     }
 }
@@ -805,17 +927,17 @@ impl<T: SgdParamDtype> SgdStepPlan<T> {
     /// velocity.
     pub fn step(
         &self,
-        params: &TensorList<'_, T>,
+        params: &mut TensorListMut<'_, T>,
         grads: &TensorList<'_, T>,
-        momentum: &TensorList<'_, T>,
+        momentum: &mut TensorListMut<'_, T>,
         first_step: bool,
         stream: &Stream,
     ) -> Result<()> {
         require_f32_state::<T>()?;
-        validate_triple(params, grads, momentum)?;
+        check_sizes(&[params.sizes(), grads.sizes(), momentum.sizes()])?;
         let n_tensors = params.len() as i32;
         let status = unsafe {
-            let f = T::sgd_ffi().0;
+            let f = T::sgd_ffi(sealed::Token::new()).0;
             f(
                 n_tensors,
                 params.sizes_ptr(),
@@ -848,16 +970,16 @@ impl<T: SgdParamDtype> SgdStepPlan<T> {
     /// grads with f32 momentum buffer).
     pub fn step_with_f32_momentum(
         &self,
-        params: &TensorList<'_, T>,
+        params: &mut TensorListMut<'_, T>,
         grads: &TensorList<'_, T>,
-        momentum: &TensorList<'_, f32>,
+        momentum: &mut TensorListMut<'_, f32>,
         first_step: bool,
         stream: &Stream,
     ) -> Result<()> {
-        validate_triple(params, grads, momentum)?;
+        check_sizes(&[params.sizes(), grads.sizes(), momentum.sizes()])?;
         let n_tensors = params.len() as i32;
         let status = unsafe {
-            let f = T::sgd_ffi().0;
+            let f = T::sgd_ffi(sealed::Token::new()).0;
             f(
                 n_tensors,
                 params.sizes_ptr(),
@@ -956,11 +1078,11 @@ impl LambStepPlan {
     /// - `step_index`: 1-based step counter.
     pub fn step(
         &self,
-        params: &TensorList<'_, f32>,
+        params: &mut TensorListMut<'_, f32>,
         grads: &TensorList<'_, f32>,
-        exp_avg: &TensorList<'_, f32>,
-        exp_avg_sq: &TensorList<'_, f32>,
-        u_scratch_tensors: &TensorList<'_, f32>,
+        exp_avg: &mut TensorListMut<'_, f32>,
+        exp_avg_sq: &mut TensorListMut<'_, f32>,
+        u_scratch_tensors: &mut TensorListMut<'_, f32>,
         u_scratch_ptr_dev: &DeviceBuffer<u64>,
         w_norm_dev: &mut DeviceBuffer<f32>,
         u_norm_dev: &mut DeviceBuffer<f32>,
@@ -969,8 +1091,13 @@ impl LambStepPlan {
         stream: &Stream,
     ) -> Result<()> {
         check_step_index(self.cfg.bias_correction, step_index)?;
-        validate_quadruple(params, grads, exp_avg, exp_avg_sq)?;
-        validate_pair(params, u_scratch_tensors)?;
+        check_sizes(&[
+            params.sizes(),
+            grads.sizes(),
+            exp_avg.sizes(),
+            exp_avg_sq.sizes(),
+        ])?;
+        check_sizes(&[params.sizes(), u_scratch_tensors.sizes()])?;
         if u_scratch_ptr_dev.len() < params.len() {
             return Err(Error::InvalidArgument(
                 "u_scratch_ptr_dev shorter than params count",
@@ -1054,30 +1181,6 @@ fn check_sizes(lists: &[&[i32]]) -> Result<()> {
         ));
     }
     Ok(())
-}
-
-fn validate_pair<A: DeviceRepr, B: DeviceRepr>(
-    a: &TensorList<'_, A>,
-    b: &TensorList<'_, B>,
-) -> Result<()> {
-    check_sizes(&[&a.sizes, &b.sizes])
-}
-
-fn validate_triple<A: DeviceRepr, B: DeviceRepr, C: DeviceRepr>(
-    a: &TensorList<'_, A>,
-    b: &TensorList<'_, B>,
-    c: &TensorList<'_, C>,
-) -> Result<()> {
-    check_sizes(&[&a.sizes, &b.sizes, &c.sizes])
-}
-
-fn validate_quadruple<A: DeviceRepr, B: DeviceRepr, C: DeviceRepr, D: DeviceRepr>(
-    a: &TensorList<'_, A>,
-    b: &TensorList<'_, B>,
-    c: &TensorList<'_, C>,
-    d: &TensorList<'_, D>,
-) -> Result<()> {
-    check_sizes(&[&a.sizes, &b.sizes, &c.sizes, &d.sizes])
 }
 
 /// Per-tensor element counts travel to the shim as `i32`; a larger tensor

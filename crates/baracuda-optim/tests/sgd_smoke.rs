@@ -11,7 +11,7 @@
 #![cfg(feature = "device-tests")]
 
 use baracuda_driver::{Context, Device, DeviceBuffer};
-use baracuda_optim::{SgdConfig, SgdStepPlan, TensorList};
+use baracuda_optim::{SgdConfig, SgdStepPlan, TensorList, TensorListMut};
 
 fn sgd_step_cpu(
     params: &mut [f32],
@@ -69,28 +69,30 @@ fn sgd_f32_momentum_nesterov_first_step() {
     let buf_init1: Vec<f32> = vec![0.0; n1];
     let buf_init2: Vec<f32> = vec![0.0; n2];
 
-    let p1 = DeviceBuffer::from_slice(&ctx, &p1_host).unwrap();
-    let p2 = DeviceBuffer::from_slice(&ctx, &p2_host).unwrap();
+    let mut p1 = DeviceBuffer::from_slice(&ctx, &p1_host).unwrap();
+    let mut p2 = DeviceBuffer::from_slice(&ctx, &p2_host).unwrap();
     let g1 = DeviceBuffer::from_slice(&ctx, &g1_host).unwrap();
     let g2 = DeviceBuffer::from_slice(&ctx, &g2_host).unwrap();
-    let m1 = DeviceBuffer::from_slice(&ctx, &buf_init1).unwrap();
-    let m2 = DeviceBuffer::from_slice(&ctx, &buf_init2).unwrap();
+    let mut m1 = DeviceBuffer::from_slice(&ctx, &buf_init1).unwrap();
+    let mut m2 = DeviceBuffer::from_slice(&ctx, &buf_init2).unwrap();
 
-    let cfg = SgdConfig {
-        lr: 1e-2,
-        momentum: 0.9,
-        dampening: 0.0,
-        weight_decay: 1e-4,
-        nesterov: true,
-        weight_decay_after_momentum: false,
-        grad_scale: 1.0,
+    let cfg = {
+        let mut c = SgdConfig::default();
+        c.lr = 1e-2;
+        c.momentum = 0.9;
+        c.dampening = 0.0;
+        c.weight_decay = 1e-4;
+        c.nesterov = true;
+        c.weight_decay_after_momentum = false;
+        c.grad_scale = 1.0;
+        c
     };
 
     let plan = SgdStepPlan::<f32>::new(cfg);
     plan.step(
-        &TensorList::new(&[&p1, &p2]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut p1, &mut p2]).unwrap(),
         &TensorList::new(&[&g1, &g2]).unwrap(),
-        &TensorList::new(&[&m1, &m2]).unwrap(),
+        &mut TensorListMut::from_buffers([&mut m1, &mut m2]).unwrap(),
         /*first_step=*/ true,
         &stream,
     )
@@ -153,27 +155,29 @@ fn sgd_f32_vanilla_no_momentum() {
     let p_host: Vec<f32> = (0..n).map(|i| (i as f32) * 0.01).collect();
     let g_host: Vec<f32> = (0..n).map(|i| ((i % 19) as f32) - 9.0).collect();
 
-    let p = DeviceBuffer::from_slice(&ctx, &p_host).unwrap();
+    let mut p = DeviceBuffer::from_slice(&ctx, &p_host).unwrap();
     let g = DeviceBuffer::from_slice(&ctx, &g_host).unwrap();
     // momentum buffer required by the FFI even when momentum=0 (the
     // pointer must be non-null; we pass a small zero buffer).
     let m_init = vec![0.0f32; n];
-    let m = DeviceBuffer::from_slice(&ctx, &m_init).unwrap();
+    let mut m = DeviceBuffer::from_slice(&ctx, &m_init).unwrap();
 
-    let cfg = SgdConfig {
-        lr: 1e-3,
-        momentum: 0.0,
-        dampening: 0.0,
-        weight_decay: 0.0,
-        nesterov: false,
-        weight_decay_after_momentum: false,
-        grad_scale: 1.0,
+    let cfg = {
+        let mut c = SgdConfig::default();
+        c.lr = 1e-3;
+        c.momentum = 0.0;
+        c.dampening = 0.0;
+        c.weight_decay = 0.0;
+        c.nesterov = false;
+        c.weight_decay_after_momentum = false;
+        c.grad_scale = 1.0;
+        c
     };
     SgdStepPlan::<f32>::new(cfg)
         .step(
-            &TensorList::new(&[&p]).unwrap(),
+            &mut TensorListMut::from_buffers([&mut p]).unwrap(),
             &TensorList::new(&[&g]).unwrap(),
-            &TensorList::new(&[&m]).unwrap(),
+            &mut TensorListMut::from_buffers([&mut m]).unwrap(),
             false,
             &stream,
         )

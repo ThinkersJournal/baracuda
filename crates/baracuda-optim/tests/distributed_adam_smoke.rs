@@ -28,7 +28,8 @@
 use baracuda_driver::{Context, Device, DeviceBuffer, require_optional};
 use baracuda_nccl::Communicator;
 use baracuda_optim::{
-    AdamConfig, AdamMode, AdamStepPlan, DistributedAdamStepPlan, TensorList, shard_range,
+    AdamConfig, AdamMode, AdamStepPlan, DistributedAdamStepPlan, TensorList, TensorListMut,
+    shard_range,
 };
 
 /// Try to bring up a single-rank NCCL communicator on device 0.
@@ -65,14 +66,16 @@ fn distributed_adam_single_rank_matches_plain_adam() {
     );
     assert_eq!(comm.rank(), 0);
 
-    let cfg = AdamConfig {
-        lr: 1e-2,
-        beta1: 0.9,
-        beta2: 0.999,
-        epsilon: 1e-8,
-        weight_decay: 0.01,
-        bias_correction: true,
-        mode: AdamMode::Classic,
+    let cfg = {
+        let mut c = AdamConfig::default();
+        c.lr = 1e-2;
+        c.beta1 = 0.9;
+        c.beta2 = 0.999;
+        c.epsilon = 1e-8;
+        c.weight_decay = 0.01;
+        c.bias_correction = true;
+        c.mode = AdamMode::Classic;
+        c
     };
 
     // Build two parallel parameter sets — one for the plain Adam
@@ -85,25 +88,25 @@ fn distributed_adam_single_rank_matches_plain_adam() {
     let v_init: Vec<f32> = vec![0.0; n];
 
     // Plain Adam side.
-    let p_plain = DeviceBuffer::from_slice(&ctx, &p_host).unwrap();
+    let mut p_plain = DeviceBuffer::from_slice(&ctx, &p_host).unwrap();
     let g_plain = DeviceBuffer::from_slice(&ctx, &g_host).unwrap();
-    let m_plain = DeviceBuffer::from_slice(&ctx, &m_init).unwrap();
-    let v_plain = DeviceBuffer::from_slice(&ctx, &v_init).unwrap();
+    let mut m_plain = DeviceBuffer::from_slice(&ctx, &m_init).unwrap();
+    let mut v_plain = DeviceBuffer::from_slice(&ctx, &v_init).unwrap();
 
     // Distributed Adam side.
     let mut p_dist = DeviceBuffer::from_slice(&ctx, &p_host).unwrap();
     let mut g_dist = DeviceBuffer::from_slice(&ctx, &g_host).unwrap();
-    let m_dist = DeviceBuffer::from_slice(&ctx, &m_init).unwrap();
-    let v_dist = DeviceBuffer::from_slice(&ctx, &v_init).unwrap();
+    let mut m_dist = DeviceBuffer::from_slice(&ctx, &m_init).unwrap();
+    let mut v_dist = DeviceBuffer::from_slice(&ctx, &v_init).unwrap();
 
     // Run plain Adam.
     {
-        let params = TensorList::new(&[&p_plain]).unwrap();
+        let mut params = TensorListMut::from_buffers([&mut p_plain]).unwrap();
         let grads = TensorList::new(&[&g_plain]).unwrap();
-        let mom = TensorList::new(&[&m_plain]).unwrap();
-        let vel = TensorList::new(&[&v_plain]).unwrap();
+        let mut mom = TensorListMut::from_buffers([&mut m_plain]).unwrap();
+        let mut vel = TensorListMut::from_buffers([&mut v_plain]).unwrap();
         AdamStepPlan::<f32>::new(cfg)
-            .step(&params, &grads, &mom, &vel, 1, &stream)
+            .step(&mut params, &grads, &mut mom, &mut vel, 1, &stream)
             .expect("plain Adam step");
     }
 
@@ -113,14 +116,14 @@ fn distributed_adam_single_rank_matches_plain_adam() {
     // internally) and moment buffers as TensorList (they're not
     // touched by collectives, only the inner Adam kernel).
     {
-        let mom = TensorList::new(&[&m_dist]).unwrap();
-        let vel = TensorList::new(&[&v_dist]).unwrap();
+        let mut mom = TensorListMut::from_buffers([&mut m_dist]).unwrap();
+        let mut vel = TensorListMut::from_buffers([&mut v_dist]).unwrap();
         let plan = DistributedAdamStepPlan::<f32>::new(cfg, &comm);
         let mut pbufs_storage = [&mut p_dist];
         let mut gbufs_storage = [&mut g_dist];
         let pbufs: &mut [&mut DeviceBuffer<f32>] = &mut pbufs_storage;
         let gbufs: &mut [&mut DeviceBuffer<f32>] = &mut gbufs_storage;
-        plan.step(pbufs, gbufs, &mom, &vel, 1, &stream)
+        plan.step(pbufs, gbufs, &mut mom, &mut vel, 1, &stream)
             .expect("distributed Adam step (single rank)");
     }
 
@@ -176,15 +179,15 @@ fn distributed_adam_single_rank_three_tensors_no_collective_overhead() {
     let mut bg1 = DeviceBuffer::from_slice(&ctx, &g1).unwrap();
     let mut bg2 = DeviceBuffer::from_slice(&ctx, &g2).unwrap();
     let mut bg3 = DeviceBuffer::from_slice(&ctx, &g3).unwrap();
-    let bm1 = DeviceBuffer::from_slice(&ctx, &vec![0.0f32; n1]).unwrap();
-    let bm2 = DeviceBuffer::from_slice(&ctx, &vec![0.0f32; n2]).unwrap();
-    let bm3 = DeviceBuffer::from_slice(&ctx, &vec![0.0f32; n3]).unwrap();
-    let bv1 = DeviceBuffer::from_slice(&ctx, &vec![0.0f32; n1]).unwrap();
-    let bv2 = DeviceBuffer::from_slice(&ctx, &vec![0.0f32; n2]).unwrap();
-    let bv3 = DeviceBuffer::from_slice(&ctx, &vec![0.0f32; n3]).unwrap();
+    let mut bm1 = DeviceBuffer::from_slice(&ctx, &vec![0.0f32; n1]).unwrap();
+    let mut bm2 = DeviceBuffer::from_slice(&ctx, &vec![0.0f32; n2]).unwrap();
+    let mut bm3 = DeviceBuffer::from_slice(&ctx, &vec![0.0f32; n3]).unwrap();
+    let mut bv1 = DeviceBuffer::from_slice(&ctx, &vec![0.0f32; n1]).unwrap();
+    let mut bv2 = DeviceBuffer::from_slice(&ctx, &vec![0.0f32; n2]).unwrap();
+    let mut bv3 = DeviceBuffer::from_slice(&ctx, &vec![0.0f32; n3]).unwrap();
 
-    let mom = TensorList::new(&[&bm1, &bm2, &bm3]).unwrap();
-    let vel = TensorList::new(&[&bv1, &bv2, &bv3]).unwrap();
+    let mut mom = TensorListMut::from_buffers([&mut bm1, &mut bm2, &mut bm3]).unwrap();
+    let mut vel = TensorListMut::from_buffers([&mut bv1, &mut bv2, &mut bv3]).unwrap();
 
     let plan = DistributedAdamStepPlan::<f32>::new(cfg, &comm);
     let mut pbufs_storage = [&mut bp1, &mut bp2, &mut bp3];
@@ -192,8 +195,8 @@ fn distributed_adam_single_rank_three_tensors_no_collective_overhead() {
     plan.step(
         &mut pbufs_storage,
         &mut gbufs_storage,
-        &mom,
-        &vel,
+        &mut mom,
+        &mut vel,
         1,
         &stream,
     )

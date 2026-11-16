@@ -39,28 +39,30 @@ half-precision moments lose precision catastrophically.
 
 ```rust,no_run
 # use baracuda_driver::{DeviceBuffer, Stream};
-# use baracuda_optim::{AdamConfig, AdamMode, AdamStepPlan, TensorList};
-# fn demo(
+# use baracuda_optim::{AdamConfig, AdamMode, AdamStepPlan, TensorList, TensorListMut};
+# fn demo<'a>(
 #     stream: &Stream,
-#     params: &[&DeviceBuffer<f32>],
+#     params: Vec<&'a mut DeviceBuffer<f32>>,
 #     grads: &[&DeviceBuffer<f32>],
-#     exp_avg: &[&DeviceBuffer<f32>],
-#     exp_avg_sq: &[&DeviceBuffer<f32>],
+#     exp_avg: Vec<&'a mut DeviceBuffer<f32>>,
+#     exp_avg_sq: Vec<&'a mut DeviceBuffer<f32>>,
 # ) -> Result<(), Box<dyn std::error::Error>> {
-let plan = AdamStepPlan::<f32>::new(AdamConfig {
-    lr: 1e-3,
-    weight_decay: 0.01,
-    mode: AdamMode::Decoupled,
-    ..AdamConfig::default()
-});
+// `AdamConfig` is `#[non_exhaustive]`: start from the default and assign.
+let mut cfg = AdamConfig::default();
+cfg.lr = 1e-3;
+cfg.weight_decay = 0.01;
+cfg.mode = AdamMode::Decoupled;
+let plan = AdamStepPlan::<f32>::new(cfg);
 
 // One `step` call updates ALL parameter tensors in a single launch
 // (up to the 110-tensor per-launch cap). Step indices start at 1.
+// Tensors the step writes go in a `TensorListMut` (borrowed `&mut`);
+// the gradients it only reads go in a `TensorList`.
 plan.step(
-    &TensorList::new(params)?,
+    &mut TensorListMut::from_buffers(params)?,
     &TensorList::new(grads)?,
-    &TensorList::new(exp_avg)?,
-    &TensorList::new(exp_avg_sq)?,
+    &mut TensorListMut::from_buffers(exp_avg)?,
+    &mut TensorListMut::from_buffers(exp_avg_sq)?,
     1,
     stream,
 )?;
