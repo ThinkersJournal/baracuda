@@ -314,6 +314,23 @@ Source of the ruling: the PM's message, quoting CireSnave 2026-11-16 (relayed, n
 
 **Reading.** Today the five statements do not exist in this repository's code or in its pinned Unpopped release, so there is nothing to lower; the only related thing is the host-side TMA descriptor wrapper, which is not an instruction. The PM's reading applies when they appear: this lane targets NVIDIA hardware only, so `baracuda-cuda-emit` **may** lower them for CUDA (the instruction is NVIDIA's own, board 434 C), with this note as the risk note, and **must not** lower them for any non-NVIDIA backend this lane may grow. Whether lowering them for CUDA is inside any licence NVIDIA grants for its own platform was **not** checked and is a question for CireSnave. A repin to an Unpopped release that adds the five statements is the event that would make `cuda-emit` handle them; re-run this table then. No code is changed in this commit.
 
+## Wait on pending MMA operations: US12204897B2 and US12710961B2 (added 2026-11-16, PM [NOTICE] wgmmawait-note)
+
+Source of the ruling: the PM's message, quoting CireSnave 2026-11-16 (relayed): *"I think we treat that patent like the others that are Nvidia-only. Add a note and specifically notify our non-Nvidia-emitter builders about the potential for infringement and not to."* Patents named by the PM: NVIDIA US12204897B2 (and US12710961B2); statement: `WgmmaWait`, a wait on a count of pending matrix-multiply-accumulate (MMA) operations. **I did not read either patent or its claims.** Not legal advice; no attorney; self-serve only. Nothing here is a verdict.
+
+**Risk note.** Same as for the barrier statements above: if an emitter that is not NVIDIA-specific lowers `WgmmaWait` to a hardware wait on a count of pending MMA operations on another manufacturer's hardware, that is a potential infringement of US12204897B2 (and US12710961B2) on the relayed description. Emitters for other manufacturers' hardware must know this and must not lower it; for non-NVIDIA targets they decline by name. Notifying the non-NVIDIA-emitter builders is the PM's to do (this repository has none, below); this note is the written risk statement they are pointed to.
+
+**What baracuda has (origin/main 7ef1153f9 plus this branch, counted 2026-11-16):**
+
+| question | result | command / basis |
+|---|---|---|
+| `WgmmaWait` or any `wgmma` instruction in baracuda crates | 0 instructions: `wgmma.wait_group` 0 hits and `wgmma.mma_async` 0 hits; the word `wgmma` appears 5 times, all prose saying Hopper `wgmma` is **not** implemented (`baracuda-kernels-sys/Cargo.toml:117`, `build.rs:533`, `vendor/marlin/VENDOR.md:90,147`, `baracuda-kernels/src/gemm/int4_marlin.rs:41`, where sm_90 is rejected at `select`) | `git grep -n -i -E 'wgmma\.wait_group\|wgmma\.mma_async' -- crates`; `git grep -n -i wgmma -- crates` |
+| the statement in the pinned vocabulary | 0 hits for `Wgmma` in `unpopped` 0.47.0, the version `Cargo.lock` pins and crates.io's newest (checked 2026-11-16); positive control: `AsyncWait` has 17 hits in the same unpacked source | `.crate` unpacked in an empty directory, `grep -rn -i Wgmma` over its `*.rs` |
+| other wait instructions | `cp.async.wait_group` 9 hits (`wait_group` in all, 43 hits): a different instruction family (`cp.async`, covered in the section above), not what the relayed patents describe; `mma.sync` / `mma_sync` 116 hits (control for the query; the synchronous Ampere-class MMA, which has no pending-count wait) | `git grep -n -i 'cp\.async\.wait_group' -- crates`; `git grep -n -i -E 'mma\.sync\|mma_sync' -- crates` |
+| a non-NVIDIA emitter target in this repository | none found (`baracuda-cuda-emit`, `baracuda-cuda-seam`, `baracuda-seam`; not an exhaustive check) | `ls crates` |
+
+**Reading.** Hopper warpgroup MMA is not implemented here, so nothing lowers `WgmmaWait` today. The PM's reading applies when it appears: this lane targets NVIDIA hardware only, so `baracuda-cuda-emit` **may** lower it for CUDA, with this note as the risk note (CireSnave: treat it "like the others that are Nvidia-only"), and **must not** lower it for any non-NVIDIA backend this lane may grow. Whether lowering for CUDA is inside any licence NVIDIA grants for its own platform was **not** checked and is a question for CireSnave. A repin to an Unpopped release that adds `WgmmaWait`, or a Marlin v2 / Hopper rewrite, is the event that makes this live; re-run the table then. No code is changed in this commit.
+
 ## Needs review (to the PM)
 1. ~~US8584106B2 and US8261270B2~~ claims were read in full later the same day (see "Claim charts"): `design-around`, not `needs-review`.
 2. ~~US20240103872~~ read in full: Intel hardware-instruction claims, clear (pending; re-check if granted).
