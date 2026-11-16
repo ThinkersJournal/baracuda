@@ -17,6 +17,12 @@ file = "crates/baracuda-cuda-parse/Cargo.toml"
 symbol = "baracuda-cuda-parse"
 reason = "parser built on unpopped-vocab; MAJOR.MINOR follows the unpopped release it builds against (CHANGELOG 'Versioning exception')"
 
+[[allow]]
+check = "version-consistency"
+file = "crates/baracuda-cuda-seam/Cargo.toml"
+symbol = "baracuda-cuda-seam"
+reason = "seam between Unpopped and the baracuda emitters; MAJOR.MINOR follows the unpopped release it builds against (CHANGELOG 'Versioning exception'); repinned to 0.47.1 in #395"
+
 # Not consumed by anyone, never published (`publish = false`): there is no downstream
 # who could mistake which crates go together, which is the rule's purpose.
 [[allow]]
