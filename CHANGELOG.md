@@ -16,6 +16,14 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.162 - 2026-11-15
+
+docs: API-freeze census applies the `-sys` -> `vendor-mirror` rule before the private-module re-export escape (130 rows moved out of `stable`: `baracuda-cuvs-sys` 102, `baracuda-tensorrt-sys` 28) and expands `baracuda-cuvs-sys` with its `cuvs` feature so the 19 macro-generated `Cuvs` rows are counted. Adds `tool/classify-test.py.txt` (fails on the old order) and `tool/expand-features.txt`. No code change.
+
+## 0.1.0-alpha.161 - 2026-11-15
+
+docs: R6 public-API-freeze review of `baracuda-cuvs-sys` (102 census rows, 9 findings; the census misses 19 macro-generated rows behind the `cuvs` feature and mis-classes 130 `-sys` rows as `stable`). No code change.
+
 ## 0.1.0-alpha.160 - 2026-11-15
 
 docs: R6 public-API-freeze review of `baracuda-cutensor` (103 census rows, 10 findings). No code change.

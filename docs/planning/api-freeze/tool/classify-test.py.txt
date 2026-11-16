@@ -1,0 +1,26 @@
+# Usage: python -I classify-test.py <path-to-classify.py>   (exit 1 on failure)
+# Synthetic census: a `-sys` crate whose items sit in a private module re-exported by `pub use ffi::*` must be `vendor-mirror`, not `stable`.
+import csv, os, subprocess, sys, tempfile
+cols = ["crate", "file", "line", "kind", "name", "reach", "hidden", "deprecated", "non_exhaustive", "ffi"]
+def row(crate, kind, name, reach, ffi="0"):
+    return dict(crate=crate, file="f.rs", line="1", kind=kind, name=name, reach=reach, hidden="0", deprecated="0", non_exhaustive="0", ffi=ffi)
+rows = [
+    row("x-sys", "reexport", "ffi::*", "public"), row("x-sys", "struct", "Foo", "private-mod"),   # the bug shape
+    row("y", "reexport", "ffi::*", "public"), row("y", "struct", "Bar", "private-mod"),            # control: same shape, not -sys
+    row("baracuda-kernels-sys", "fn", "baracuda_k", "public", "1"),                               # control: our C ABI
+    row("z-sys", "struct", "Baz", "public"),                                                      # control: public mod, -sys
+]
+d = tempfile.mkdtemp()
+src = os.path.join(d, "items.tsv")
+with open(src, "w", newline="") as f:
+    w = csv.DictWriter(f, cols, delimiter="\t"); w.writeheader(); w.writerows(rows)
+subprocess.run([sys.executable, "-I", sys.argv[1], src, d], check=True, capture_output=True)
+got = {r["crate"]: r for r in csv.DictReader(open(os.path.join(d, "summary.tsv")), delimiter="\t")}
+want = {"x-sys": "vendor-mirror", "y": "stable", "baracuda-kernels-sys": "stable-c-abi", "z-sys": "vendor-mirror"}
+bad = 0
+for crate, cls in want.items():
+    n = int(got[crate][cls])
+    ok = n == int(got[crate]["total"])   # every row of the crate lands in the expected class
+    print(("ok  " if ok else "FAIL"), crate, "expects class", cls, "count", n, "total", got[crate]["total"])
+    bad += not ok
+sys.exit(1 if bad else 0)
