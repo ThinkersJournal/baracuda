@@ -2,7 +2,8 @@
 
 Safe Rust wrappers for **NVIDIA cuSOLVER** — dense and sparse linear-system
 solvers, eigensolvers, and matrix factorizations on the GPU. Covers
-`cuSolverDn`, `cuSolverSp`, `cuSolverRf`, and `cuSolverMg`.
+`cuSolverDn`, `cuSolverSp`, `cuSolverRf`, and `cuSolverMg` (see Coverage for what
+each part has).
 
 Generic over scalar type (`f32` / `f64` / `Complex32` / `Complex64`)
 where the math allows.
@@ -16,10 +17,10 @@ where the math allows.
   - SVD (`gesvd`, `gesvdj`, batched `gesvdj`)
   - Eigensolvers: `syevd`, `syevj`, batched `syevj`
   - Least-squares: `gels`
-  - Generic 64-bit `X*` family (`Xgetrf`, `Xgetrs`, `Xgeqrf`, `Xpotrf`,
-    `Xpotrs`, `Xsyevd`) for very large matrices.
-- **Sparse (`cuSolverSp`)**: `csrlsvchol`, `csrlsvqr`.
-- **Refactor (`cuSolverRf`)**: full Rf API.
+  - Generic 64-bit `X*` family, as raw `unsafe` functions in `xapi`:
+    `Xgetrf` (+ buffer size), `Xgetrs`, `Xpotrs`.
+- **Sparse (`cuSolverSp`)**: `scsrlsvchol`, `scsrlsvqr` (f32 only).
+- **Refactor (`cuSolverRf`)**: create, `analyze`, `refactor`, destroy only (no matrix setup yet).
 - **Multi-GPU (`cuSolverMg`)**: `getrf`, `potrf`, `syevd`.
 
 ## Workspace handling

@@ -299,11 +299,9 @@ name = "baracuda-cusolver"
 version = "0.1.0-alpha.163"
 dependencies = [
  "baracuda-core",
- "baracuda-cuda-sys",
  "baracuda-cusolver-sys",
  "baracuda-driver",
  "baracuda-types",
- "thiserror",
 ]
 
 [[package]]
