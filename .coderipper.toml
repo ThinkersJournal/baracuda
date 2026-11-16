@@ -494,7 +494,7 @@ reason = "false positive: `Member::token` is the canonical `cuda:` architecture 
 [[allow]]
 check = "SEC-012"
 file = "crates/baracuda-kernels/src/random/perrow_spec_sampling.rs"
-reason = "false positive: `draft_token_ids` and the other `*token*` fields are `TensorRef` views of device token-id buffers (language-model vocabulary indices), not secrets. Owner: baracuda lane. Remove this entry when coderipper's SEC-012 reads field types instead of names."
+reason = "false positive: `output_accepted_token_num` and `output_emitted_draft_token_num` are counters of accepted and emitted language-model tokens (device buffers), not secrets. Owner: baracuda lane. Remove this entry when coderipper's SEC-012 reads field types instead of names."
 
 [[allow]]
 check = "ARC-005"
