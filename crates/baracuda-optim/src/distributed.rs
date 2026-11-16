@@ -1,11 +1,23 @@
-//! Distributed (ZeRO-1-style) optimizer plans.
+//! Distributed optimizer plans.
+//!
+//! **Experimental, outside the API freeze.** What [`DistributedAdamStepPlan`]
+//! does today: all-reduce the gradients in place, run the inner
+//! [`AdamStepPlan`](crate::AdamStepPlan) over the **full** parameter tensors
+//! on every rank, then all-gather the parameters in place in
+//! `len / world_size` chunks. The inner plan compares the moment lists with
+//! the parameter lists tensor by tensor, so the optimizer state has the size
+//! of the parameters on every rank: **this plan does not shard the optimizer
+//! state and gives no ZeRO-1 memory saving.** The multi-rank path has not been
+//! run (it needs two GPUs), and whether the in-place all-gather's send pointer
+//! is right for ranks above 0 has not been checked. The sections below
+//! describe the ZeRO-1 design the plan is heading toward, not what it does.
 //!
 //! Phase 58 — extends Phase 49's [`AdamStepPlan`](crate::AdamStepPlan)
 //! with the **sharded** variant for memory-efficient distributed
 //! training. Behind the `distributed_optim` cargo feature (default
 //! OFF). Requires NCCL at runtime (via [`baracuda_nccl`]).
 //!
-//! ## ZeRO-1 in one paragraph
+//! ## ZeRO-1 background (the intended design, not what the plan does today)
 //!
 //! Stage 1 of Microsoft's ZeRO (Zero Redundancy Optimizer) partitions
 //! the optimizer state — Adam's `m`, `v`, and the master fp32 weights
@@ -118,7 +130,8 @@ pub fn shard_range(n: usize, rank: i32, world_size: i32) -> (usize, usize) {
 // DistributedAdamStepPlan
 // ============================================================================
 
-/// ZeRO-1-style sharded Adam optimizer step.
+/// Data-parallel Adam optimizer step over NCCL (experimental; the optimizer
+/// state is not sharded, see the module docs).
 ///
 /// Wraps a Phase 49 [`AdamStepPlan<T>`] + a borrowed
 /// [`baracuda_nccl::Communicator`]; orchestrates the
@@ -196,23 +209,21 @@ impl<'comm, T: AdamParamDtype + NcclScalar> DistributedAdamStepPlan<'comm, T> {
         shard_range(n, self.comm.rank(), self.comm.world_size())
     }
 
-    /// One ZeRO-1 step. Same dtype `T` for params + grads + moments
+    /// One data-parallel step (experimental). Same dtype `T` for params + grads + moments
     /// (use the f32 plan, or [`Self::step_with_f32_state`] for the
     /// mixed-precision shape).
     ///
     /// ## Arguments
     ///
     /// - `param_buffers` — mutable references to each parameter
-    ///   tensor's device buffer. Each buffer must already describe
-    ///   this rank's local shard view of the full tensor (the
-    ///   caller controls the per-rank slice layout; Phase 58 only
-    ///   supplies the protocol).
+    ///   tensor's device buffer: the **full** tensor, the same size on
+    ///   every rank.
     /// - `grad_buffers` — mutable references to each gradient
-    ///   tensor's device buffer (same per-rank shard convention).
-    /// - `exp_avg`, `exp_avg_sq` — TensorList views of the per-rank
-    ///   Adam moment buffers (also sharded; smaller than the full
-    ///   tensor in the multi-rank case — that's the ZeRO-1 memory
-    ///   savings).
+    ///   tensor's device buffer (full tensors, same convention).
+    /// - `exp_avg`, `exp_avg_sq` — TensorList views of the Adam moment
+    ///   buffers. They must have the same per-tensor sizes as the
+    ///   parameters (the inner plan compares them), so the optimizer
+    ///   state is **not** sharded and there is no ZeRO-1 memory saving.
     /// - `step_index` — 1-based step counter for bias correction.
     /// - `stream` — CUDA stream the launches are dispatched on.
     ///
@@ -341,7 +352,7 @@ impl<'comm, T: AdamParamDtype + NcclScalar> DistributedAdamStepPlan<'comm, T> {
         Ok(())
     }
 
-    /// Mixed-precision (half-param + f32-state) ZeRO-1 step.
+    /// Mixed-precision (half-param + f32-state) step (experimental).
     ///
     /// Same protocol as [`Self::step`] but the moment buffers stay in
     /// f32 (matching Phase 49's
@@ -349,8 +360,8 @@ impl<'comm, T: AdamParamDtype + NcclScalar> DistributedAdamStepPlan<'comm, T> {
     /// contract).
     ///
     /// Only the params + grads are all_reduce'd / all_gather'd in `T` —
-    /// the f32 moment buffers stay on-rank (they're already sharded;
-    /// that's the ZeRO-1 memory savings).
+    /// the f32 moment buffers stay on-rank. They have the size of the
+    /// params (the inner plan compares sizes), so they are not sharded.
     pub fn step_with_f32_state(
         &self,
         param_buffers: &mut [&mut DeviceBuffer<T>],
