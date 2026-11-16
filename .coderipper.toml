@@ -42,6 +42,8 @@ reason = "publish = false; workspace task runner, versioned 0.0.0 so no consumer
 # CUTLASS and bespoke kernels, over the driver and raw FFI. One component per workspace crate, named by the crate.
 [architecture]
 style = "layered"
+# EFX-001 inputs: no component is tagged `pure = true` (every crate here is an FFI wrapper or a kernel crate that touches the device), so the rule has nothing to check; saying so makes it run and report 0 sites by declaration instead of "not run".
+none = ["pure"]
 
 # ARC-003/004/006/007/012 inputs. Policy = the two vocabulary crates that depend on nothing but `unpopped-vocab` (and the derive): baracuda-types
 # (dtypes, kernel-arg and status types) and baracuda-cuda-vocab. Infrastructure = every raw `-sys` FFI crate plus baracuda-driver, which
@@ -483,6 +485,16 @@ owner = "baracuda lane"
 
 # ARC advisory findings accepted for now. The MOD-* waivers are in the member's own .coderipper.toml (crates/baracuda-driver,
 # crates/baracuda-kernels-sys): a member's run reads its own file, not this one. Each is a row in docs/planning/arc-mod-programme.md.
+
+[[allow]]
+check = "SEC-012"
+file = "crates/baracuda-cuda-vocab/src/manifest.rs"
+reason = "false positive: `Member::token` is the canonical `cuda:` architecture token (an identifier such as `sm_89`, from the codec), not a secret; the type derives Debug on purpose so manifests print. Owner: baracuda lane. Remove this entry when coderipper's SEC-012 reads field types instead of names."
+
+[[allow]]
+check = "SEC-012"
+file = "crates/baracuda-kernels/src/random/perrow_spec_sampling.rs"
+reason = "false positive: `output_accepted_token_num` and `output_emitted_draft_token_num` are counters of accepted and emitted language-model tokens (device buffers), not secrets. Owner: baracuda lane. Remove this entry when coderipper's SEC-012 reads field types instead of names."
 
 [[allow]]
 check = "ARC-005"
