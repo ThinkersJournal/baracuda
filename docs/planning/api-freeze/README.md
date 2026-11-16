@@ -33,6 +33,13 @@ with two extractor fixes; the §2 and §3 prose and the tables in the later sect
    **10,313 `stable`** (was 10,486): the published-API freeze scope is the `stable` column, and R6 row counts for `internal` crates are reported separately from it. The rows stay listed in `items.tsv`, class `internal`.
    Control: every one of the 4 has no published user (the same query lists `baracuda-kernels-bench` as the user of `baracuda-bench-stats`, which is itself `internal`).
 
+4. **`-sys` rule order and feature-gated macro items** (R6 `baracuda-cuvs-sys` review, found 2026-11-16, `origin/main` `495ffbbfe`). (a) `classify.py` sent a `private-mod` item that a `pub use` glob covers to `stable` *before* the `-sys` rule,
+   so every `-sys` crate with a private `mod ffi` + `pub use ffi::*` was `stable` instead of `vendor-mirror`: 130 rows (`baracuda-cuvs-sys` 102, `baracuda-tensorrt-sys` 28). The `-sys` test now runs first; `tool/classify-test.py.txt`
+   fails on the old order (x-sys: 1 of 2 rows `vendor-mirror`) and passes on the new. (b) The default-feature expansion drops `#[cfg(feature = "cuvs")]` code, so the macro-generated `Cuvs` struct and its 18 `cuvs_*` accessors were missing (19 rows).
+   `expand.sh` takes an optional features file (`tool/expand-features.txt`, one `crate feat,...` line, currently `baracuda-cuvs-sys cuvs`). Feature-on expansion was also tried for `baracuda-tensorrt-sys` (`shim`) and `baracuda-nccl` (`half-crate`): 0 rows added, so they are not listed.
+   Not checked: `baracuda-driver` (`test-support`), `baracuda-tensorrt-builder` (`shim`), `baracuda-types`, `baracuda-kernels`, `baracuda-kernels-sys` (nvcc features), the other crates with a macro and a `cfg(feature)` in the same crate.
+   Result: 22,528 rows (+19), `stable` 10,183 (was 10,313), `vendor-mirror` 6,368 (was 6,219), `baracuda-cuvs-sys` 122 rows (was 103). Tables regenerated at `495ffbbfe` with the saved f7662ec1 expansions for the other crates.
+
 Totals at `f7662ec1`: 22,509 rows (20,172 from the source walk plus 2,337 macro-expanded); 10,565 listed individually in `items.tsv` (481 macro-expanded) against 9,996 at alpha.96.
 Classes (before the `internal` class above moved 173 rows out of `stable`): stable 10,486, stable-c-abi 5,725, vendor-mirror 6,219, doc-hidden 56, sealed-trait-pattern 21, narrow-visibility-candidate 2, candidate-for-removal 0 (the 8 deprecated items are gone from the tree).
 
@@ -140,12 +147,12 @@ Removing any of them is a breaking change under §4; do it in the beta.0 window,
 1. `#[deprecated]` → `candidate-for-removal`.
 2. `#[doc(hidden)]` → `doc-hidden`.
 3. `pub trait Sealed*` in a private module → `sealed-trait-pattern`.
-4. other `pub` item in a private module with no matching `pub use` → `narrow-visibility-candidate`.
-5. `trait-member` whose name starts with `_` or ends `_raw` / `_ffi` → `candidate-doc-hidden`
+4. in a `*-sys` crate other than our two C-ABI crates → `vendor-mirror` (moved ahead of the private-module rule, §0 item 4).
+5. other `pub` item in a private module with no matching `pub use` → `narrow-visibility-candidate`.
+6. `trait-member` whose name starts with `_` or ends `_raw` / `_ffi` → `candidate-doc-hidden`
    (this is the FFI-plumbing shape already hidden on 30 members in `baracuda-cublas`,
    `-cusolver`, `-megatron`, `-optim`, `-nccl`, `-cuvs`).
-6. in `baracuda-kernels-sys` / `baracuda-cutlass-kernels-sys` and FFI → `stable-c-abi`.
-7. in any other `*-sys` crate → `vendor-mirror`.
+7. in `baracuda-kernels-sys` / `baracuda-cutlass-kernels-sys` and FFI → `stable-c-abi`.
 8. else `stable`.
 
 **What this is not:** a per-item judgement that each of the 9 905 `stable` items *deserves* to be
