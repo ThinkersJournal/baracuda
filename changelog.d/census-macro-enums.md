@@ -1,3 +1,0 @@
-kind: docs: API-freeze census counts the 9 `shim`-gated `trt_enum!` enums of baracuda-tensorrt-builder (+81 rows)
----
-`docs/planning/api-freeze/tool/expand-features.txt` now expands `baracuda-tensorrt-builder` and `baracuda-tensorrt` with `shim`; the default-feature expansion dropped the builder's whole `api` module's macro output (9 enums, 72 variants). Census 22,528 -> 22,609 rows, `stable` 10,183 -> 10,264, `baracuda-tensorrt-builder` 99 -> 180. All 75 crates were re-expanded; the only change against the committed tables is those 81 rows. `tool/census-macro-test.py.txt` fails on the old census. Eleven other feature-gated crates were expanded feature-on: 0 rows added. Documentation only.

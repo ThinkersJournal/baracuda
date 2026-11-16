@@ -1,3 +1,0 @@
-kind: docs: R6 review of baracuda-cufft (79 rows, 12 findings)
----
-`docs/planning/api-freeze/r6/cufft.md`, read from source at `origin/main` `970634a43`. Headline findings: every safe `exec_*` takes a `DeviceBuffer` with no length check against the plan (the plan stores no size); `PlanMany::new` reads `rank` entries of unchecked slices from safe code; the stream is not tied to the plan (a dropped `Stream` is used by a later `exec`); `Plan2d` has no `set_stream` and `Plan3d` no R2C/C2R/double; the README names `TransformType`, `PlanXt1d`, `PlanXtMany` that do not exist; two unused dependencies. Documentation only: nothing built or run, no code changed. The census counts for this crate match the source (79 rows).
