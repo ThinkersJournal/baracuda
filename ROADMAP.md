@@ -2657,3 +2657,7 @@ Not phase-specific; tracked here so they don't fall off the radar.
   `feedback_readme_badges_on_publish` memory entry captures the
   "bump README badges on release" gotcha. A pre-commit hook or
   release script could automate this rather than relying on memory.
+
+- **baracuda-cusolver per-function extents (R6 follow-up, 2026-11-16).** Only the LAPACK matrix-argument checks exist (README, "What is checked"). Add `ipiv`/`tau`/`w`/`s`/`info`, the Jacobi, batched, `gels` and multi-GPU extents once NVIDIA's cuSOLVER documentation can be read (docs.nvidia.com was refused by the fetch proxy), each tied to its doc section.
+
+- **baracuda-cusolver: report a nonzero `info` as an error (R6 follow-up, 2026-11-16; PM: not now).** The dense functions return `Ok` when the call is accepted; the factorization status (`info`: singular `U`, non-positive-definite leading minor, non-converged SVD) stays in the caller's device buffer unread. Reporting it needs a stream synchronization and a device-to-host readback on an asynchronous API: a cost and a behaviour change. Design question to settle before building: a separate checked variant (`getrf_checked`, leaves the default async and unchanged) versus checking by default (breaking, every call synchronizes). Not built.
