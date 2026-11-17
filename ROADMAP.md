@@ -1611,6 +1611,7 @@ Source: the `portfolio` job on `main` (run 40025510102, job 120660567241). `SUP-
 
 - **SPDX headers (SUP-016):** 1287 of 1290 files have no `SPDX-License-Identifier` header; the rule is one per file, no `REUSE.toml` shortcut. Deliver a mechanical 1-line add by a script that is committed and shown: print every file it touched and the count of headers-missing before (1287) and after. Existing credit and notice lines stay (provenance rule).
 - **WSP-010 (High):** `baracuda-cuda-seam` is pinned at `0.47.1` against the workspace `0.1.0-alpha.164`; fix it with a check that reads back what it fixed (resolved version in the manifest and lockfile, not an exit code).
+- **Dependency-security CI job (pm-kernels [TASK] 2026-11-17):** none today (0 `deny.toml`, 0 cargo-deny/audit hits under `.github` at `aaf5c3347`). `cargo audit` on `Cargo.lock` at that ref: 0 vulnerabilities, 0 warnings (control: a lockfile with `time 0.1.43` reports RUSTSEC-2020-0071). Add a scheduled job plus a run on PRs touching `Cargo.lock`; fix any vulnerability by upgrading, ignore only when no fix exists, with a reason and a 30-day expiry.
 - Not ours: MOD-011 `-sys` Medium flood (2855 findings) is fixed in coderipper#362.
 
 ## Pre-1.0 nice-to-haves
