@@ -1607,6 +1607,12 @@ Source: the `portfolio` job on `main` (run 40025510102, job 120660567241). `SUP-
 - **Did not run (21 check errors), so these assert NOTHING for those crates:** `baracuda-kernels`, `baracuda-kernels-sys`, `baracuda-kernels-bench`, `baracuda-ozimmu`, `baracuda-flashinfer`, `baracuda-flashinfer-sys` (the CodeRipper build of an nvcc crate has no CUDA toolkit on the hosted runner, so the crate's build fails and the rules refuse to report), and `baracuda-examples` (`No such file or directory`). The nvcc crates are most of the code. Fixing needs either a self-hosted runner with CUDA (CireSnave board 241) or `DOCS_RS=1` in the sweep environment, which is a CodeRipper-side input.
 - **`licence` (3 Medium):** unchanged, board 263.
 
+### Queued for the 2026-11-18 daily PR (PM [NOTICE] 2026-11-17, CodeRipper run at `a043b93`)
+
+- **SPDX headers (SUP-016):** 1287 of 1290 files have no `SPDX-License-Identifier` header; the rule is one per file, no `REUSE.toml` shortcut. Deliver a mechanical 1-line add by a script that is committed and shown: print every file it touched and the count of headers-missing before (1287) and after. Existing credit and notice lines stay (provenance rule).
+- **WSP-010 (High):** `baracuda-cuda-seam` is pinned at `0.47.1` against the workspace `0.1.0-alpha.164`; fix it with a check that reads back what it fixed (resolved version in the manifest and lockfile, not an exit code).
+- Not ours: MOD-011 `-sys` Medium flood (2855 findings) is fixed in coderipper#362.
+
 ## Pre-1.0 nice-to-haves
 
 These would tighten the 1.0 surface but aren't blockers.
