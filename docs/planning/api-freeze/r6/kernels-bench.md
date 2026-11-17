@@ -8,7 +8,7 @@ Reviewer: baracuda lane (R6 owner). Ref: `origin/main` `9b08b4e4c`. Items: the 1
 
 ## Verdict
 
-**Out of freeze scope; recommend the census class be `internal`, not `stable`.** The crate is `publish = false` (`Cargo.toml`), so no crates.io consumer can
+**Out of freeze scope; the census class is now `internal` (reconciled 2026-11-16: the regenerated census applies the `publish = false` rule, README section 0 item 3, and `per-crate-summary.tsv` lists all 115 rows under `internal`; the counts and the `class = stable` in this review's header are as measured at `9b08b4e4c`, before that rule).** The crate is `publish = false` (`Cargo.toml`), so no crates.io consumer can
 depend on its API. The only in-repo users are its own `benches/` (26 files), `tests/` (12 files) and `src/bin/baracuda-bench.rs` (grep for
 `baracuda_kernels_bench` over `git ls-files '*.rs'`). No other crate's `Cargo.toml` lists it (the two hits in `baracuda-bench-stats` are description text and a
 comment). The 115 rows are a harness surface, so a freeze buys nothing and costs the ability to reshape sweeps and CSV columns freely.
@@ -49,6 +49,6 @@ comment). The 115 rows are a harness surface, so a freeze buys nothing and costs
 
 ## Not decided here
 
-- Whether the census should classify `publish = false` crates as `internal`. That is a census-class decision (and would drop these 115 rows from the stable
+- (Decided, see the reconciliation note at the top: the census now does.) Whether the census should classify `publish = false` crates as `internal`. That is a census-class decision (and would drop these 115 rows from the stable
   count); it is raised, not made, here. The same question applies to every other `publish = false` crate. Not measured: how many there are.
 - Not checked: function bodies, doc tests, the CSV's readers, `baracuda-bench-stats` shape.

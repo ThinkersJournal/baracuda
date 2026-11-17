@@ -16,6 +16,12 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.173 - 2026-11-16
+
+`docs/planning/api-freeze/r6/{tensorrt,nvjpeg,nvcomp,nvml,nccl}.md`, read from source at `origin/main` `6898c42c9`; each census count matches the source (tensorrt 79, nvjpeg 65, nvcomp 63, nvml 62, nccl 61; the earlier "59" for nccl was the `stable` count only). Findings per crate: 12, 13, 9, 11, 13. Headlines: tensorrt `Dims` public fields break the rank invariant and `PluginLibraryHandle` is `Copy`; nvjpeg and nccl have safe decode/collective functions that never check buffer length against the count; nvml documents a refcounted shutdown that does not exist; nvcomp is a raw FFI pass-through with a README example naming a type that does not exist. Every crate has unused dependencies and README drift; nvjpeg, nvml and nccl have 0 `SAFETY` comments. Documentation only: nothing built or run, no code changed; vendor behaviour is "not checked" throughout. Four of the five were drafted by subagents; counts spot-checked against source by the lane (nvjpeg unsafe/SAFETY/tests, nccl unsafe/SAFETY, nvml shutdown, nvcomp unsafe fn).
+
+Also: `api-freeze/README.md` records `baracuda-optim::distributed` as experimental and outside the freeze (12 rows still `class = stable`; no classifier change), and `r6/kernels-bench.md` now says the census class is `internal`.
+
 ## 0.1.0-alpha.172 - 2026-11-16
 
 Docs only: nothing built or run, no code changed. `docs/planning/api-freeze/r6/{tensorrt-builder,cufft,cusparse}.md`, each read from source (10, 12 and 10 findings; the three crates' census counts match the source). Headlines: 16 safe `Layer` setters of tensorrt-builder `static_cast` to a layer kind with no check; safe `exec_*` in cufft take buffers with no length check against the plan, and `PlanMany::new` reads unchecked slices; cusparse descriptor constructors document but do not check their extents, and its SpSV/SpSM analysis workspace is borrowed for one call (from memory of NVIDIA's documentation, not checked). Every "undefined behaviour from safe code" claim is read, not run.
