@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `kernelgen` — thin CLI over the [`unpopped`] library.
 //!
 //! Usage: `kernelgen <out-dir> [telemetry.jsonl]`. v1 emits the elementwise pilot

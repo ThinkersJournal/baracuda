@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Measures the opt-in `Conv2dPlan` forward algorithm picker against the pinned `IMPLICIT_GEMM`
 //! on typical shapes (SA-25: the evidence for or against making the picker the default).
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Build script for `baracuda-kernels-bench`.
 //!
 //! Conditionally compiles CUDA-L2 (deepreinforce-ai) HGEMM kernel

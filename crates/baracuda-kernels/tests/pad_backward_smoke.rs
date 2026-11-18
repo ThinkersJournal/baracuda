@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `PadBackwardPlan<T, N>` — backward of
 //! `pad(mode=Constant)` is a pure slice (`dx = dy[pad_low :
 //! pad_low + input_shape]`). Bit-exact, no math.

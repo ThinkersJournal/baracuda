@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Marlin W4A16 GEMM plan — Phase 48 Goal A.
 //!
 //! Vendored kernel: `crates/baracuda-kernels-sys/vendor/marlin/`

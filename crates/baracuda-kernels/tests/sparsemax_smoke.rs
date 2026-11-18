@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `SparsemaxPlan` (Milestone 5.4).
 //!
 //! Forward: `y = ProjSimplex(x)` via the sort-then-threshold closed

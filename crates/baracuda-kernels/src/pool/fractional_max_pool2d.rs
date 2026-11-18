@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! FractionalMaxPool2d — bespoke kernel (Phase 16.3).
 //!
 //! `nn.FractionalMaxPool2d` pools an `[N, C, H_in, W_in]` input with a

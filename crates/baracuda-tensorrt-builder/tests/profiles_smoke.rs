@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Optimization profiles: build an engine with a dynamic batch axis, then run
 //! it at several shapes and across several profiles on the GPU.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! BatchNorm forward throughput — baracuda self-bench + PyTorch reference.
 //!
 //! Phase 73.8d — vision-model workhorse. Sweep mirrors `pool_vs_cudnn.rs`

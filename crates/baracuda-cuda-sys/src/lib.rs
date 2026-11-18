@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Raw FFI + dynamic loader for the CUDA Driver + Runtime APIs.
 //! Consumed by the safe wrappers in `baracuda-driver` /
 //! `baracuda-runtime`. Use those crates directly unless you need a

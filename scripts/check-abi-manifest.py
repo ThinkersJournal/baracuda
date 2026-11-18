@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """C-ABI manifest guard for baracuda-kernels-sys and baracuda-cutlass-kernels-sys.
 
 The C ABI is an independent integer (`ABI_VERSION` in baracuda-kernels-sys/src/lib.rs, mirrored as

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! int4 GEMM plan.
 //!
 //! Phase 2 int4 surface — full 36-SKU matrix on `sm_89`:

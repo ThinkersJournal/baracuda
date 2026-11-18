@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `cutlass_gemm` — end-to-end CUTLASS GEMM via [`baracuda_cutlass`].
 //!
 //! Runs both a single GEMM (`f16` 256×256×128) and a 4-group MoE-shaped

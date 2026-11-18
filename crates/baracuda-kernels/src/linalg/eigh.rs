@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Symmetric / Hermitian eigendecomposition — `A · v = λ · v` with `A`
 //! real-symmetric or complex-Hermitian, returning real eigenvalues and
 //! orthonormal eigenvectors.

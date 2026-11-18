@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GGUF MMVQ throughput — baracuda self-bench across block formats,
 //! shapes, and activation dtypes.
 //!

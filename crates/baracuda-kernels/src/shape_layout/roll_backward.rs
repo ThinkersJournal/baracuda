@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `roll` backward plan — Category N (Phase 3 BW).
 //!
 //! `roll` is invertible: the backward of `y = roll(x, shifts)` is

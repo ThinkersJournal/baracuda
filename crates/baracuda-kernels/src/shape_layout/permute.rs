@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Materialized `permute` plan — `y = x.permute(dims)`.
 //!
 //! Output axis `d` is input axis `dims[d]`, so `output[d] =

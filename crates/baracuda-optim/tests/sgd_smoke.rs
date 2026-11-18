@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! SGD — single-step smoke test against a PyTorch-equivalent reference.
 //!
 //! Validates momentum + dampening + weight_decay + Nesterov combos

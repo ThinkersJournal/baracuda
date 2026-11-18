@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Flash Attention throughput bench — TFLOPS-equivalent across LLM-
 //! typical shapes × dtypes.
 //!

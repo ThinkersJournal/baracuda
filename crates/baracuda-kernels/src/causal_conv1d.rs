@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Causal-Conv1d — Phase 50 (gated behind the `mamba` feature).
 //!
 //! Hand-port of Tri Dao's depthwise causal 1-D convolution primitive.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! L1 loss plan — `y = mean(|pred - target|)` (or sum / per-cell).
 //!
 //! BW: `dpred = sign(pred - target) · scale`; subgradient at 0 = 0

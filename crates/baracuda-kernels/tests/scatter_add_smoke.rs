@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `ScatterAddPlan<T, N>` (Phase 7 7.3).
 //!
 //! Verifies atomic accumulation into the destination tensor along the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Block-sparse Scaled Dot-Product Attention forward plan (Phase 54).
 //!
 //! Clean-room hand-port of facebookresearch/xFormers

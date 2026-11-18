@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! BCE loss plan — `y = -mean(target·log(pred) + (1-target)·log(1-pred))`.
 //!
 //! Caller ensures `pred ∈ (0, 1)`; the kernel does not guard against

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! nvCOMP integration test — LZ4 batched round-trip.
 //!
 //! Compresses a small batch of known input buffers, decompresses, and

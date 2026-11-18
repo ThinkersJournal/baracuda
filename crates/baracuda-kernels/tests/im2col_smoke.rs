@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `Im2ColPlan` / `Im2Col1dPlan` /
 //! `Col2Im1dPlan` (Phase 19.3 — bespoke kernels).
 //!

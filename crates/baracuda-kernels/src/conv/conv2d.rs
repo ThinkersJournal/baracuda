@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Conv2d — NCHW 2-D convolution via cuDNN's legacy descriptor API.
 //!
 //! Implements forward + both backward passes for 2-D convolution over

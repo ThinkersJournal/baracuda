@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! End-to-end smoke for the Phase 50 Mamba-2 block (FW only).
 //!
 //! Assembles a tiny Mamba-2 block: causal_conv1d (SiLU) + SSD chunk-

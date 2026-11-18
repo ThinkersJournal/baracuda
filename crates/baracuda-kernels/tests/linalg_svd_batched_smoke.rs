@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BatchedSvdPlan` (cuSOLVER `gesvdjBatched`).
 //!
 //! Verifies `A_b = U_b · diag(S_b) · V_b^T` per batch slot for a couple

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration tests for Wave-27 Driver-API additions:
 //! v2 prefetch/advise + VMM reverse lookups.
 

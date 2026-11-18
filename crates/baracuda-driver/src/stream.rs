@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CUDA streams — ordered queues of work on a device.
 
 use std::sync::Arc;

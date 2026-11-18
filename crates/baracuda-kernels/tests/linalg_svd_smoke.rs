@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `SvdPlan` (cuSOLVER gesvd wrap).
 //!
 //! Verifies `U · diag(S) · V^T ≈ A` for a general matrix `A`, and that

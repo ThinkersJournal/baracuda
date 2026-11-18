@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Direct-FFI smoke tests proving baracuda's **same-pointer aliasing
 //! safety contract** on the elementwise trailblazers.
 //!

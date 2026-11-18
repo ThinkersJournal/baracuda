@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `quantize_per_channel` forward plan.
 //!
 //! Per-axis-slice quantization: `q[..., c, ...] = clamp(round(x[..., c, ...]

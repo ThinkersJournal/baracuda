@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! LAMB — single-step smoke test verifying trust-ratio computation.
 //!
 //! Builds two parameter tensors with known shapes / norms, runs one

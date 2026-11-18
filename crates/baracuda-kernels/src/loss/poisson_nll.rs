@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! PoissonNLL loss plan.
 //!
 //! `log_input=true`  (PyTorch default): `y = mean(exp(input) - target · input)`.

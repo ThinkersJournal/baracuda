@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AvgPool2d — NCHW 2-D average-pool via cuDNN's legacy descriptor API.
 //!
 //! Implements forward + backward over the four floating-point dtypes

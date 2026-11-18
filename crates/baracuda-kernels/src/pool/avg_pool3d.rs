@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AvgPool3d — NCDHW 3-D average-pool via cuDNN's Nd-pooling API.
 //!
 //! Sibling of [`super::AvgPool2dPlan`] for the rank-5 case.

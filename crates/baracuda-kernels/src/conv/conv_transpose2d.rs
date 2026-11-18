@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! ConvTranspose2d — 2-D transposed convolution via cuDNN.
 //!
 //! Transposed convolution (a.k.a. "fractionally-strided" or "deconv") is

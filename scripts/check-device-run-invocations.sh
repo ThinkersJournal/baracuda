@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Guard: documentation must not instruct a raw `cargo test -- --ignored` device run.
 #
 # CONTRIBUTING step 3 is explicit: on-device tests go through `cargo gpu-test`, which

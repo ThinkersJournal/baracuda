@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `bincount` plan — count occurrences of each integer in `x`.
 //!
 //! Trailblazer dtype coverage: `i32, i64` input → `i32` counts.

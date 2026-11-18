@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dtype-fanout smoke test for `WherePlan<T, N>` on the 3 dtypes
 //! (f16 / bf16 / f64) that landed in the heterogeneous-ternary fanout.
 //! The f32 trailblazer cell stays in `where_smoke.rs` (which also

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the Phase 14.1 strided affine sibling.
 //!
 //! Validates that [`AffinePlan::run`] dispatches between the contig

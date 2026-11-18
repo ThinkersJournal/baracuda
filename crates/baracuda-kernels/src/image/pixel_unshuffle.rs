@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `pixel_unshuffle` plan — Category T.
 //!
 //! `[N, C, H·r, W·r] → [N, C·r², H, W]`. Inverse permutation of

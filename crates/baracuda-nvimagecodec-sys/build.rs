@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `baracuda-nvimagecodec-sys` — internal FFI / support crate.
 
 fn main() {

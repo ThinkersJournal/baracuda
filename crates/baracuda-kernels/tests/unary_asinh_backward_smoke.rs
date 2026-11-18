@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary Asinh backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Asinh`). Backward:
 //! `dx = dy / sqrt(1 + x²)`. Saved-x. Domain: all real x.

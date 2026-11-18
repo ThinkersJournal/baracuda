@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `dequantize_per_group` backward plan — straight-through.
 //!
 //! `dq[i, j] = dy[i, j] * scale[i, g_idx]` where `g_idx = j / group_size`.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Sort-free top-K / top-P / min-P sampling — Phase 46 (FlashInfer
 //! cherry-pick).
 //!

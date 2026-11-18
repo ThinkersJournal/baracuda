@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `fftshift` / `ifftshift` — bespoke index-permutation kernels.
 //!
 //! cuFFT has no native shift, so these are hand-rolled kernels in

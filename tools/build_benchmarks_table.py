@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Build the BENCHMARKS.md wide-format rollup from phase29 CSV files.
 
 Phase 73.3 — joins per-bench CSV outputs from

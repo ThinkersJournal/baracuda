@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! BLAS-2 routines: `gemv`, `symv`, `trmv`, `trsv`, `ger`, `syr`.
 //!
 //! Column-major storage. Generic over `f32` / `f64` / [`Complex32`] /

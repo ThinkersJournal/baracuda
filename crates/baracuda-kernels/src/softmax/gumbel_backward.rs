@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GumbelSoftmax backward plan.
 //!
 //! Since `y_soft = softmax((x + g) / τ)`, the BW w.r.t. `x` is the

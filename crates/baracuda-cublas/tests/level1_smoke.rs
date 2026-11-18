@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated tests for cuBLAS L1/L2 additions.
 #![cfg(feature = "device-tests")]
 

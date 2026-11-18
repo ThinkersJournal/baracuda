@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Minimal end-to-end baracuda **runtime** example: allocate buffers, load
 //! PTX via the CUDA 12+ library API, launch `vector_add`, verify.
 //!

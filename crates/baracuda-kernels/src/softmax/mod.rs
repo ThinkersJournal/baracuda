@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Softmax op family — Phase 5 Category H.
 //!
 //! Length-preserving transform along a single axis. Output shape ==

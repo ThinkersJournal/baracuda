@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `LstSqPlan` (cuSOLVER `_gels` wrap).
 //!
 //! Verifies `min ||A·x - b||²` for a small overdetermined full-rank

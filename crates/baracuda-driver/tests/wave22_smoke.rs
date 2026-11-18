@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for Wave-22 Driver-API additions:
 //! user objects attached to graphs.
 

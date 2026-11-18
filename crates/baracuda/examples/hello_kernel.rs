@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Minimal end-to-end baracuda driver example: allocate buffers, load PTX,
 //! launch `vector_add`, verify.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! KV-cache append — decoder-inference helper (Milestone 6.5).
 //!
 //! At every autoregressive decoding step the model produces fresh

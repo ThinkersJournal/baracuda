@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Sort-free token sampling plans.
 //!
 //! FlashInfer's sampling kernels draw one token per row directly from a

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 45 — RoPE position-interpolation scaling helpers.
 //!
 //! Long-context recipes that derive a custom `(cos, sin)` schedule for

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `DropoutBackwardPlan`.
 //!
 //! Verifies bit-exact (within rounding) `dx[i] = dy[i] * mask[i] * scale`.

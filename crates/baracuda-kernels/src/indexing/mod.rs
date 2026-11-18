@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Indexing / scatter / gather op family — Category L.
 //!
 //! Phase 7 Milestone 7.3 of the baracuda-kernels comprehensive plan.

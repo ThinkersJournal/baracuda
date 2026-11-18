@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `KvCacheAppendPlan + AttentionKind::KvCache`.
 //!
 //! Pure copy → bit-exact (`to_bits()` equality) across every wired dtype.

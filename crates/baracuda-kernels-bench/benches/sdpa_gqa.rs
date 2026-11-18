@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Flash SDPA + GQA broadcast — baracuda self-bench across head ratios.
 //!
 //! GQA (grouped-query attention) feeds the K/V tensor with a smaller

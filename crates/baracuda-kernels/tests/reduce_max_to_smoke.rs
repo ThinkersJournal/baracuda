@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 31 — direct-FFI smoke for `reduce_max_to_<dtype>_run`.
 #![cfg(feature = "device-tests")]
 #![allow(

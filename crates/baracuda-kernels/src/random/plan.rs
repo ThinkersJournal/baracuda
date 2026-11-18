@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Random-generator plan — Uniform / Normal / Bernoulli.
 //!
 //! Three sample-generation ops with no input tensor (the descriptor's

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 72 direct-FFI smoke tests for the strided sibling exports
 //! (`_strided_run` / `_strided_can_implement`) on the 7 op families that
 //! lacked them: rms_norm, layer_norm, softmax, log_softmax, flip, roll,

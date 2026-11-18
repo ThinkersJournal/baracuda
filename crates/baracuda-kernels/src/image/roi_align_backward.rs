@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `roi_align` BW plan — Category T.
 //!
 //! Adjoint of [`crate::image::RoiAlignPlan`]: bilinear-weighted

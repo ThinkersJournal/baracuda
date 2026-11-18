@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Single-axis reduction plan.
 //!
 //! Output shape == input shape with the reduced axis collapsed to size

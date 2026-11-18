@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Paged-KV attention plans (decode, append, cascade merge).
 //!
 //! These are the FlashInfer-backed attention primitives for KV-cache

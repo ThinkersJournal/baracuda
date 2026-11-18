@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke for `PixelShufflePlan<T>` / `PixelUnshufflePlan<T>`
 //! (Phase 9 Category T). Pure index permutation → bit-exact at every
 //! dtype. Verifies inverse property (unshuffle(shuffle(x)) == x).

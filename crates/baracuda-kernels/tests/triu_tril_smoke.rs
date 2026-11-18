@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for Triu / Tril plans — Phase 13.4.
 //!
 //! Both ops are differentiable (`d_input = triu(d_output, diagonal)`,

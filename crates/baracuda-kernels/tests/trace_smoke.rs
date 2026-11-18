@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `TracePlan<T>` across
 //! `{f32, f16, bf16, f64}`. Matrix shape `[D, D]` with `D = 32` —
 //! single-thread diagonal walk, output is a rank-0 scalar.

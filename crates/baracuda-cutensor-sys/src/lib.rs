@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Raw FFI + dynamic loader skeleton for NVIDIA cuTENSOR.
 //!
 //! `baracuda-cutensor` wraps this with a safe, typed API. Use this

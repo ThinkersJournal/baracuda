@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Driver initialization helpers.
 //!
 //! CUDA requires `cuInit(0)` before any other driver call. `baracuda-driver`

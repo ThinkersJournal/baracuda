@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Spells one `cuda-ptx` inline-asm body of an Unpopped [`ExternDecl`] as a CUDA statement (ROADMAP U11 step 3;
 //! `docs/u11-ptx-leg-design.md`). Behind `--features extern_asm_cuda`, default off; it changes no other emitted output.
 //!

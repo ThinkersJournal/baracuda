@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `BoolReducePlan<T, N>` — `any` along one
 //! axis. Output dtype is always `Bool` (u8 storage, 0 = false, 1 =
 //! true). One test per input dtype:

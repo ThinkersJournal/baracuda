@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Embedding op family — Category M.
 //!
 //! Phase 7 Milestone 7.5 of the baracuda-kernels comprehensive plan.

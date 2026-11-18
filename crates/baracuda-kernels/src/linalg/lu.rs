@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! LU factorization with partial pivoting — `P · A = L · U`.
 //!
 //! Wraps cuSOLVER's `cusolverDnSgetrf` / `Dgetrf` (non-batched, supports

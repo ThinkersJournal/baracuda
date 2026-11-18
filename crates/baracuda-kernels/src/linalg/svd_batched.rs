@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Batched singular value decomposition — Jacobi method.
 //!
 //! Wraps cuSOLVER's `cusolverDnSgesvdjBatched` / `DgesvdjBatched`. Unlike

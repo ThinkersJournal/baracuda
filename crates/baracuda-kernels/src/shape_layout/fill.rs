@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Fill plan — `y[i] = value` for all `i`.
 //!
 //! Phase 3 fanout from `fuel-cuda-kernels/fill.cu`. Lives under the

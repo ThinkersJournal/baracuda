@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Mixed-precision BLAS-1 (`axpyEx`, `dotEx`, `nrm2Ex`, `scalEx`, `rotEx`).
 //!
 //! Unlike the typed [`crate::axpy`] etc. helpers, these accept explicit

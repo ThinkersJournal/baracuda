@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Third-party type integrations.
 //!
 //! When a user enables a `*-crate` feature, baracuda automatically teaches

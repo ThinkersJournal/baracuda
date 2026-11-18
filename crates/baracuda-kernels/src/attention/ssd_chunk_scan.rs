@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Mamba-2 SSD chunk-scan — Phase 50 (gated behind the `mamba` feature).
 //!
 //! State-Space Duality (SSD) reformulates Mamba's selective SSM

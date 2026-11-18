@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Random / sampling op family — Phase 4.5 (Category Q).
 //!
 //! Plan-per-op-family because the random ops have heterogeneous arg

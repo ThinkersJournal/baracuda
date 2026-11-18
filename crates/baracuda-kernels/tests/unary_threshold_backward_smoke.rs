@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `UnaryParamBackwardPlan + UnaryKind::Threshold`.
 //!
 //! Forward: `y = (x > t) ? x : v`. Backward: `dx = (x > t) ? dy : 0`.

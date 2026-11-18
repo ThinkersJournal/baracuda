@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! FKC contract tests that require a real backend lowering (`&Cuda`).
 //!
 //! Relocated from `baracuda-kernelgen` `src/contract.rs`'s `mod tests` during the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Batched and mixed-precision GEMM.
 //!
 //! [`gemm_batched`] takes a host-side slice of *device pointers*, one per

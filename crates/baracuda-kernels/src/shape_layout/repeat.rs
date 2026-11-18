@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `repeat` plan — per-axis tile (output > input). PyTorch
 //! `torch.repeat(x, *repeats)`: `output.shape[d] = input.shape[d] *
 //! repeats[d]`. The kernel walks output cells and computes input

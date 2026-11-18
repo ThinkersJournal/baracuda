@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the bespoke int4 RRR Identity kernels in
 //! `baracuda-kernels-sys` — covers both `S4` and `U4` element types.
 //!

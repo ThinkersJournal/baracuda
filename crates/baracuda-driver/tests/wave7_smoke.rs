@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for Wave-7 Driver-API additions:
 //! the Virtual Memory Management (VMM) API round-trip.
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryPlan + BinaryKind::Pow` — `y = a^b`.
 //! Transcendental — relative-eps compare per dtype.
 //!

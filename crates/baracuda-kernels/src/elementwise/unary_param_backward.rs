@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Backward plan for the parameterized unary elementwise family.
 //!
 //! Sibling of [`crate::UnaryParamPlan`] for gradient computation. The

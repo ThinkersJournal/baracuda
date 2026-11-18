@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `GridSamplePlan<T>` + `AffineGridPlan<T>`
 //! (Phase 9 Category T). PyTorch defaults: bilinear, zeros pad,
 //! `align_corners=false`. gated behind the `device-tests` feature.

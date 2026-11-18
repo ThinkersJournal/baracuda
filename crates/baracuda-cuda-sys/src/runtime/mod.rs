@@ -1,4 +1,5 @@
 #![allow(
+// SPDX-License-Identifier: MIT OR Apache-2.0
     non_camel_case_types,
     reason = "names mirror the vendor C API (FFI bindings)"
 )]

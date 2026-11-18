@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `dynamic_range_quantize` — compose op (Phase 8 Milestone 8.3).
 //!
 //! Computes a `(scale, zero_point)` pair from the runtime dynamic range

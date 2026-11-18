@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Baracuda release preflight: the project-specific checks that run BEFORE
 # `releaseant publish` (ReleaseAnt R5, adopted for baracuda). Publishing
 # mechanics (order, retries, rate limits, tagging) are ReleaseAnt's; these two

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `RepeatBackwardPlan<T, N>` — backward of
 //! `torch.repeat(x, *repeats)`. Each `dx[c_in]` is the sum of
 //! `prod(repeats[d])` cells of `dy` (one per coord in the per-axis

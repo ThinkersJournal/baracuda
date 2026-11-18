@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Driver-free pieces of board #162's kernel performance baseline design
 //! (`docs/design/2026-10-09-kernel-perf-baseline-design.md`): timing
 //! statistics, machine-state record types, and the baseline key. No CUDA

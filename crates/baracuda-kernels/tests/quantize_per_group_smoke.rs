@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `QuantizePerGroupPlan<f32, S8>`.
 //! `[outer=2, axis_size=8]`, `group_size=4` → 2 groups per row, so
 //! `scale` / `zp` shape is `[2, 2]`.

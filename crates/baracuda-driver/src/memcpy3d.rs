@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! 3-D arrays + 3-D memcpy + mipmapped arrays.
 //!
 //! Volumetric data (MRI, CT, voxel grids) lives in `cuArray3DCreate`-backed

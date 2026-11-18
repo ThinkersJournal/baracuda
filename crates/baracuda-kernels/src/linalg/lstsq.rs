@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Least-squares solve `min ||A·x - b||²` (full-rank `A`, `m ≥ n`).
 //!
 //! Wraps cuSOLVER's mixed-precision iterative-refinement `_gels` family.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The ONNX parser: fill a [`Network`] from a serialized ONNX model.
 
 use std::ffi::{CStr, CString};

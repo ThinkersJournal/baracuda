@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 36 (Fuel ask Gap 6a) — direct-FFI smoke for the new argsort
 //! dtype fanout (`u8`, `i8`, `u32`, `i16`, `bf16`, `f16`, FP8 E4M3).
 //!

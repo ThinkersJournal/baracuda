@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime Wave 1: memory pools, 2D memcpy, host callbacks, write/wait
 //! value, pointer attributes, device properties, explicit graph nodes,
 //! graph exec update, func attrs.

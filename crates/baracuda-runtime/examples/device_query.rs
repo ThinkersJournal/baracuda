@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Enumerate CUDA devices via the Runtime API, print compute capability
 //! and total global memory for each.
 //!

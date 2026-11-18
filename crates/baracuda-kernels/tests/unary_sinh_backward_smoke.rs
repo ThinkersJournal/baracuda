@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary Sinh backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Sinh`). Backward:
 //! `dx = dy * cosh(x)`. Saved-x, transcendental.

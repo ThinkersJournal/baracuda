@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration tests for `baracuda-driver`.
 //!
 //! Gated behind the `device-tests` feature, which CI type-checks on every PR and

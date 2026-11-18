@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Binary elementwise plan.
 //!
 //! Phase 3 trailblazer surface for the baracuda-kernels elementwise op

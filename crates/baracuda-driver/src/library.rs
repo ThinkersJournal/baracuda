@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Driver-API library + kernel management (CUDA 12.0+).
 //!
 //! Unlike [`crate::Module`] which loads into a specific [`crate::Context`],

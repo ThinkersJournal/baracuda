@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `RandomPlan + RandomKind::Bernoulli`.
 //! Verifies the empirical mean of the Bool output matches the requested
 //! probability `p` within a statistical tolerance.

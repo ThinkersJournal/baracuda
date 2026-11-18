@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! External memory / semaphore interop via the Runtime API.
 //!
 //! Mirrors `baracuda_driver::external`. Because `cudaExternalMemory_t`

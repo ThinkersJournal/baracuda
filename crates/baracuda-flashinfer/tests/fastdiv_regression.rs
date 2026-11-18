@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Regression tests for the vendored FlashInfer `fastdiv.cuh`, through the plans that use it.
 //!
 //! The 2026-05 vendor patch (a pure-C++ replacement for `cuda::fast_mod_div`) gave quotient 0 for every power-of-two

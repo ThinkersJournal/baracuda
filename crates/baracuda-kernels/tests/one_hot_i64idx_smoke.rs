@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the i64 class-index variant of
 //! `OneHotPlan<T, N>` (Phase 15.2).
 //!

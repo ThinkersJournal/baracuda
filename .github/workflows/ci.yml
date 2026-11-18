@@ -558,6 +558,16 @@ jobs:
       - name: cargo check every (crate, feature)
         run: python3 scripts/check-each-feature.py --shard ${{ matrix.shard }}/4
 
+  # Dependency security (pm-kernels/PM ruling 2026-11-17): cargo-deny over `deny.toml` -- advisories, licences, bans,
+  # sources. We publish crates and bundle NVIDIA-adjacent files, so the licence check matters. Required-context
+  # registration on `main` is the PM's step; this job only has to exist and pass.
+  deny:
+    name: cargo deny (advisories, licences, bans, sources)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2
+
   # ADVISORY portfolio check (CireSnave 2026-10-23: "Roll out advisory-only, non-blocking CodeRipper
   # checks everywhere."). NOT a required status context and no rule is silenced here: the rule list is
   # fixed by the `portfolio` profile inside the reusable workflow. It builds the crates (build.rs runs),

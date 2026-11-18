@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for Wave-23 Driver-API additions:
 //! profiler start/stop, func/kernel name + param info, device UUID,
 //! context ID, module loading mode, graph dot-print.

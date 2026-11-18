@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `SmoothQuantLinearPlan` — Phase 45 zero-new-CUDA composition.
 //!
 //! Implements the inference-time linear pass of **SmoothQuant**

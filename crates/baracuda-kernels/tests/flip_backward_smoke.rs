@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `FlipBackwardPlan<T, N>` — backward of
 //! `flip` is the same op applied to `dy`. Bit-exact, no math.
 //!

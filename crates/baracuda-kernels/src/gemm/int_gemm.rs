@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Unified integer GEMM plan.
 //!
 //! Dispatches by [`LayoutSku`]:

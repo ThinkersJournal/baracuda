@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU test that `CastPlan` rounds f64 -> f16/bf16 and 32/64-bit integer ->
 //! bf16 ONCE (round-to-nearest-even straight from the source), not twice through
 //! f32.

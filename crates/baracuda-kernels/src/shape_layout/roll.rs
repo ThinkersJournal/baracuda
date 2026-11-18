@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `roll` plan — cyclic shift along axes. Output shape == input shape.
 //! Today wired for `{f32, f64, f16, bf16}`.
 

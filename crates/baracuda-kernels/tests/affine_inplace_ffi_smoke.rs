@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Direct-FFI smoke tests for the `affine_inplace_*` family.
 //!
 //! Covers:

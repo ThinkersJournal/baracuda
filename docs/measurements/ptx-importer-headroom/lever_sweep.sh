@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # PTX-lever / occupancy survey over ship-exact kernels-sys objects.
 # Reports PRESENT and ABSENT per kernel; counts, never "the kernels don't use it".
 #

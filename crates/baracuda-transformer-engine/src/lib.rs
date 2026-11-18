@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-transformer-engine
 //!
 //! Safe Rust wrapper for baracuda's port of NVIDIA

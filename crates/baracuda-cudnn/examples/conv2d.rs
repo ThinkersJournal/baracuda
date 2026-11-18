@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Minimal cuDNN 2-D forward convolution demo.
 //!
 //! Builds NCHW tensor + filter + convolution descriptors, queries the

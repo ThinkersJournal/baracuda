@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-optim
 //!
 //! Fused multi-tensor optimizer plans (Adam / LAMB / SGD) for the

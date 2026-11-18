@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Gated-activation forward plan (Phase 3 Category C′).
 //!
 //! Plan shape: split the rank-`N` input `x` along `split_dim` into two

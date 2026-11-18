@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for the **NVIDIA NVSHMEM host API**.
 //!
 //! NVSHMEM is the OpenSHMEM symmetric-heap model on GPUs: every PE

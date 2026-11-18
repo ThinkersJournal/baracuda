@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the capture-safe dense m=1 GEMV family —
 //! `GemvDensePlan` (bespoke kernel) and its flat C twin
 //! `baracuda_kernels_gemv_dense_m1_*`.

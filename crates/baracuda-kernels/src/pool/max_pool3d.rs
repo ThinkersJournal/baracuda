@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! MaxPool3d — NCDHW 3-D max-pool via cuDNN's Nd-pooling descriptor API.
 //!
 //! Sibling of [`super::MaxPool2dPlan`]. Drives the same cuDNN exec

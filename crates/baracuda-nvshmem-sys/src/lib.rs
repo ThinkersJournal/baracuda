@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Raw FFI + dynamic loader for the **NVIDIA NVSHMEM host library**
 //! (`libnvshmem_host.so`).
 //!

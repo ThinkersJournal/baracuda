@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The seam crates are pinned with a tilde requirement, never `^` and never `=`.
 //!
 //! FireLine's rule for its crates (one project, a crate per interface, each crate's version

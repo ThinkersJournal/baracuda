@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The [`Driver`] singleton: a lazily-loaded handle to `libcuda` with a
 //! cached, version-aware function-pointer table.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for CV-CUDA (NVCV) — GPU computer-vision primitives.
 //!
 //! CV-CUDA is a separately-installed NVIDIA library; this crate wraps the

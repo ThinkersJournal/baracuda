@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CUDA Graph user objects (CUDA 12.0+).
 //!
 //! Graphs frequently hold references to external resources (allocators,

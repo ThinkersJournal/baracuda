@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for NVIDIA nvJPEG (JPEG decode/encode on GPU).
 //!
 //! Layered on top of [`baracuda-nvjpeg-sys`](https://docs.rs/baracuda-nvjpeg-sys).

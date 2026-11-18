@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-cuda-seam
 //!
 //! Baracuda's live JIT synthesizer for the FireLine kernel seam — the

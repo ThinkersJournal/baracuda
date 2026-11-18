@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `unique_consecutive` plan — emit one cell per run-start in each row.
 //!
 //! Input must be pre-sorted (or the user only wants consecutive-equal

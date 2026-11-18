@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Smoke test for the host-side `gptq_to_marlin_repack` utility —
 //! Phase 48 Goal C.
 //!

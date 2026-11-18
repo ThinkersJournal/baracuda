@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dense linear algebra op family — Phase 6 (Category Linalg).
 //!
 //! Wraps cuSOLVER's dense API plus a few bespoke kernels for batched-QR

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `cudaError_t` — the Runtime API status enum — plus its `CudaStatus` impl.
 
 use baracuda_types::CudaStatus;

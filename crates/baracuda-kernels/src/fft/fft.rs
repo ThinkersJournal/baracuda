@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! FFT / IFFT (complex-to-complex) — `FftPlan<T>` for `T = Complex64`
 //! or `T = Complex128`.
 //!

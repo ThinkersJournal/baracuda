@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Process-wide default-stream-semantics selector.
 //!
 //! The CUDA Driver API exposes two ABI-distinct variants of many functions

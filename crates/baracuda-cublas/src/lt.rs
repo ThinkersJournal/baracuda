@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! cuBLASLt — the descriptor-based, heuristic-tuned GEMM API.
 //!
 //! # Fused activations / epilogues

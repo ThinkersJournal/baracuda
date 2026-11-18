@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! General (non-symmetric) eigendecomposition — `A · v = λ · v` where
 //! `A` may have complex eigenvalues even for real input.
 //!

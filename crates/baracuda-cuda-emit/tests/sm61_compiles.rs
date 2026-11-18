@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Emitted kernels compile for Pascal (`cuda:sm61`) and the other pre-Ampere targets, no device needed.
 //!
 //! SA-13, hardware-free half: compiles a spread of generated kernels with NVRTC for `sm_61`, `sm_70`

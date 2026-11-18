@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! 3D memcpy + `cudaMalloc3D` pitched 3D buffers.
 
 use core::ffi::c_void;

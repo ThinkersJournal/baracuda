@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for NVIDIA cuBLAS (+ cuBLASLt + cuBLASXt).
 //!
 //! Layered on top of [`baracuda-cublas-sys`](https://docs.rs/baracuda-cublas-sys).

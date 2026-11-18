@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GGUF MMVQ plan — fused dequant + matrix-vector multiply.
 //!
 //! `out[r] = Σ_c W_q[r, c] · y[c]`, where `W_q` is GGUF-packed

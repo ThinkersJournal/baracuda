@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `embedding` FW plan — Category M trailblazer.
 //!
 //! `out[n, :] = weight[indices[n], :]` for n in `0..num_indices`. When

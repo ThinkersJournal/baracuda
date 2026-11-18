@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! MultiMargin loss plan — Tier-2 (Milestone 5.3).
 //!
 //! Per-row n: `Σ_{j != t_n} max(0, margin - input[n, t_n] + input[n, j])^p / C`.

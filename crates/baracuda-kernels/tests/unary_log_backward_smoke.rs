@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary log backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Log`). Backward: `dx = dy / x`.
 //! Saved-x, no transcendental. Inputs keep `x >= 1.0` so the division

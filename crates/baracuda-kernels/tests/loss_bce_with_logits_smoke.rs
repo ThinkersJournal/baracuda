@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BceWithLogitsLossPlan`. FW × 4 dtypes × Mean.
 #![cfg(feature = "device-tests")]
 

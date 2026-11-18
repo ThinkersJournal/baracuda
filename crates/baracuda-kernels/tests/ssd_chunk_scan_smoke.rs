@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for Phase 50 [`SsdChunkScanPlan`] (FW).
 
 #![cfg(feature = "mamba")]

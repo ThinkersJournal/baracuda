@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `interpolate` BW plan — Category T (bilinear 2D).
 //!
 //! Adjoint of [`crate::image::InterpolatePlan`]: distributes each

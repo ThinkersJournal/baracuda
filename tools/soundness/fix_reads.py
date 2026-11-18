@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Apply rustc E0616 ("field `X` of struct `TensorRef|TensorMut` is private")
 fixes from a `cargo check --message-format=json` log: turn the field read into
 the accessor call, `.data` -> `.data()`, `.shape` -> `.shape()`, `.stride` ->

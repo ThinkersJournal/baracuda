@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the Triu / Tril strided siblings — Phase 14.3.
 //!
 //! Coverage:

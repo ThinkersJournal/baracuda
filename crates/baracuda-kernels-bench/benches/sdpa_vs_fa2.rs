@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 42 A/B: FA2 vs baracuda's bespoke Flash SDPA forward.
 //!
 //! Sweeps four shape regimes to validate the dispatch heuristic:

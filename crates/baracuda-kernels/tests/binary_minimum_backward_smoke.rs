@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryBackwardPlan<T, N> + BinaryKind::Minimum`.
 //!
 //! Mirror of `binary_maximum_backward_smoke.rs` with the gradient flipped

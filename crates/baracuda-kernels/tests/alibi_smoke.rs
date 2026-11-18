@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `AlibiPlan + AttentionKind::Alibi` FW.
 //!
 //! `y[b, h, i, j] = scores[b, h, i, j] + slope[h] · (j - i)`.

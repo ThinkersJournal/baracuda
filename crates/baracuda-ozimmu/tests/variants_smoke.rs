@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 44c — exercise the four ozIMMU algorithmic variants (Base /
 //! EF / RN / H) end-to-end via the safe wrapper.
 //!

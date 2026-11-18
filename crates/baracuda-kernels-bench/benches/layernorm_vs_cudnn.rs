@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! LayerNorm throughput — baracuda self-bench.
 //!
 //! Phase 29 cross-impl bench. cuDNN's classic API doesn't expose

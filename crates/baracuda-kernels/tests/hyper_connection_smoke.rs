@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `HyperConnectionPlan` (Phase 43, Tier 1).
 //!
 //! mHC.cu's static-H FW path is a multi-step pipeline (RMSNorm +

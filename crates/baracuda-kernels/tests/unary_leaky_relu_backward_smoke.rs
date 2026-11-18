@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `UnaryBackwardPlan + UnaryKind::LeakyRelu`.
 //!
 //! Forward: `y = x if x > 0 else α·x`. Backward:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! #140: the K-quant MMVQ kernels (`mmvq_q*_K_tmpl` in
 //! `crates/baracuda-kernels-sys/kernels/gguf/mmvq.cu`) computed
 //! `row = blockIdx.x*blockDim.y + threadIdx.y` and guarded with

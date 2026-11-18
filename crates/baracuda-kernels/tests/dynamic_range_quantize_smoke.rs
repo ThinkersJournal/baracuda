@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `DynamicRangeQuantizePlan<f32, S8>` (Phase 8.3).
 //!
 //! `[N=2, D=4]` fixture; verifies the symmetric per-token DRQ recipe:

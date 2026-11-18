@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for Wave-19 Driver-API additions:
 //! conditional graph nodes (CUDA 12.3+).
 

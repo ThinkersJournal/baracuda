@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 19.2 — Real-GPU smoke tests for the cuDNN convolution FFI
 //! facade exposed by `baracuda-kernels-sys`.
 //!

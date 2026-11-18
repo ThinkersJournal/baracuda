@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Backward plan for the ternary elementwise family.
 //!
 //! Sibling of [`crate::TernaryPlan`] for gradient computation:

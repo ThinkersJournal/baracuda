@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU test for `HyperConnectionPlan<f16 / bf16>` (SA-31 Tier 3).
 //!
 //! The half-precision plan widens `x_expanded` to f32, runs the vendored f32 path

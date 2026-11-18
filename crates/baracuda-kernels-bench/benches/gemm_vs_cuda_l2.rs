@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GEMM head-to-head: baracuda CUTLASS / cuBLAS gemmEx / CUDA-L2.
 //!
 //! Phase 44 bench — RL+LLM-tuned HGEMM kernels from

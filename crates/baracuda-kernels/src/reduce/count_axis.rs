@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Single-axis `count_nonzero` reduction. Heterogeneous output dtype:
 //! input is `T: Element`, output is always `i64` (PyTorch convention —
 //! `torch.count_nonzero` returns int64).

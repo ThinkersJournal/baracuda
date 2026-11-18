@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated NPP smoke test: query version.
 //!
 //! NPP's signal/image functions moved to `_Ctx`-suffixed variants in

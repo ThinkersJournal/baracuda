@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `kthvalue_backward` plan — scatter the scalar `dy[batch]` back to
 //! the saved-index position in `dx[batch, row_len]`.
 //!

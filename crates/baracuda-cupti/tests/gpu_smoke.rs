@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CUPTI presence + version probe.
 
 use baracuda_driver::require_optional;

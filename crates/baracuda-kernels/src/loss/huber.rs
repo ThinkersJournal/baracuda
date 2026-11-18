@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Huber loss plan — piecewise:
 //! `0.5·x²` if `|x|<δ`, else `δ·(|x| - 0.5·δ)`, where `x = pred - target`.
 //!

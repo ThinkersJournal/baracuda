@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the Phase 74 dense FP GEMM family —
 //! `DenseGemmPlan` (cuBLAS-backed) and its flat C twin
 //! `baracuda_kernels_gemm_dense_*`.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `SoftmaxPlan + SoftmaxKind::LogSoftmax`.
 //!
 //! Forward: `y[k] = (x[k] - max(x)) - log(Σ_j exp(x[j] - max(x)))`,

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `SolvePlan` (cuSOLVER `getrf` + `getrs` wrap).
 //!
 //! Verifies `A · X ≈ B` for a small well-conditioned `A`. Storage

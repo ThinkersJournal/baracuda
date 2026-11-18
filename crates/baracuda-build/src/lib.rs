@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Build-script helpers shared by every `baracuda-*-sys` crate.
 //!
 //! Typical usage from a `-sys` crate's `build.rs`:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! A `Select`-bearing all-move RowReduce, compiled and run, with the payload.
 //!
 //! #113 declined `Select` from the §6.16-0009 bit-move route. Measured with the

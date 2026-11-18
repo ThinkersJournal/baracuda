@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `MaxPool2dPlan` / `AvgPool2dPlan` FW + BW.
 //!
 //! Covers all four FP dtypes (f32 / f64 / f16 / bf16). The base fixture

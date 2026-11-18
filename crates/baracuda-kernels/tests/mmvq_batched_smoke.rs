@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 20.1 — real-GPU smoke tests for batched MMVQ × N-experts.
 //!
 //! Coverage map (one representative per dispatch path):

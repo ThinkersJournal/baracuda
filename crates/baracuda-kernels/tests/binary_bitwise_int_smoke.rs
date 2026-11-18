@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the Phase 3.3 integer bitwise binary
 //! kernels in `baracuda-kernels-sys`.
 //!

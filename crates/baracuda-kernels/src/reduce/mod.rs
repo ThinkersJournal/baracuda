@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Reduction op family — Phase 4 (Category E).
 //!
 //! Output shape differs from input: the reduced axis collapses to size

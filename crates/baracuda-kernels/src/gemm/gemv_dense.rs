@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Capture-safe dense m=1 GEMV plan (bespoke kernel).
 //!
 //! The m == 1 companion to [`DenseGemmPlan`](super::dense_gemm::DenseGemmPlan).

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration tests for cuFFT.
 #![cfg(feature = "device-tests")]
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Rectangular batched approximate-SVD via `gesvdaStridedBatched`.
 //!
 //! Wraps cuSOLVER's `cusolverDnSgesvdaStridedBatched` /

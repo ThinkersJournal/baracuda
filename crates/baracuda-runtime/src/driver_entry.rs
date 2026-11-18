@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime-to-Driver entry-point bridge — `cudaGetDriverEntryPoint`.
 //!
 //! Most code using this crate goes through the typed Driver loader in

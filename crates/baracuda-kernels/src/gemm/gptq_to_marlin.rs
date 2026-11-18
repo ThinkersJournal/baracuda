@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPTQ → Marlin weight repack utility — Phase 48 Goal C.
 //!
 //! Pure-Rust host-side routine that converts a GPTQ-format quantized

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `topk` plan — block-bitonic top-k select.
 //!
 //! `topk(x, k, dim=last, largest)` returns the top-k values along the

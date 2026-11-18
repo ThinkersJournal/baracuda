@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The CUDA [`unpopped_convert::Frontend`] — the parse-side (`.cu` -> IR)
 //! half of Baracuda's donation to Unpopped's neutral core.
 //!

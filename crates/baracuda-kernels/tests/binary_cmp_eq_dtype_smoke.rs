@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dtype-fill smoke test for `BinaryCmpPlan<T, N> + BinaryCmpKind::Eq`
 //! on the 3 dtypes (f16 / bf16 / f64) that landed in the comparison
 //! fanout. The f32 trailblazer cell stays in `binary_cmp_eq_smoke.rs`.

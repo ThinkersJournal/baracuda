@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `RfftNdPlan` + `IrfftNdPlan` (rank 2,
 //! R2C / C2R) — Milestone 6.8.
 //!

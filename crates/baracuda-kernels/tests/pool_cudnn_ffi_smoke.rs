@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Smoke test for the Phase 19.1 cuDNN pool FFI facade.
 //!
 //! Verifies that the raw `extern "C"` FFI entry points in

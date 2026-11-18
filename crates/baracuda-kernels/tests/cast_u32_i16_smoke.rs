@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 31 — direct-FFI smoke for the new u32 / i16 cast instantiations.
 //!
 //! Covers the four cells of the matrix that exercise both new dtypes

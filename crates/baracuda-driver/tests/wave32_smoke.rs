@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration test for `cuMemMapArrayAsync` typed wrapper.
 //!
 //! Sparse arrays require hardware support (compute 7.0+; full mipmap-tail

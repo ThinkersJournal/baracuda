@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `fake_quantize` backward plan via STE.
 //!
 //! `dx = dy * 1[qmin <= round(x/scale)+zp <= qmax]`. **No `1/scale`

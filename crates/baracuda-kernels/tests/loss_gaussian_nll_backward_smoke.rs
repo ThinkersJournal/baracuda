@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `GaussianNllLossBackwardPlan`. BW × 4 dtypes × Mean.
 //!
 //! `dinput = (input - target) / max(var, eps) · dy / N`.

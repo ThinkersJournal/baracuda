@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! RowParallelLinear — single-rank smoke test.
 //!
 //! Same shape as `column_parallel_smoke` but with the input-split

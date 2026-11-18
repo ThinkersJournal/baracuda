@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Binary comparison plan.
 //!
 //! Sibling of [`crate::BinaryPlan`] for ops where the output dtype

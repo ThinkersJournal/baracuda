@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary Tan backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Tan`). Backward:
 //! `dx = dy * (1 + tan(x)²)`. Saved-x, transcendental.

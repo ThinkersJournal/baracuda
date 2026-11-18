@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `L1LossBackwardPlan`. BW × 4 dtypes × Mean.
 //!
 //! `dpred[i] = sign(pred[i] - target[i]) · dy / N`.

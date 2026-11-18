@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! E4M3 round-trip smoke test.
 //!
 //! Verifies that values within E4M3's representable range survive a

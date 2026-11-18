@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Single-GPU NCCL smoke tests — exercise the full collective surface
 //! against a `Communicator::new_single_gpu` (world_size = 1) communicator.
 //!

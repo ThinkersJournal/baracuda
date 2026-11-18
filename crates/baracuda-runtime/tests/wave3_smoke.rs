@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime Wave 3: batch mem ops, conditional graph handles,
 //! driver-entry-point bridge, occupancy-with-flags + available-smem.
 

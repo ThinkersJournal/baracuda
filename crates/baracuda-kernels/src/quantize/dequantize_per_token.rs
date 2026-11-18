@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `dequantize_per_token` forward plan.
 //!
 //! Per-row dequantization: `y[n, d] = (q[n, d] - zp[n]) * scale[n]`.

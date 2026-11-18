@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for Phase 50 [`SsdChunkScanBackwardPlan`].
 //!
 //! Validates dx via finite difference at a small handful of probe

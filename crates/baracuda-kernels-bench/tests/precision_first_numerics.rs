@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! On-device numerical two-sided validation of the precision-first
 //! `MorePrecise` variants — proving the `_prec` kernel is MORE ACCURATE than
 //! the base (not merely different) vs an f64 oracle, on an ill-conditioned

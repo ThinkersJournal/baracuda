@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Stream-ordered memory pools (CUDA 11.2+).
 //!
 //! A [`MemoryPool`] is a GPU-backed allocator with a release threshold:

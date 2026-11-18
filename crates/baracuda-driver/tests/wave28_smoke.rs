@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration tests for Wave-28 Driver-API additions:
 //! array introspection, context-level events, P2P query, exec-affinity
 //! probe, core-dump settings, library-extras (enumerate kernels + module).

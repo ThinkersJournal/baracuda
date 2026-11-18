@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Raw FFI + dynamic loader for NVIDIA libcudf (RAPIDS cuDF GPU dataframes).
 //!
 //! `baracuda-cudf` wraps this with a safe, typed API. Use this crate

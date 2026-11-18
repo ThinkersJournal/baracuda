@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `RollBackwardPlan<T, N>` — backward of
 //! `roll` is `roll` with negated shifts. Bit-exact, no math.
 //!

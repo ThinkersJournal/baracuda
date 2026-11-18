@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `dequantize_per_tensor` backward plan — `dq = dy * scale`.
 //!
 //! Linear identity scaled by `scale`. The integer `q` operand is

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Rust `#[repr(C, packed)]` mirrors of the GGUF block-format structs.
 //!
 //! Layouts match the C definitions in

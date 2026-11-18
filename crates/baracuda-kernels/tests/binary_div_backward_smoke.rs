@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the binary-div backward kernel
 //! (`BinaryBackwardPlan<T, N> + BinaryKind::Div`).
 //!

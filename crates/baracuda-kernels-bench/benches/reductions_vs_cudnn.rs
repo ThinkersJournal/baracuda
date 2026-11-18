@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Reductions throughput — baracuda vs cuDNN reduce_tensor.
 //!
 //! Reduces along the last axis of a 2-D `(rows, hidden)` tensor. Both

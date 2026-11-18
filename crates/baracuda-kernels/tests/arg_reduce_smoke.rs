@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `ArgReducePlan<f32, N>` — argmax / argmin.
 //! Output dtype is i64 (PyTorch convention). Ties broken by first
 //! occurrence.

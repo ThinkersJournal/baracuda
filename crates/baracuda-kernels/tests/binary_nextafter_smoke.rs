@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryPlan + BinaryKind::Nextafter` —
 //! `y = nextafter(a, b)`. Bit-exact across all dtypes — the operation
 //! is a 1-ULP bit manipulation with no rounding.

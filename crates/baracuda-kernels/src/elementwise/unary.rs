@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Unary elementwise plan.
 //!
 //! 1→1 sibling of [`crate::BinaryPlan`]. Mirrors the same shape

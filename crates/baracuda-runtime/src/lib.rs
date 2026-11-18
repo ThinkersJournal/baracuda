@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for the CUDA Runtime API.
 //!
 //! The Runtime API is "higher level" than the Driver API: contexts are

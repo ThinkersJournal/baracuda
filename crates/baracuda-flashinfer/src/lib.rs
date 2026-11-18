@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe, typed Rust wrappers for NVIDIA **FlashInfer**'s inference-
 //! serving kernels — the vLLM-style serving surface for the baracuda
 //! CUDA stack.

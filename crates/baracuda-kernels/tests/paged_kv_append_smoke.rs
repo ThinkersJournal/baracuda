@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Direct-FFI smoke test for FlashInfer `paged_kv_append_decode`
 //! (Phase 46/66, vLLM-style serving).
 //!

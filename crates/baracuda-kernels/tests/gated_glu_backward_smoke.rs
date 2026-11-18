@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the gated GLU backward.
 //!
 //! Forward: `y = a · sigmoid(b)`. Backward (saved x):

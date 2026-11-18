@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 58 — DistributedAdamStepPlan multi-rank scaffold.
 //!
 //! Exercises the all-reduce + local-step + all-gather path. Gated

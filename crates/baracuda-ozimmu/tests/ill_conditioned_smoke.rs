@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Ill-conditioned input smoke test for the Phase 44b baracuda-owned
 //! ozIMMU. Proves the slice-count knob actually moves the needle:
 //! a Hilbert-like ill-conditioned matrix at S=6 should miss the

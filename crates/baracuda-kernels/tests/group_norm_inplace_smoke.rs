@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Direct-FFI smoke test for the **Phase 65d in-place dispatch
 //! contract** on GroupNorm. Same two-stage argument as BN
 //! (`batch_norm_inplace_smoke`): stage-1 reads `x` and writes only

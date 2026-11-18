@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Direct-FFI smoke test for the **Phase 65d in-place dispatch
 //! contract** on InstanceNorm. IN dispatches through GroupNorm with
 //! `num_groups == c_extent`, so this proof covers the IN call path

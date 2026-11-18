@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Trace plan — `y = sum(diag(M))` for a 2-D square matrix.
 //!
 //! Doesn't fit `ReducePlan<T, N>` cleanly because trace reduces *both*

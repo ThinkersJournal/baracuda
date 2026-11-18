@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Device enumeration + queries via the Runtime API.
 //!
 //! Unlike `baracuda_driver::Device`, a [`Device`] in the Runtime API is

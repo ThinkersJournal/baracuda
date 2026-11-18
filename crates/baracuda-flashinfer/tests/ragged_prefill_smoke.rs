@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Smoke tests for ragged (non-paged) prefill — Phase 66 Tier 2.
 //! Gated behind the `device-tests` feature + `flashinfer` feature.
 //!

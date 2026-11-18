@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `MultilabelMarginLossPlan`. FW × 4 dtypes.
 #![cfg(feature = "device-tests")]
 #![allow(

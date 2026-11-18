@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `EighPlan` (cuSOLVER syevd / heevd wrap).
 //!
 //! Builds a real symmetric matrix with closed-form eigenvalues, runs

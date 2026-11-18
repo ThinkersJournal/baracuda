@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `grid_sample` BW plan — Category T (2-D).
 //!
 //! Adjoint of [`crate::image::GridSamplePlan`]: scatters the upstream

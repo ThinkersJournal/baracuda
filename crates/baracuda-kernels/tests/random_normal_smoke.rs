@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `RandomPlan + RandomKind::Normal` over
 //! cuRAND. Verifies sample mean / stddev match the requested parameters
 //! within a generous statistical tolerance.

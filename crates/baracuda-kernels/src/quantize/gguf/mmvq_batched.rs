@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GGUF batched MMVQ × N-experts plan — Phase 20.1.
 //!
 //! General-purpose MMVQ primitive that takes N weight matrices + routing

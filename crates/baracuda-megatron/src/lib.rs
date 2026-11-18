@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-megatron
 //!
 //! Megatron-LM-style tensor-parallel (TP) primitives on top of

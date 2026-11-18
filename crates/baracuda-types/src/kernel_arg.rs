@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The `KernelArg` trait: a uniform way to hand values to
 //! `cuLaunchKernel` / `cudaLaunchKernel`, which expect `void**` — an array
 //! of pointers to each argument.

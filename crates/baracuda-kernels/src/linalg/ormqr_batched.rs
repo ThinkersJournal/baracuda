@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Batched-`ormqr` / `unmqr` — apply Householder-encoded `Q`, `Q^T`,
 //! or `Q^H` from a [`super::qr_batched::BatchedQrPlan`] packed output
 //! to a stack of right-hand-side matrices, fusing all batch slots into

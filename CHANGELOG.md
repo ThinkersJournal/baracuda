@@ -16,6 +16,16 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.174 - 2026-11-17
+
+Every source file without one gets `// SPDX-License-Identifier: MIT OR Apache-2.0` (`# ` for py/sh/ps1) via `tools/add-spdx-headers.py` (file set mirrors CodeRipper SUP-016, enumerated from `git ls-files`): 1289 of 1292 missing before, 67 after. 58 sit in 8 crates with a NOTICE/ATTRIBUTION/third-party record and 9 more mention "derived from"/"ported from" in their first 60 lines (PM provenance control); all 67 are left for a per-file decision. One line is added at the top of each file (after a shebang), so line numbers in those files move by one; the R6 reviews and the sweep cite lines at a stated ref and are not renumbered. `abi-manifest` check ok and `cargo check` of core, driver, cuda-emit and optim pass; `cargo fmt --all` could not run here (Windows argument length) and the full CI is the check.
+
+New `deny.toml` (fishstringer template; `[licenses.private] ignore` for the unpublished examples crate, `allow-wildcard-paths` for path dev-dependencies) and a `deny` CI job (cargo-deny: advisories, licences, bans, sources); `cargo deny check` at `aaf5c3347` plus these edits: advisories, bans, licences, sources all ok, 2 duplicate-version warnings (`libloading`, `syn`). Registering it as a required context on `main` is the PM's step.
+
+`.coderipper.toml`: the `baracuda-cuda-seam` waiver id `version-consistency` becomes `WSP-010` (CodeRipper 0.47.10: 5 waived, 0 findings before and after; the seam pin is unchanged, it follows Unpopped by the documented exception).
+
+`docs/PATENT-SWEEP.md`: the board-434-C lines now say `baracuda-cuda-emit` lowers `CopyAsync`/`AsyncCommit`/`AsyncWait`/`Collective` for CUDA only and does not lower `CollectiveTuple` (`kernel.rs:775-788` and `:51` at `aaf5c3347`); `ROADMAP.md` records the dependency-security row, the SPDX result and the WSP-010 outcome.
+
 ## 0.1.0-alpha.173 - 2026-11-16
 
 `docs/planning/api-freeze/r6/{tensorrt,nvjpeg,nvcomp,nvml,nccl}.md`, read from source at `origin/main` `6898c42c9`; each census count matches the source (tensorrt 79, nvjpeg 65, nvcomp 63, nvml 62, nccl 61; the earlier "59" for nccl was the `stable` count only). Findings per crate: 12, 13, 9, 11, 13. Headlines: tensorrt `Dims` public fields break the rank invariant and `PluginLibraryHandle` is `Copy`; nvjpeg and nccl have safe decode/collective functions that never check buffer length against the count; nvml documents a refcounted shutdown that does not exist; nvcomp is a raw FFI pass-through with a README example naming a type that does not exist. Every crate has unused dependencies and README drift; nvjpeg, nvml and nccl have 0 `SAFETY` comments. Documentation only: nothing built or run, no code changed; vendor behaviour is "not checked" throughout. Four of the five were drafted by subagents; counts spot-checked against source by the lane (nvjpeg unsafe/SAFETY/tests, nccl unsafe/SAFETY, nvml shutdown, nvcomp unsafe fn).

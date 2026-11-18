@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 59a — GQA (grouped-query attention) smoke test for FA2.
 //!
 //! Phase 42 (Tier-1) rejected `num_heads_k != num_heads`. Phase 59a's

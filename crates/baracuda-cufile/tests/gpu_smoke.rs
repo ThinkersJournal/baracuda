@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! cuFile (GPUDirect Storage) presence probe. Linux-only in practice —
 //! the Windows driver doesn't ship libcufile.
 

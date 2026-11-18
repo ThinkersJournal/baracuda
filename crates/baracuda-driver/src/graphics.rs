@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Graphics-API interop — register GL / D3D / VDPAU / EGL resources with
 //! CUDA for zero-copy compute on their memory.
 //!

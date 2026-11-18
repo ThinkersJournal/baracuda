@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `GatherPlan<T, N>` (Phase 7 Milestone 7.3).
 //!
 //! Covers contig 2-D and 3-D fixtures across `f32, f64, i32`. The

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! 2-input `concat` plan — `y = cat(a, b, dim=k)`.
 //!
 //! Variable-arity (N-input) concat needs a separate plan shape with

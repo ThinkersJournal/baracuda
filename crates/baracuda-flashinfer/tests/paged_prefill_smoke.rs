@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Smoke tests for the FlashInfer paged-KV prefill plan — Phase 66 Tier 2.
 //!
 //! Closed-form correctness trick: if every KV token shares the SAME key

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 45 — `RopeScaledTableBuilder` real-GPU integration smoke test.
 //!
 //! Verifies that the Linear-scaling table produced by the builder is

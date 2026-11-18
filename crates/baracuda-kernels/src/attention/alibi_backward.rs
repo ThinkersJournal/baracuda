@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Attention with Linear Biases (ALiBi) backward plan.
 //!
 //! For the FW `Y[b, h, i, j] = A[b, h, i, j] + slope[h] · (j - i)`:

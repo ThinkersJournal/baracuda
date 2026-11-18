@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `GumbelSoftmaxBackwardPlan` (Milestone 5.4).
 //!
 //! BW formula: `dx = y_soft · (dy - Σ y_soft · dy)` (modulo the

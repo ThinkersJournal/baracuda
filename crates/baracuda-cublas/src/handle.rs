@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `cublas::Handle` — the owning wrapper around a `cublasHandle_t`.
 
 use std::sync::Arc;

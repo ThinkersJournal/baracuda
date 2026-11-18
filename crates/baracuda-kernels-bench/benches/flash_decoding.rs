@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! FlashDecoding — bench the seq_q=1 decode kernel against
 //! `FlashSdpaPlan` (bespoke + FA2) at decode-typical shapes.
 //!

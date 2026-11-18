@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Baracuda ↔ kiss-ref differential PoC — **step 2 (elementwise) + 2b (folds)**:
 //! the converter from Baracuda's REAL emitted recipe surface
 //! (`unpopped::recipe::semantics_dag` — the KISS-Contract §2.3

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `BlasScalar` — the element-type trait that parametrises the generic GEMM /
 //! AXPY / DOT wrappers over `f32`, `f64`, `Complex32`, `Complex64`.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! End-to-end smoke for a Phase 50b Mamba-1 block (FW only).
 //!
 //! Composes the baracuda primitives that a Mamba-1 block needs:

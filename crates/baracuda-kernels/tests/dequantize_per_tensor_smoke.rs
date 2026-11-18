@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `DequantizePerTensorPlan<TIn, TOut>` —
 //! Phase 8 Milestone 8.1.
 //!

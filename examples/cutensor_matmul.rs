@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! cuTENSOR matmul via contraction.
 //!
 //! Runs `D[m,n] = Σₖ A[m,k] · B[k,n]` using cuTENSOR's `cutensorContract`

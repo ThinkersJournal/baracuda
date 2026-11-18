@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Scan (associative prefix) op family — Phase 4 Category F.
 //!
 //! Length-preserving prefix operators along a single axis. Output

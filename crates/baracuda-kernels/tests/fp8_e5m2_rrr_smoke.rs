@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the bespoke FP8 E5M2 RRR Identity kernel in
 //! `baracuda-kernels-sys`. Mirror of `fp8_e5m2_rcr_smoke.rs` with B
 //! row-major `[K, N]` (indexed `b[k * ldb + j]`).

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CTCLoss plan — `torch.nn.CTCLoss` (Phase 5 final deferral).
 //!
 //! Connectionist Temporal Classification: sequence-to-sequence loss

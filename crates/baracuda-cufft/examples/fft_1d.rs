@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Minimal 1-D cuFFT R2C → C2R round-trip demo.
 //!
 //! Generates a small sine-wave-style real signal, runs a forward

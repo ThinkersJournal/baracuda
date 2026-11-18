@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! NcclScalar / NcclDataType dtype mapping smoke tests.
 //!
 //! These tests verify that the `NcclScalar` sealed trait (alias

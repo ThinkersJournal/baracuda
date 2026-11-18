@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU dtype-fanout smoke tests for `RepeatPlan<T, 2>` across
 //! `{f16, bf16, f64}`. The `f32` cell is covered by the trailblazer
 //! file `repeat_smoke.rs`.

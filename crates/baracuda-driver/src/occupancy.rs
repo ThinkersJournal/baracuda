@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Occupancy calculators — how many blocks can a kernel fit per SM, and
 //! what block size maximizes utilization.
 //!

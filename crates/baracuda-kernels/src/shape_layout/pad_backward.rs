@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `pad` backward plan — Category N (Phase 3 BW).
 //!
 //! Backward of `y = pad(x, pad_low, pad_high, mode=Constant, value=v)`:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Batched direct dense solvers: `getrf_batched`, `getrs_batched`,
 //! `getri_batched`, `matinv_batched`.
 //!

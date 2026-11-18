@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `embedding_bag` Max-mode FW plan — Category M. Phase 25.
 //!
 //! Per-bag max-reduction with per-feature argmax tracking. For each

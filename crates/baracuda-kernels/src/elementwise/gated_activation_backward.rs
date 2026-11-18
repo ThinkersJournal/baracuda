@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Gated-activation backward plan (Phase 3 Category C′).
 //!
 //! Sibling of [`crate::GatedActivationPlan`] for gradient computation:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the WriteSlice trailblazer
 //! (`WriteSlicePlan<T, N>`).
 //!

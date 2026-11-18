@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Host-independent smoke tests — these do **not** load NVSHMEM, so they run
 //! on every host (Linux / Windows / no-GPU CI). They pin the predefined team
 //! handle values and the safe/raw `Team` mapping so a future refactor can't

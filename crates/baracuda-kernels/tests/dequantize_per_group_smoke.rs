@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `DequantizePerGroupPlan<f32, S8>`.
 //!
 //! Gated behind the `device-tests` feature.

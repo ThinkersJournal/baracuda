@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Guard: every publishable crate ships the licence text its `license` field names.
 
 The workspace licence is `MIT OR Apache-2.0`, and both licences require their

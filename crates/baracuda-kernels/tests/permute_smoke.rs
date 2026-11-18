@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `PermutePlan<f32, N>`.
 //!
 //! Covers 2D transpose (dims=[1,0]) + 3D permutations (e.g. NHWC→NCHW

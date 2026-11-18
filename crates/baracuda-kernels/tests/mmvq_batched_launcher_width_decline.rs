@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! #141: the batched MMVQ `-sys` launchers (`baracuda_kernels_mmvq_<qtype>
 //! _batched[_<dtype>]_run` in `crates/baracuda-kernels-sys/kernels/gguf/
 //! mmvq_batched.cu`) decline `ncols % 64 != 0` for the 5 type-0/1 formats

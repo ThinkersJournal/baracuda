@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for NVIDIA cuFile (GPUDirect Storage).
 //!
 //! cuFile is **Linux-only** and requires a GDS-capable filesystem (ext4

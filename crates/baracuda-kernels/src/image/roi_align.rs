@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `roi_align` FW plan — Category T.
 //!
 //! Extract a fixed-size `[pooled_h, pooled_w]` feature from each

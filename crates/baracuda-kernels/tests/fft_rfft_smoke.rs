@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `RfftPlan` + `IrfftPlan` (cuFFT R2C / C2R wrap).
 //!
 //! Round-trip identity: `IRFFT(RFFT(x)) ≈ x` to within `1e-4` (f32) /

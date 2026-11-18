@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CUDA C++ lowering — the one backend-specific module (v1).
 //!
 //! Everything CUDA-shaped (the vector types, `__global__`, the

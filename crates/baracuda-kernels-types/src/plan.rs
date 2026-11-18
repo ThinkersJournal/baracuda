@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Device-coupled plan handle: the borrowed [`Workspace`] scratch buffer.
 //!
 //! The pure-data plan *descriptors* ([`PlanPreference`], [`PrecisionGuarantee`])

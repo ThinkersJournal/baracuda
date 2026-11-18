@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Compile-time layout checks for the `#[repr(C)]` mirrors of CUDA C structs.
 //!
 //! Each line asserts `size_of` / `align_of` of a Rust mirror against the value

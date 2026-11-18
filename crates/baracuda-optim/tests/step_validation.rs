@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The step functions reject inputs that would make the kernel read or write
 //! out of bounds, or write NaN, instead of launching.
 //!

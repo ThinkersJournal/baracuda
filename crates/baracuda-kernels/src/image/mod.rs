@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Image / spatial-transform op family — Category T.
 //!
 //! Phase 9 of the baracuda-kernels comprehensive plan. Bespoke CUDA

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `CholeskyPlan` (cuSOLVER wrap).
 //!
 //! Verifies `L · L^T ≈ A` for an SPD matrix `A`. Storage convention is

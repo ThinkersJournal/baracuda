@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the bespoke int4 bias-family kernels in
 //! `baracuda-kernels-sys` — 32 SKUs total:
 //!

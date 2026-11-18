@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `LpPool1dPlan` / `LpPool2dPlan` FW + BW
 //! (Phase 16.2 — bespoke fused kernel).
 //!

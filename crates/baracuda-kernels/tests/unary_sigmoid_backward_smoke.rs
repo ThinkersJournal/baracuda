@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary sigmoid backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Sigmoid`). Backward:
 //! `dx = dy * y * (1 - y)`. Saved-y. Tolerance compare (3 ops, may fuse).

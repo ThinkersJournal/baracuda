@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `ReducePlan` Var / Std (Welford one-pass).
 //!
 //! Wired for all four FP dtypes (Phase 4 deferral 4.2 close-out):

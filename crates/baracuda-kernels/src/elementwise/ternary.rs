@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Ternary elementwise plan.
 //!
 //! 3→1 sibling of [`crate::BinaryPlan`]. Same-dtype-input, same-dtype-

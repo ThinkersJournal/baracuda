@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Segment / scatter-reduce op family — Category S.
 //!
 //! Phase 7 Milestone 7.6 of the baracuda-kernels comprehensive plan.

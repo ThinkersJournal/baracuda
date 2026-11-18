@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `nms` plan — Category T (non-max suppression).
 //!
 //! Box format: `(x1, y1, x2, y2)` with `x2 >= x1`, `y2 >= y1`. The

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! C function-pointer aliases for the CUDA Runtime API.
 //!
 //! Runtime symbols are resolved via plain `dlsym` (unlike the Driver API,

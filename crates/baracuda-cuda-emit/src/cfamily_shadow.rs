@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Baracuda's own closed-set copy of the CUDA-specific scalar spellers that
 //! used to be imported directly from the neutral `unpopped::cfamily` module:
 //! `scalar_ctype`, `cast_scalar`, `promote_load_f32`, `demote_store_f32`,

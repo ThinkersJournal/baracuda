@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AdaptiveAvgPool3d — NCDHW adaptive average-pool, bit-exact PyTorch
 //! (Phase 16.1 bespoke kernel).
 //!

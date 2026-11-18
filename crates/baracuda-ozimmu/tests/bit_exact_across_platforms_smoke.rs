@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Cross-platform bit-exact regression test.
 //!
 //! The Ozaki path goes through int8 tensor-core matmuls, which are

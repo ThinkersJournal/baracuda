@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Kernel launch builder — the Rust equivalent of CUDA C's triple-chevron syntax.
 //!
 //! ```no_run

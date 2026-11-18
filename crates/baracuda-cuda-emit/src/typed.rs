@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The CUDA spellings of [`ScalarExpr::Fma`], [`ScalarExpr::Cast`] and
 //! [`ScalarExpr::Bitcast`] (ROADMAP SA-43 / SA-44; unpopped 0.24.0).
 //!

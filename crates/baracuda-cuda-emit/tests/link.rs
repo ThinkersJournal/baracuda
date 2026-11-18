@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Link-registry tests that generate a real CUDA kernel (`&Cuda`). Relocated from
 //! baracuda-kernelgen `src/link.rs`'s `mod tests` during the Unpopped carve (step
 //! 3): both assert a CUDA-flavoured structure key / `baracuda_gen_` entry point, so

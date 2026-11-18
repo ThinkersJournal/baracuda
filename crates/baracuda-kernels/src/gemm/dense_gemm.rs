@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dense floating-point GEMM plan — cuBLAS-backed (Phase 74).
 //!
 //! The plain dense `f32 / f64 / f16 / bf16` GEMM family that the rest

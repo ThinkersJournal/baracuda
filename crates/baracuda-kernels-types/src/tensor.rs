@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Borrowed views of device-resident N-dimensional tensors.
 //!
 //! Sibling to [`crate::MatrixRef`] / [`crate::MatrixMut`] (which are the

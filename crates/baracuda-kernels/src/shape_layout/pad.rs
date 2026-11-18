@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `pad` plan — Category N entry point.
 //!
 //! Output shape per-axis is `input_shape[d] + pad_low[d] + pad_high[d]`

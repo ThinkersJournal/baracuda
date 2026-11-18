@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Board #162 — machine-state capture
 //! (`docs/design/2026-10-09-kernel-perf-baseline-design.md`).
 //!

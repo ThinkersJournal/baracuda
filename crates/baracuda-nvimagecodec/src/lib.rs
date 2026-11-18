@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for **NVIDIA nvImageCodec** — the unified GPU image
 //! codec library (JPEG / JPEG2000 / TIFF / PNG / BMP / WebP / ...).
 //!

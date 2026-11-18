@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Handle creation for the linalg / loss plans, funnelled through the
 //! process-wide lock in `baracuda_kernels_sys::handle_init` (see its docs for
 //! the race this serialises). Shared with the `kernels-sys` C facades, so

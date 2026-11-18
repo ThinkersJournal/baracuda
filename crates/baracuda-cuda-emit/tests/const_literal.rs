@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! An `f32` kernel's constants are `float` literals (`1.0f`), so the arithmetic stays in
 //! `float`.
 //!

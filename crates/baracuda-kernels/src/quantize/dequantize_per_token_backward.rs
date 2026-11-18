@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `dequantize_per_token` backward plan — straight-through
 //! (`dq = dy * scale[n]`).
 //!

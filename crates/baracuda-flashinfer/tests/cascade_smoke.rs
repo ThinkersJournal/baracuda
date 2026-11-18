@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Smoke tests for the FlashInfer cascade-attention LSE-merge plan, via
 //! the `baracuda-flashinfer` safe facade — Phase 66.
 //!

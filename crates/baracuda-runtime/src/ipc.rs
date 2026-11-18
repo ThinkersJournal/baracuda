@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime-API IPC — share events and device allocations between
 //! processes. Linux-primary; Windows returns `NOT_SUPPORTED` or
 //! similar on most paths.

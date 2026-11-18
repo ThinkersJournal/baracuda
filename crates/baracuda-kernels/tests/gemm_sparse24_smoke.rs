@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `GemmSparse24Plan` (Phase 54).
 //!
 //! Two assertions:

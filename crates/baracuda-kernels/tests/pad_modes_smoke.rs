@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the non-constant Pad modes: `Reflect`,
 //! `Replicate`, `Circular`. 3 modes × 4 dtypes = 12 tests at a fixed
 //! 2D shape.

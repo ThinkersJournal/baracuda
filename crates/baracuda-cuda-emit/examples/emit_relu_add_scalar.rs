@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Emit the `relu(add(a,b))` f32 SCALAR-schedule kernel and print its source +
 //! symbol — the exact shape Fuel bisected to an all-zero output at alpha.78
 //! (76/77 PASS, 78 FAIL). Used to discriminate emitter-body vs launch-ABI:

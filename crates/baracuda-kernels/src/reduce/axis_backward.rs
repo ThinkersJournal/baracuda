@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Backward plan for single-axis reductions.
 //!
 //! Sibling of [`crate::ReducePlan`] for gradient computation. Today

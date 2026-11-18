@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Guard: every crate with `#[cfg(feature = "…")]`-gated code must have that code
 # built by SOME CI job, or be explicitly recorded as CUDA-only (uncovered because
 # no CI CUDA runner exists). The failure this defends against is the one that broke

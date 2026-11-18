@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CV-CUDA image preprocessing pipeline (Linux).
 //!
 //! Takes an input NHWC u8 BGR frame, resizes to 224×224, converts to

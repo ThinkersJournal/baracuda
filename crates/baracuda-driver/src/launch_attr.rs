@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Typed builders for [`CUlaunchAttribute`] entries consumed by
 //! [`crate::LaunchBuilder::launch_ex`] (CUDA 12.0+).
 //!

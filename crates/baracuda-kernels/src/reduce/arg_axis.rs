@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Argmax / Argmin single-axis reduction.
 //!
 //! New plan shape from [`crate::ReducePlan`] because the output dtype

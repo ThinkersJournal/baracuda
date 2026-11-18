@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! One spatial axis of a pooled / `im2col` window view
 //! (KISS-OPS-6.13-0010 and -0011).
 //!

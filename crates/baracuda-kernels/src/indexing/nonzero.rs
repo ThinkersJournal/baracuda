@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `nonzero` plan — Category L (non-differentiable).
 //!
 //! Returns the coordinates where the input is non-zero. Output is a

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `affine_grid` plan — Category T.
 //!
 //! Generate a normalized sampling grid from a 2x3 affine matrix per

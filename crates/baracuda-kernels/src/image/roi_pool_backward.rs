@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `roi_pool` BW plan — Category T.
 //!
 //! Routes each output cell's gradient (via atomicAdd) to the argmax

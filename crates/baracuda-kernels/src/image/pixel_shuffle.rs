@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `pixel_shuffle` plan — Category T.
 //!
 //! `[N, C·r², H, W] → [N, C, H·r, W·r]`. Pure index permutation —

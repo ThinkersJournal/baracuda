@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 38 (Fuel 6c.4 Gap 3) — direct-FFI smoke tests for the
 //! `where_cond` dtype-matrix fanout.
 //!

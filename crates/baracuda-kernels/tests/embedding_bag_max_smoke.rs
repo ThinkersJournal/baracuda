@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `EmbeddingBagMaxPlan<T>` (Phase 25).
 //!
 //! Per-bag Max-mode FW with per-feature argmax tracking.

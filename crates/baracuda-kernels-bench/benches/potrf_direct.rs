@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Splits the Linalg `cholesky` gap vs PyTorch (ROADMAP "Linalg `cholesky` vs PyTorch")
 //! into its parts, on the same box, in the same run:
 //!

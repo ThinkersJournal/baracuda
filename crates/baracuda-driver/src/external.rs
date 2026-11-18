@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! External memory / semaphore interop — import buffers and sync
 //! primitives from Vulkan, D3D11, D3D12, NvSci, and OpaqueFd sources.
 //!

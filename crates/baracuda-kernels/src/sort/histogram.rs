@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `histogram` plan — 1-D uniform-bin atomic-accumulating histogram.
 //!
 //! Trailblazer dtype coverage: `f32, f64` input → `i32` counts.

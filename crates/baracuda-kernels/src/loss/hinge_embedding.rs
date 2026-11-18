@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! HingeEmbedding loss plan — Tier-2 (Milestone 5.3).
 //!
 //! FW: `y = mean(input if t==1 else max(0, margin - input))`.

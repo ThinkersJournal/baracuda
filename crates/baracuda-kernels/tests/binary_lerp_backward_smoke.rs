@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryParamBackwardPlan + BinaryKind::Lerp`.
 //!
 //! Forward: `y = a + weight·(b - a)`. Backward: `da = (1 - weight)·dy`,

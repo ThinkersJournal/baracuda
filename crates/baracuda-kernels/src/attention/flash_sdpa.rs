@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Flash Attention forward plan (Milestone 6.6).
 //!
 //! Tiled, fused online-softmax SDPA that avoids materializing the

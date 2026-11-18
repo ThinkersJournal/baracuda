@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `SdpaBackwardPlan + AttentionKind::Sdpa` BW.
 //!
 //! Validates dQ / dK / dV against an f64 host reference for the naive

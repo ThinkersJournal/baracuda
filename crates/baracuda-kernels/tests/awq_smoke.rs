@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Descriptor-rejection test for `Int4AwqGemmPlan`.
 //!
 //! Numerical correctness of the AWQ kernel is covered by `awq_reference.rs`

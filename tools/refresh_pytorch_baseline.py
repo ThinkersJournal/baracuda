@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Generate PyTorch reference timings for baracuda's bench suite.
 
 Phase 73.1 — replaces the abandoned tch-rs in-process integration with a

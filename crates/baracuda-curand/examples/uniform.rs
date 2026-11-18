@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Minimal cuRAND `Uniform(0, 1]` demo.
 //!
 //! Seeds a Philox 4x32-10 generator, fills a small device buffer with

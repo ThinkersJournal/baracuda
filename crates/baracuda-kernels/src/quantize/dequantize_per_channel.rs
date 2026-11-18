@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `dequantize_per_channel` forward plan.
 //!
 //! `x[..., c, ...] = scale[c] * (q[..., c, ...] - zero_point[c])`. Linear

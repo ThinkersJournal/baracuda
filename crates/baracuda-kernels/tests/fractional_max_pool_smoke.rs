@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `FractionalMaxPool2dPlan` /
 //! `FractionalMaxPool3dPlan` (Phase 16.3 — bespoke kernel).
 //!

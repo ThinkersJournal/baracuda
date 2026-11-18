@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The **automated variant-gate loop**, end to end and on-device (phase 2):
 //!
 //! ```text

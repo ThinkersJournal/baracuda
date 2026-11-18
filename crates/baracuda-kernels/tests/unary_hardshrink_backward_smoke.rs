@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `UnaryBackwardPlan + UnaryKind::Hardshrink`.
 //!
 //! Forward: `y = x if |x| > λ else 0`. Backward: `dx = dy if |x| > λ

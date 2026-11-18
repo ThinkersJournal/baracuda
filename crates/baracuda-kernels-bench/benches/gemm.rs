@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GEMM throughput bench — TFLOPS across LLM-typical shapes × dtypes.
 //!
 //! Sweep:

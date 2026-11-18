@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryBackwardPlan + BinaryKind::Hypot`.
 //!
 //! Forward: `y = sqrt(a² + b²)`. Backward:

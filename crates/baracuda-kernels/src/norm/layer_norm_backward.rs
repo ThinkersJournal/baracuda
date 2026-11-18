@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! LayerNorm backward plan — multi-axis.
 //!
 //! Standard layer-norm gradient (biased variance):

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `AlibiBackwardPlan` (Phase 6.1).
 //!
 //! BW:  dA[b, h, i, j] = dy[b, h, i, j]                (pass-through copy)

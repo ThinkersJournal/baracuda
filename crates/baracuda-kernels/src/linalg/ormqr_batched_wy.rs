@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! WY-blocked batched-`ormqr` — applies Householder-encoded `Q` (or
 //! `Q^T`) from a [`super::qr_batched::BatchedQrPlan`] packed output to a
 //! stack of right-hand-side matrices at GEMM-rates.

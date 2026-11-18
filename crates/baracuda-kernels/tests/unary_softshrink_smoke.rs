@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `UnaryPlan + UnaryKind::Softshrink` across
 //! f32 / f16 / bf16 / f64. λ hardcoded to 0.5.
 //!

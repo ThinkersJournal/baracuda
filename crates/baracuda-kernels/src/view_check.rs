@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Bounds validation for caller-built tensor views.
 //!
 //! `TensorRef` / `TensorMut` can only be built through their validating

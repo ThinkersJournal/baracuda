@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the Phase 22 cuSOLVER FFI facade.
 //!
 //! Each plan family gets at least one FFI symbol smoke test that

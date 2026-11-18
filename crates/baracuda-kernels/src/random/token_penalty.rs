@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Token-penalty logit transform — Phase 66 Tier 2 (bespoke).
 //!
 //! Applies the three standard autoregressive sampling penalties to a

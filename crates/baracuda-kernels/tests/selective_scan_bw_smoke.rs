@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for Phase 50b [`SelectiveScanBackwardPlan`].
 //!
 //! Validates `du`, `ddelta`, and `dA` via finite difference on a small

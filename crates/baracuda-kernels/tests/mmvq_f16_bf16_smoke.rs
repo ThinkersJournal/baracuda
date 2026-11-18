@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 18.1 — real-GPU smoke tests for f16 / bf16 activation MMVQ.
 //!
 //! Coverage is representative, not exhaustive (the kernel template is

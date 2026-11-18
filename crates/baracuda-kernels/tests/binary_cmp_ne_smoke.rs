@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryCmpPlan<T, N> + BinaryCmpKind::Ne`
 //! across the 4 FP dtypes (f32 / f16 / bf16 / f64).
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! MaxPool2d — NCHW 2-D max-pool via cuDNN's legacy descriptor API.
 //!
 //! Implements forward + backward over the four floating-point dtypes

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `UnsortedSegmentProdPlan<T>` (Phase 25).
 //! Gated behind the `device-tests` feature.
 //!

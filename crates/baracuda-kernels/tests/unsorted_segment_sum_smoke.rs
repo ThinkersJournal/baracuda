@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `UnsortedSegmentSumPlan<T>` (Phase 7 7.6).
 //! Gated behind the `device-tests` feature.
 #![cfg(feature = "device-tests")]

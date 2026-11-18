@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for cuSOLVER dense LU + solve.
 #![cfg(feature = "device-tests")]
 

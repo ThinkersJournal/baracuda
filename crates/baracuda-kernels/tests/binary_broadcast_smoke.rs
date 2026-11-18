@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the strided / broadcast path of
 //! `BinaryPlan<f32, N> + BinaryKind::Add`.
 //!

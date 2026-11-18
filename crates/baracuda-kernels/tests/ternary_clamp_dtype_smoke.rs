@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dtype-fill smoke test for `TernaryPlan<T, N> + TernaryKind::Clamp`
 //! on the 3 dtypes (f16 / bf16 / f64) that landed in the ternary
 //! fanout. The f32 trailblazer cell stays in `ternary_clamp_smoke.rs`

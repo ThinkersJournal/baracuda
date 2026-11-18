@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Softmax forward plan — single-axis numerically-stable softmax /
 //! log-softmax.
 //!

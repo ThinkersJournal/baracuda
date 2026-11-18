@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `quantize_per_token` forward plan.
 //!
 //! Per-row quantization for 2-D activations: input `[N, D]`; one

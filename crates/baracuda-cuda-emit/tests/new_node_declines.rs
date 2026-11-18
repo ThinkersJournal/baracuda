@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Unpopped 0.32 added `ScalarExpr` nodes (integer leaves, packed values, kernel
 //! locals, qualifiers) that this emitter does not spell. Each must be a TYPED decline,
 //! never a panic and never emitted source. Through the public API the plan gate

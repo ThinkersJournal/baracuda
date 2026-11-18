@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shared helpers for the loss-family plans.
 
 use core::ffi::c_void;

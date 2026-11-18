@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Error type for `baracuda-cublas`.
 
 use baracuda_cublas_sys::cublasStatus_t;

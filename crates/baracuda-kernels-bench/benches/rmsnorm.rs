@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! RMSNorm throughput — baracuda self-bench.
 //!
 //! Phase 29 cross-impl bench. No cuDNN equivalent: cuDNN's

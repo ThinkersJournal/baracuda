@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! How noisy is a Linalg timing on this box, and is any trend claimable?
 //!
 //! This test was written to answer a different question — "why does the CSV

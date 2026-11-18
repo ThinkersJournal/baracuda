@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Every `f16` / `bf16` elementwise body that contains a literal is either declined or compiles.
 //!
 //! The emitter used to spell `__half + 1.0` for such a body, which NVRTC rejects as an ambiguous

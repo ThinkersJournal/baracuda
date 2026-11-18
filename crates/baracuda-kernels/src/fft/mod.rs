@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! FFT op family — Milestone 6.4 (Category Fft).
 //!
 //! Wraps cuFFT's 1-D APIs for the four canonical PyTorch / JAX FFTs

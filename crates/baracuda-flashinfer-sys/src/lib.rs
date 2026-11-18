@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Raw C-ABI FFI surface for the vendored FlashInfer inference kernels.
 //!
 //! `baracuda-flashinfer` wraps this with a safe, typed API. Use this

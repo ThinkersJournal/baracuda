@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Device check of the CUDA spellings of `Fma`, `Cast` and `Bitcast` (ROADMAP SA-43 / SA-44).
 //!
 //! Each case builds an elementwise op, generates it with [`Cuda`], compiles it with NVRTC,

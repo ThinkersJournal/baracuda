@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Decline-contract tests for the sibling backends `CpuC` / `Slang` (published from
 //! the Unpopped extraction). Each asserts a DOCUMENTED refusal **paired with a
 //! positive control in the same test** — "backend X declines Y" is also satisfied by

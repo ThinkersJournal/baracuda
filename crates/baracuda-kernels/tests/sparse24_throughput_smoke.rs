@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU throughput smoke test for `GemmSparse24Plan` (Phase 54).
 //!
 //! **Tier-1 caveat**: this test is gated behind the `device-tests` feature AND additionally

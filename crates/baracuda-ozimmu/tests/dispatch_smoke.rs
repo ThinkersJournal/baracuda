@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Verify the ozIMMU `Handle` plumbing through `baracuda-driver`.
 //!
 //! Phase 44b ships the safe wrapper + the C-ABI shim; the full

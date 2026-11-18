@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BatchedOrmqrWyPlan` (WY-blocked bespoke
 //! kernel + cuBLAS strided-batched GEMM, Milestone 6.17).
 //!

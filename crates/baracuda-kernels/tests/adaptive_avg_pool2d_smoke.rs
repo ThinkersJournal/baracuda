@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `AdaptiveAvgPool2dPlan` FW.
 //!
 //! Verifies the **bit-exact PyTorch** bespoke kernel (Phase 16.1)

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for Wave-20 Driver-API additions:
 //! IPC handle export. Only validates that symbols resolve; IPC is
 //! Linux-only (Windows returns NOT_SUPPORTED).

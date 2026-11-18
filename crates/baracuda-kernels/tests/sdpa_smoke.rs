@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `SdpaPlan + AttentionKind::Sdpa` FW.
 //!
 //! `y = softmax(Q · K^T · scale + mask) · V`. Three-kernel pipeline

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `gather` plan — Category L FW trailblazer.
 //!
 //! `out[..., j, ...] = src[..., index[..., j, ...], ...]` along the

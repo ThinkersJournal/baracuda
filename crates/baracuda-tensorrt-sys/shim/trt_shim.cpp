@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // baracuda-tensorrt-sys — C-ABI shim over the TensorRT 10 C++ runtime API.
 //
 // TensorRT ships no flat C ABI: its public API is C++ only, and `libnvinfer`

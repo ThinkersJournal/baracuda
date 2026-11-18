@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for NVIDIA cuFFT.
 //!
 //! v0.1 covers `cufftPlan1d`/`cufftPlan2d`/`cufftPlan3d` and the R2C/C2R/C2C

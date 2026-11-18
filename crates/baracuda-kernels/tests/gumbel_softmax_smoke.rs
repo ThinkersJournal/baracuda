@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `GumbelSoftmaxPlan` (Milestone 5.4).
 //!
 //! Forward: `y = softmax((x + g) / τ)` with `g[k] = -log(-log(u[k]))`,

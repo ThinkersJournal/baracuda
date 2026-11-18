@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CUDA contexts — both primary (shared with the Runtime API) and explicit.
 //!
 //! A [`Context`] owns the handle returned by `cuCtxCreate`. Contexts are

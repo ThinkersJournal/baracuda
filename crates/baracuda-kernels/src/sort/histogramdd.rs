@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `histogramdd` plan — N-D histogram. Reserved for follow-up.
 //!
 //! The 1-D path lives in [`crate::sort::HistogramPlan`]. This file

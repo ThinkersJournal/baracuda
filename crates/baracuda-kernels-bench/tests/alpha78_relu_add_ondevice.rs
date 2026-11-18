@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Gate 5 (regression repro) + gate 6 (on-device output-CORRECTNESS) for the
 //! alpha.78 all-zero bug: Fuel bisected a synthesized `relu(add(a,b))` f32-scalar
 //! kernel writing all zeros (alpha.76/77 PASS, .78 FAIL; byte-identical symbol →

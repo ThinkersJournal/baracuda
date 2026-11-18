@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the Phase 74 broadcast-reverse reduction
 //! facade `ReduceToPlan<T, N>` — the plan-level sibling of the Phase 31
 //! direct-FFI `reduce_sum_to_smoke` / Phase 37 `reduce_to_extras_smoke`.

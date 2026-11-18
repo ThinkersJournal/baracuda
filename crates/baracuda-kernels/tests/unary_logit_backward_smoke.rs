@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary Logit backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Logit`).
 //! Backward: `dx = dy / (x * (1 - x))`. Saved-x, no transcendental.

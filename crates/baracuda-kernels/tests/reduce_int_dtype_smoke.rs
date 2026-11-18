@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 37 Gap 1b — direct-FFI smoke for integer-dtype single-axis
 //! Reduce family (`reduce_{sum, min, max, prod}_<int_dt>_run`).
 //!

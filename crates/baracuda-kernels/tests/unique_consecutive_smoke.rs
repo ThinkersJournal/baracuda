@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `UniqueConsecutivePlan<T>` (Phase 9
 //! Category O). gated behind the `device-tests` feature.
 #![cfg(feature = "device-tests")]

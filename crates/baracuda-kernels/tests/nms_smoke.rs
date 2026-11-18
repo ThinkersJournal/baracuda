@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke for `NmsPlan<T>` (Phase 9 Category T).
 //! Three boxes pre-sorted by score; box 1 overlaps box 0 above
 //! threshold and box 2 is disjoint. Expected: keep_mask = [1, 0, 1].

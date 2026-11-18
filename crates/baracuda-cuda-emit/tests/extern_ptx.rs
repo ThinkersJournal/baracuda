@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Device check of `extern_asm_cuda` (ROADMAP U11 step 3, `docs/u11-ptx-leg-design.md`).
 //!
 //! Each case declares an Unpopped `ExternDecl` with a `cuda-ptx` asm body and a plain `reference` kernel. The

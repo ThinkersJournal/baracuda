@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration tests for Wave-5 Driver-API additions:
 //! explicit graph node construction via `cuGraphAddKernelNode_v2`,
 //! `cuGraphAddEmptyNode`, `cuGraphAddMemsetNode`, and `cuGraphClone`.

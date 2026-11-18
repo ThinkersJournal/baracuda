@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 51 — speculative-decoding tree-attention composition example.
 //!
 //! Demonstrates how baracuda's primitives compose to implement the

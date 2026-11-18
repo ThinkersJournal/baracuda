@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! KLDiv loss plan — `y = mean(target·(log(target) - input))`.
 //!
 //! PyTorch convention: `input` is already log-prob. Cells with

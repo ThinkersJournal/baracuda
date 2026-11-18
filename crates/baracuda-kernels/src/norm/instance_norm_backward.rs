@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! InstanceNorm backward plan — thin wrapper over GroupNorm BW.
 
 use baracuda_cutlass::Result;

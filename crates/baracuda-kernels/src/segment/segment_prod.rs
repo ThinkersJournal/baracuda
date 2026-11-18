@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `segment_prod` plan — Category S, sorted variant.
 //!
 //! `out[s, d] = prod_{n : segment_ids[n] == s} input[n, d]`. Requires

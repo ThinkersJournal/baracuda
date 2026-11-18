@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Recipe amax history sliding-window smoke test.
 //!
 //! Verifies that:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GroupNorm backward plan.
 //!
 //! Three-stage scheme (same as BatchNorm BW, with per-group group_id =

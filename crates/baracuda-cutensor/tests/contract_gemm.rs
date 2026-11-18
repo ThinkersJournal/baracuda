@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! cuTENSOR integration test: a matmul via contraction.
 //!
 //! Runs `D[m,n] = A[m,k] * B[k,n]` and checks the result against a CPU

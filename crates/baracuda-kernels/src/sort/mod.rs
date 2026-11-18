@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Sorting / order-statistics op family — Category O.
 //!
 //! Phase 9 of the baracuda-kernels comprehensive plan. Ships the

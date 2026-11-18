@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `RopeBackwardPlan` (Phase 6.1).
 //!
 //! BW rotates by `-θ`:

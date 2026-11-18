@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `triu` plan — upper-triangular matrix mask (Phase 13.4).
 //!
 //! `output[..., i, j] = input[..., i, j] if j >= i + diagonal else 0`.

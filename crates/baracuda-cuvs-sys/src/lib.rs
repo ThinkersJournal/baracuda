@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Raw FFI + dynamic loader for NVIDIA cuVS (GPU vector search / ANN).
 //!
 //! cuVS is part of NVIDIA RAPIDS and ships as `libcuvs.so` (which pulls in

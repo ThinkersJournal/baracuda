@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Multicast objects (CUDA 12.0+, NVSwitch systems only).
 //!
 //! A multicast object aliases one virtual-memory range across a group of

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the Phase 3 unary trailblazer's dtype fill —
 //! `UnaryPlan<T, N> + UnaryKind::Neg` at the f16 / bf16 / f64 cells that
 //! the math-fanout session wired in alongside the new ops.

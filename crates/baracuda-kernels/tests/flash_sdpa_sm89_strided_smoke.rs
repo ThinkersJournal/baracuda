@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `FlashSdpaSm89Plan` strided sibling — Phase 17.1.
 //!
 //! Validates that the Phase 17.1 strided FW kernel propagates per-tensor

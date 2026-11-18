@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the Phase 3 unary fanout kernel
 //! `UnaryPlan<T, N> + UnaryKind::Asin` across f32 / f16 / bf16 / f64.
 //!

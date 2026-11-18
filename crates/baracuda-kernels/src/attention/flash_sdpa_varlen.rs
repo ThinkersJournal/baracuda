@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Flash Attention varlen plan family (Phase 59b).
 //!
 //! Varlen (variable-length) attention runs a batch of sequences with

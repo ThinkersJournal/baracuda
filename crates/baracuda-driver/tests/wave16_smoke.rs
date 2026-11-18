@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for Wave-16 Driver-API additions:
 //! Hopper TMA descriptor encoding. Encoding works on any device; actual
 //! TMA instructions require SM 9.0+.

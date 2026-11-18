@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `quantize_per_token` backward plan (Straight-Through Estimator).
 //!
 //! `dx[n, d] = (dy[n, d] / scale[n]) * 1[qmin < round(x/s)+zp < qmax]`.

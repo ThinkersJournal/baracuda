@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! A uniform interface every NVIDIA-library status/return-code enum implements.
 //!
 //! `CudaStatus` lets higher-level code print or log an error from any of the

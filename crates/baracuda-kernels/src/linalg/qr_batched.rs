@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Batched QR factorization — `A_b = Q_b · R_b` per batch slot.
 //!
 //! Wraps **cuBLAS**'s `cublasSgeqrfBatched` / `DgeqrfBatched` (note:

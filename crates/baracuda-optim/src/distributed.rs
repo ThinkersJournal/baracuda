@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Distributed optimizer plans.
 //!
 //! **Experimental, outside the API freeze.** What [`DistributedAdamStepPlan`]

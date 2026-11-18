@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Fail if any tracked text file contains a raw NUL byte.
 
 A backslash-zero mangled by editing tooling becomes a real NUL that still compiles

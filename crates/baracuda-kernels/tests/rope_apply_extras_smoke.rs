@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 41 (Fuel Phase 6c.4 Gap 7 + 8) — direct-FFI smoke for the
 //! RoPE-apply interleaved + THD-layout variants.
 //!

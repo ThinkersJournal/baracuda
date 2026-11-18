@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! 2-input `concat` backward plan — Category N (Phase 3 BW).
 //!
 //! Backward of `y = cat(a, b, dim=k)`:

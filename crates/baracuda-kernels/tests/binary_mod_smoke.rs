@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryPlan + BinaryKind::Mod` — Python-style
 //! modulo. Result sign matches `b`. Inputs avoid `b == 0`.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `dequantize_per_channel` backward plan — `dq[i] = dy[i] * scale[c]`.
 
 use core::ffi::c_void;

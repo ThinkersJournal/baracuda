@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `EmbeddingBagBackwardPlan<T>` (Phase 7 7.5).
 //!
 //! Sum-mode: `dweight[indices[k], :] += dout[b, :]` for k in bag b.

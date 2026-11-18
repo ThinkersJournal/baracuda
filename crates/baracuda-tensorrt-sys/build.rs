@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Build script for `baracuda-tensorrt-sys`.
 //!
 //! Default build: a pure dynamic-loader crate — nothing is compiled, and no

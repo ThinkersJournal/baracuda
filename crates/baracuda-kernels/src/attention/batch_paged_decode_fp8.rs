@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! FP8 KV-cache paged decode — Phase 66 Tier 2 (FlashInfer).
 //!
 //! A variant of [`BatchPagedDecodePlan`](crate::BatchPagedDecodePlan) where

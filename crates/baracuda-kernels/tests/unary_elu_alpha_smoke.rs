@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 31 — verify the ELU FFI threads `alpha` through correctly.
 //!
 //! The historical `UnaryPlan + UnaryKind::Elu` smoke test pins

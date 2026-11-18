@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `FlashSdpaBackwardPlan + AttentionKind::FlashAttention` BW.
 //!
 //! Validates dQ / dK / dV from the Flash BW pipeline against the naive

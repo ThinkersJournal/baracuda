@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `permute` backward plan — Category N (Phase 3 BW).
 //!
 //! The backward of `y = x.permute(dims)` is `dx = dy.permute(inv_dims)`
