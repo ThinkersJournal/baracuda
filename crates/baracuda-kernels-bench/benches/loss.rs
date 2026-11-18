@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Loss-family throughput — baracuda vs PyTorch (Wave-1).
 //!
 //! Phase 29 cross-impl bench for the loss family: `mse`, `l1`,

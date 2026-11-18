@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! §6.8-0008 machine-manifest generator (KISS-Classify) for the `cuda:` namespace.
 //!
 //! Emits the machine-readable form of the annex from [`CATALOG`] as canonical

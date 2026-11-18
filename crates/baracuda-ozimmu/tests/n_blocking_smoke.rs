@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 44c — n-blocking smoke test for the ozIMMU dispatch.
 //!
 //! `matmul_core` automatically chunks `n > 12288` int8 GEMM launches

@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Backward plan for the parameterized binary elementwise family.
 //!
 //! Sibling of [`crate::BinaryParamPlan`]. For `Lerp`, the BW formula is

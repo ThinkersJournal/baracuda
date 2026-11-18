@@ -25,6 +25,11 @@ HASH = {"py", "sh", "ps1", "rb"}
 EXTS = SLASH | HASH
 SKIPPED = {"fixtures", "fixture", "testdata", "test_data", "conformance", "snapshots", "golden", "vendor", "vendors",
            "third_party", "third-party", "node_modules", "bower_components", "target"}
+# Second guard (PM control, 2026-11-18): a file whose first 60 lines name another licence or say it is derived,
+# adapted or ported from something is left to a human, in or out of a crate with a provenance record.
+# "NVIDIA" alone is not in this list: it is the API vendor's name in the doc comments of every CUDA wrapper.
+FOREIGN = re.compile(r"copyright|licensed under|permission is hereby granted|all rights reserved|\b(derived|adapted|ported) from\b", re.I)
+FOREIGN_LINES = 60
 PROVENANCE = re.compile(r"^(NOTICE|ATTRIBUTION|THIRD[-_]?PARTY|LICENSE-thirdparty)", re.I)
 HEADER_LINES = 15
 
@@ -76,12 +81,17 @@ def main():
         return [p for p in paths if not has_header(open(p, "rb").read().decode("utf-8"))]
 
     missing = missing_of(sources)
-    skipped = [p for p in missing if any(p.startswith(r) for r in prov)]
+
+    def foreign(p):
+        lines = open(p, "rb").read().decode("utf-8").split("\n")
+        return bool(FOREIGN.search("\n".join(lines[:FOREIGN_LINES])))
+
+    skipped = [p for p in missing if any(p.startswith(r) for r in prov) or foreign(p)]
     eligible = [p for p in missing if p not in set(skipped)]
     print(f"enumerated: git ls-files ({len(files)} tracked), {len(sources)} source files (SUP-016 extensions, skipped dirs excluded)")
     print(f"BEFORE: {len(missing)} of {len(sources)} without SPDX-License-Identifier in the first {HEADER_LINES} lines")
     print(f"provenance crates skipped ({len(prov)}): {', '.join(sorted(r.rstrip('/') for r in prov)) or '-'}")
-    print(f"skipped files needing a human decision: {len(skipped)}")
+    print(f"skipped files needing a human decision: {len(skipped)} (provenance-record crate or foreign-notice wording in the first {FOREIGN_LINES} lines)")
     for p in skipped:
         print("  SKIP", p)
     print(f"eligible: {len(eligible)}")

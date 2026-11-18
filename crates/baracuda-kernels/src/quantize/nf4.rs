@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: MIT OR Apache-2.0
 //! NF4 (NormalFloat 4-bit) dequant + GEMV plans — Phase 53.
 //!
 //! Vendored kernels: `crates/baracuda-kernels-sys/vendor/bitsandbytes/`
