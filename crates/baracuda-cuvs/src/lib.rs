@@ -139,6 +139,20 @@ mod imp {
         }
     }
 
+    /// Reject a null params pointer. A `*_params_create` call can report
+    /// success yet hand back null; dereferencing it would be undefined
+    /// behaviour, so surface it as the generic `CUVS_ERROR`.
+    #[inline]
+    fn non_null<T>(p: *mut T) -> Result<*mut T> {
+        if p.is_null() {
+            Err(Error::Status {
+                status: cuvsError_t::ERROR,
+            })
+        } else {
+            Ok(p)
+        }
+    }
+
     /// The most recent cuVS error message (from `cuvsGetLastErrorText`), or
     /// `None` if cuVS isn't loadable or has no message. Useful to enrich the
     /// generic [`Error::Status`] after a failed call.
@@ -445,6 +459,7 @@ mod imp {
             // stay forward-compatible if cuVS grows the struct).
             let mut p: cuvsIvfFlatIndexParams_t = core::ptr::null_mut();
             check(unsafe { c.cuvs_ivf_flat_index_params_create()?(&mut p) })?;
+            non_null(p)?;
             // SAFETY: `p` is a live params allocation from cuVS.
             unsafe {
                 (*p).metric = params.metric.raw();
@@ -518,6 +533,7 @@ mod imp {
 
             let mut sp: cuvsIvfFlatSearchParams_t = core::ptr::null_mut();
             check(unsafe { c.cuvs_ivf_flat_search_params_create()?(&mut sp) })?;
+            non_null(sp)?;
             unsafe {
                 (*sp).n_probes = params.n_probes;
             }
@@ -741,6 +757,20 @@ mod imp {
             {
                 let _ = unsafe { f(self.raw) };
             }
+        }
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        /// Sabotage guard: a null params pointer must be rejected, a live one passed through.
+        #[test]
+        fn non_null_rejects_null_params() {
+            let null: *mut u8 = core::ptr::null_mut();
+            assert!(non_null(null).is_err());
+            let mut x = 0u8;
+            assert_eq!(non_null(&mut x as *mut u8).unwrap(), &mut x as *mut u8);
         }
     }
 }

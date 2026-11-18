@@ -688,11 +688,19 @@ impl Graph {
                 )
             })?;
         }
-        Ok((
-            from.into_iter().map(|raw| GraphNode { raw }).collect(),
-            to.into_iter().map(|raw| GraphNode { raw }).collect(),
-        ))
+        Ok((nodes_from_raw(from, count), nodes_from_raw(to, count)))
     }
+}
+
+/// Wrap the first `count` entries of a buffer the driver filled.
+///
+/// The buffer is sized from a first size-query call; the second call may
+/// report a smaller `count` if the graph shrank in between, leaving the tail
+/// as the null placeholders it was created with. Truncating to the count the
+/// driver returned keeps those nulls out of the result.
+fn nodes_from_raw(mut raw: Vec<CUgraphNode>, count: usize) -> Vec<GraphNode> {
+    raw.truncate(count);
+    raw.into_iter().map(|raw| GraphNode { raw }).collect()
 }
 
 fn deps_raw(deps: &[CUgraphNode]) -> (*const CUgraphNode, usize) {
@@ -740,7 +748,7 @@ impl GraphNode {
         if count > 0 {
             check(unsafe { cu(self.raw, out.as_mut_ptr(), &mut count) })?;
         }
-        Ok(out.into_iter().map(|raw| GraphNode { raw }).collect())
+        Ok(nodes_from_raw(out, count))
     }
 
     /// Return nodes that depend on this node.
@@ -753,7 +761,7 @@ impl GraphNode {
         if count > 0 {
             check(unsafe { cu(self.raw, out.as_mut_ptr(), &mut count) })?;
         }
-        Ok(out.into_iter().map(|raw| GraphNode { raw }).collect())
+        Ok(nodes_from_raw(out, count))
     }
 
     /// Fetch current kernel-node params (kernel-node nodes only).
@@ -1117,4 +1125,27 @@ pub fn device_set_graph_mem_attribute(device: &crate::Device, attr: i32, value: 
             &mut v as *mut u64 as *mut core::ffi::c_void,
         )
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Sabotage guard: the driver reported fewer nodes on the second call
+    /// than the size query promised. The tail must not surface as null nodes.
+    #[test]
+    fn shrunk_graph_drops_null_tail() {
+        let mut buf: Vec<CUgraphNode> = vec![core::ptr::null_mut(); 4];
+        buf[0] = 0x10 as CUgraphNode;
+        buf[1] = 0x20 as CUgraphNode;
+        let nodes = nodes_from_raw(buf, 2);
+        assert_eq!(nodes.len(), 2);
+        assert!(nodes.iter().all(|n| !n.as_raw().is_null()));
+    }
+
+    #[test]
+    fn full_count_keeps_all() {
+        let buf: Vec<CUgraphNode> = vec![0x10 as CUgraphNode, 0x20 as CUgraphNode];
+        assert_eq!(nodes_from_raw(buf, 2).len(), 2);
+    }
 }
