@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryBackwardPlan<T, N> + BinaryKind::Maximum`.
 //!
 //! Dual-save backward (first BW where the saves are pure comparison

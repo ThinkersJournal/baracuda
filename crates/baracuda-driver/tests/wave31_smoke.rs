@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration test for Wave-31: VDPAU + EGL + NvSci (Jetson).
 //!
 //! On the test host (Windows 11 + RTX 4070 Laptop) none of these APIs

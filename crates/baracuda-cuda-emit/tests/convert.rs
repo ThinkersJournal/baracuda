@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Tree-sitter lifter round-trip tests that re-emit through real backends
 //! (`&Cuda` and `&CpuC`). Relocated from baracuda-kernelgen `src/convert.rs`'s `mod tests`
 //! during the Unpopped carve (step 3): the neutral lifter tests (CUDA/Slang parse,

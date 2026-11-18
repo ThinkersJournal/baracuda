@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Builds small networks with the builder API, deserializes the plan with the
 //! runtime crate, runs it on the GPU, and compares with a CPU reference.
 //!

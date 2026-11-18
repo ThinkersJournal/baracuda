@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! [`ValidAsZeroBits`] — safety marker for zero-initializable types.
 
 use crate::{BFloat16, Complex32, Complex64, Half};

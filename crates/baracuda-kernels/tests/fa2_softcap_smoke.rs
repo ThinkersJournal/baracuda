@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 59a — softcap smoke test for FA2.
 //!
 //! Softcap is a tanh-style score capping used by Gemma-2 to bound the

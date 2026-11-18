@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Smoke tests for per-row sampling + speculative-decode verification —
 //! Phase 66 Tier 2. gated behind the `device-tests` feature + `flashinfer` feature.
 

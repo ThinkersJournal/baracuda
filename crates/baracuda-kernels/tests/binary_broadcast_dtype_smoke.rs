@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU dtype-fanout smoke tests for the strided / broadcast path
 //! of `BinaryPlan<T, 2>` across all 15 remaining (op, dtype) cells.
 //!

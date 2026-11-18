@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The dense GEMM facade pools cuBLAS handles per CUDA context. A caller that creates a fresh
 //! context for every call (Fuel's `CudaInvoker`) gets each new context at the address the
 //! previous, destroyed one had. The pool used to key on that address, so a handle bound to the

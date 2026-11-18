@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CTCLoss — cuDNN-backed sibling of [`super::ctc::CtcLossPlan`].
 //!
 //! cuDNN exposes a single fused FW+BW CTC entry point

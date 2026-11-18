@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Direct-FFI smoke test for the **Phase 65d in-place dispatch
 //! contract** on BatchNorm. Proves that calling
 //! `baracuda_kernels_batch_norm_<dt>_run` with `x_ptr == y_ptr`

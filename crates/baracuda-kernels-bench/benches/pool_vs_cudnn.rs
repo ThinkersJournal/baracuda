@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Pool2d throughput — baracuda vs raw cuDNN (MaxPool2d / AvgPool2d FW).
 //!
 //! baracuda's `MaxPool2dPlan` / `AvgPool2dPlan` are cuDNN-backed, so

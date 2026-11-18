@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `GgufMmvqPlan` — Phase 8 Milestone 8.4.
 //!
 //! Builds a `[nrows=2, ncols=64]` Q8_0-packed weight matrix on the host

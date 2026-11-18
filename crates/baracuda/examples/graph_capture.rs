@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Capture a sequence of kernel launches into a CUDA Graph, then replay
 //! it many times. Demonstrates the overhead reduction CUDA Graphs are
 //! designed for — the per-launch CPU cost of the replay is much lower

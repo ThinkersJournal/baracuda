@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! N-D `fftshift` / `ifftshift` — single-pass general-permutation plan.
 //!
 //! Companion to the 1-D [`super::FftShiftPlan`] that shifts a subset of

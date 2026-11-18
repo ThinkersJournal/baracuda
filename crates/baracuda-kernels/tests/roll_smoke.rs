@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `RollPlan<f32, N>` — cyclic shift along axes.
 #![cfg(feature = "device-tests")]
 

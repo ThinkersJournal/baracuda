@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CUDA GPU core-dump configuration (CUDA 12.1+).
 //!
 //! Control whether the driver dumps GPU state to disk when a kernel

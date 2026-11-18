@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Thin dynamic-loader wrapper around `libloading`.
 //!
 //! This crate does not know about any particular NVIDIA library; each `-sys`

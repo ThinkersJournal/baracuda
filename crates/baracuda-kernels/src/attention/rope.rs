@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Rotary Position Embedding (RoPE) forward plan.
 //!
 //! For a Q/K tensor `x` of shape `[batch, num_heads, seq_len, head_dim]`,

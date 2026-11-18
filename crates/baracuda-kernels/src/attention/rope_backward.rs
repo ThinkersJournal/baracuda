@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Rotary Position Embedding (RoPE) backward plan.
 //!
 //! Rotation matrices are orthogonal, so BW is rotation by `-θ`:

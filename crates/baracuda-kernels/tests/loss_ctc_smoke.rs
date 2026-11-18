@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `CtcLossPlan<T>` — CTC forward via lattice DP.
 //!
 //! Verified against a hand-computed reference plus a CPU re-implementation

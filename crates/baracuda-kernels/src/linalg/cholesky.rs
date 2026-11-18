@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Cholesky factorization — `A = L · L^T` (lower) or `A = U^T · U` (upper).
 //!
 //! Wraps cuSOLVER's `cusolverDnSpotrf` / `Dpotrf` (non-batched) and

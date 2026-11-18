@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Conv1d — NCL 1-D convolution via cuDNN's NdDescriptor API.
 //!
 //! Implements forward + both backward passes for 1-D convolution over

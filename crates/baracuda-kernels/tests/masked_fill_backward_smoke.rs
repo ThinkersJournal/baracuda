@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `MaskedFillBackwardPlan<T, N>` (Phase 7 7.3).
 //!
 //! `dsrc[i] = mask[i] ? 0 : dout[i]`. f32, f64, i32, bool coverage.

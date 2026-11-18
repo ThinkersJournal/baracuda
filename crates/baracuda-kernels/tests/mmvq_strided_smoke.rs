@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the activation-strided + W-offset MMVQ
 //! sibling family — Phase 14.5.
 //!

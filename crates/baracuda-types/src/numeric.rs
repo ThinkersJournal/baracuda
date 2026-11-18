@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Numeric types used across the CUDA stack.
 //!
 //! These are thin, `#[repr(transparent)]` / `#[repr(C)]` wrappers chosen to

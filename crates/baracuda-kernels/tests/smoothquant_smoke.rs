@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 45 — Real-GPU smoke test for `SmoothQuantLinearPlan<f32, S8>`.
 //!
 //! Small `M=2`, `N=3`, `K=8` SmoothQuant W8A8 matmul. The test:

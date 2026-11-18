@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! PReLU FW plan — Milestone 5.3.
 //!
 //! `y[..., c, ...] = x[..., c, ...]` if positive, else

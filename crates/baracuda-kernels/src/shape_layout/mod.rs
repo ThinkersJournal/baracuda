@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shape / layout op family — Category N from the comprehensive plan.
 //!
 //! Each op has its own plan type because the descriptor / args shapes

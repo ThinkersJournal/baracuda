@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `flip` backward plan — Category N (Phase 3 BW).
 //!
 //! `flip` is involutive: `flip(flip(x, dims), dims) == x`. Therefore the

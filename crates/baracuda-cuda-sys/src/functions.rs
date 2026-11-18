@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! C function-pointer aliases for the CUDA Driver API.
 //!
 //! Each `PFN_*` alias is the signature of the corresponding driver function

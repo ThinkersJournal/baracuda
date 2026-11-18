@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Direct-FFI smoke tests proving the **Phase 64 extended aliasing
 //! contract** for kernel families beyond the Phase 61/62 elementwise
 //! set.

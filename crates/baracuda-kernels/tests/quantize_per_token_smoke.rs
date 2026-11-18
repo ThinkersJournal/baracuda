@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `QuantizePerTokenPlan<f32, S8>` (Phase 8 8.2).
 //!
 //! `[N=2, D=4]` fixture with two distinct per-row scales. CPU reference

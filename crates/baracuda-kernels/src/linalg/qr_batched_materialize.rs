@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Batched-QR dense `Q` / `R` materialization (Milestone 6.14, Piece 2).
 //!
 //! Consumes the cuBLAS `geqrfBatched` packed output produced by

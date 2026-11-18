@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Minimal cuSOLVER dense QR factorization demo.
 //!
 //! Factorizes a small column-major `f32` matrix into `A = Q · R` via

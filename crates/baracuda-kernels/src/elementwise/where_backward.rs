@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Heterogeneous-dtype ternary BW plan: `where_backward(cond, dy)`.
 //!
 //! Sibling of [`crate::WherePlan`] for gradient computation. Forward:

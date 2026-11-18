@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shared type vocabulary for the baracuda CUDA stack.
 //!
 //! This crate contains only pure-data types — no I/O, no `libloading`, no

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Guard: `BENCHMARKS.md` states the machine it was measured on TWICE, and only one
 # of the two can ever be updated.
 #

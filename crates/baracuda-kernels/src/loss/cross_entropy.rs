@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CrossEntropyLoss plan — `y = NLLLoss(LogSoftmax(input), target)`.
 //!
 //! Fused into a single per-row two-pass kernel for numerical stability

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration tests for Wave-1 Driver-API additions:
 //! occupancy, unified memory, context queries + limits, peer query,
 //! pointer attributes, stream priority, stream host callback,

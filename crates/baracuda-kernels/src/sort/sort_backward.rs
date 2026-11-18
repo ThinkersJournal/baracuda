@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `sort_backward` plan — scatter `dy` via the saved indices.
 //!
 //! `dx[batch, indices[batch, i]] = dy[batch, i]`. Launcher zeros `dx`

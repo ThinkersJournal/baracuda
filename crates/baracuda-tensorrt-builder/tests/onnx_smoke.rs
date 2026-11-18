@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The ONNX parser: hand-encoded ONNX models are parsed into a network, built,
 //! and run on the GPU against a CPU reference.
 //!

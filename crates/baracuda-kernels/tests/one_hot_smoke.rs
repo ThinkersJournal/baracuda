@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `OneHotPlan<T, N>` (Phase 7 7.3).
 //!
 //! Output rank = input_rank + 1; last output axis = `num_classes`.

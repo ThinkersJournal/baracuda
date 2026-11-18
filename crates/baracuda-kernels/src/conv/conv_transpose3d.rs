@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! ConvTranspose3d — 3-D transposed convolution via cuDNN.
 //!
 //! Implementation strategy mirrors [`super::conv_transpose2d`] /

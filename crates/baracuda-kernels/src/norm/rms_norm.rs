@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! RMSNorm forward plan — multi-axis.
 //!
 //! `y = x / sqrt(mean(x², over norm_axes) + eps) * gamma`. `gamma` is an

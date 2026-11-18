@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Fuel reaches these seven items at the `baracuda_kernels_types::` path and cannot tell which of
 //! them arrive through the `pub use unpopped_vocab::*;` glob. API-freeze R3 replaces that glob with
 //! an explicit list; this test fails to COMPILE if any of the seven stops resolving at this path.

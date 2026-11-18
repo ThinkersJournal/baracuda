@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `ConcatBackwardPlan<T, N>` — backward of
 //! `y = cat(a, b, dim=k)` is the pure inverse routing
 //! (`da = dy[..., :split, ...]`, `db = dy[..., split:, ...]`).

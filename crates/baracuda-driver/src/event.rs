@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CUDA events — lightweight synchronization objects you can record on
 //! a stream and later wait on, or use to measure elapsed device time.
 

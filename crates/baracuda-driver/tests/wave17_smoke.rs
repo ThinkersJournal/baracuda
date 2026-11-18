@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for Wave-17 Driver-API additions:
 //! green contexts (CUDA 12.4+).
 

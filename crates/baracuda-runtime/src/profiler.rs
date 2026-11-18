@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime-side profiler start / stop — bracket the region you want
 //! Nsight Systems / nvprof to capture.
 

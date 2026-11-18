@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Broadcast-reverse reduction plan.
 //!
 //! The autograd primitive that undoes a forward `BroadcastTo`: for

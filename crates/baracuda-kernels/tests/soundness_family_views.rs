@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Soundness: one representative plan per op family must reject (`Err`) a
 //! launch whose `TensorRef` / `TensorMut` / `MatrixRef` declares a shape that
 //! reaches past the `DeviceSlice` backing it.

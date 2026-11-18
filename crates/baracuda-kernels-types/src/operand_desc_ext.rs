@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The device-view adapter: build a driver-free [`OperandDesc`] from a borrowed
 //! device [`TensorRef`].
 //!

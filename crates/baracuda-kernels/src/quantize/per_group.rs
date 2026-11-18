@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `quantize_per_group` forward plan.
 //!
 //! Per-group quantization: input is `[outer, axis_size]` (the higher-

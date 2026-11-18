@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryBackwardPlan + BinaryKind::Atan2`.
 //!
 //! Forward: `y = atan2(a, b)`. Backward:

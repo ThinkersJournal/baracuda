@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for NVIDIA cuDNN.
 //!
 //! Layered on top of [`baracuda-cudnn-sys`](https://docs.rs/baracuda-cudnn-sys).

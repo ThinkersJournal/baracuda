@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! LayerNorm forward plan — multi-axis.
 //!
 //! `y = (x - mean) / sqrt(var + eps) * gamma + beta` where mean and var

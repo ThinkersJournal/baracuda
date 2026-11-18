@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Direct-FFI smoke tests for the **FA2 forward→saved-LSE→backward
 //! saved-tensor contract** (Phase 63).
 //!

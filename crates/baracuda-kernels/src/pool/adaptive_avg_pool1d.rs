@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AdaptiveAvgPool1d — NCL adaptive average-pool, bit-exact PyTorch.
 //!
 //! **Phase 16.1 rewrite.** Previously this plan dispatched through cuDNN

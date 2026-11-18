@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Binary (B1) GEMM plan — Identity-only.
 //!
 //! Distinct programming model from the float / int / FP8 / int4 GEMM

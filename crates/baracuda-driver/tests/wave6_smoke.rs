@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration tests for Wave-6 Driver-API additions:
 //! `cuArrayCreate_v2` + 2-D memcpy to/from CUarray,
 //! `cuTexObjectCreate/Destroy`, `cuSurfObjectCreate/Destroy`.

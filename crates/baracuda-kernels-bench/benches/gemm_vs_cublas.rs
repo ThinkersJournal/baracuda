@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GEMM throughput — baracuda vs cuBLAS.
 //!
 //! For each `(M, K=N, dtype)` shape, runs two criterion bench groups:

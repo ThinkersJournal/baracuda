@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `RandomPlan + RandomKind::Uniform` over
 //! cuRAND. Verifies basic statistical sanity (mean, range) rather than
 //! exact bit-equality, because cuRAND is intrinsically stochastic.

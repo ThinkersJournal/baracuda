@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! #127: type-0/1 MMVQ declines widths that are not multiples of 64.
 //!
 //! The shared type-0/1 MMVQ kernel reads whole 64-column strides, so a width

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `CountReducePlan<T, N>` — `count_nonzero`
 //! along one axis. Output dtype is always `i64` (PyTorch convention).
 //! One test per input dtype: `{f32, f16, bf16, f64, i32, i64, Bool}`.

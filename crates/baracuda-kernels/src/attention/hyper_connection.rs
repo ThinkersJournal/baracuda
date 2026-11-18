@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Manifold-Constrained Hyper-Connections (Phase 43, Tier 1).
 //!
 //! Drop-in replacement for the bare `y = x + sublayer(x)` residual

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `unsorted_segment_min_backward` plan — Category S, unsorted. Phase 25.
 //!
 //! Mirror of [`crate::segment::UnsortedSegmentMaxBackwardPlan`].

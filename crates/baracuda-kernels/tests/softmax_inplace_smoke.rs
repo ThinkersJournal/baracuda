@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Direct-FFI smoke test for the **Phase 65c in-place dispatch
 //! contract** on Softmax. Proves that
 //! `baracuda_kernels_softmax_<dt>_run` with `x_ptr == y_ptr`

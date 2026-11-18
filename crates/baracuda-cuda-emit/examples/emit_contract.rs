@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Emit a small FKC bundle to stdout — a worked example of the generator's
 //! contract output (front-matter + a primitive; plus a fusion + a scalar-param op
 //! whose CONTRACTS are generated but WITHHELD from the importable bundle).

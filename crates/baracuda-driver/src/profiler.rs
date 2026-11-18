@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Thin wrappers over `cuProfilerStart` / `cuProfilerStop`. These tell
 //! external profilers (Nsight, CUPTI) which sections of a program are
 //! interesting; they do not produce output themselves.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! MarginRanking loss plan — Tier-2 (Milestone 5.3).
 //!
 //! FW: `y = mean(max(0, -t · (x1 - x2) + margin))` (or sum / per-cell).

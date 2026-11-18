@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `Conv1dPlan` (cuDNN wrap, Phase 11.7).
 //!
 //! Covers FW + BW data + BW filter for f32 over a small NCL tensor,

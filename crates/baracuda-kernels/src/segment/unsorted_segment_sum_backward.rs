@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `unsorted_segment_sum_backward` plan — Category S, unsorted variant.
 //!
 //! Adjoint of [`crate::segment::UnsortedSegmentSumPlan`]:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Recipe `scale = max_representable / max_amax` formula correctness.
 //!
 //! Drives the recipe with a known max-amax input, runs update, and

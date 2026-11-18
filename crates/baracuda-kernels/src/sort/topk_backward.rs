@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `topk_backward` plan — scatter k-wide `dy` into row_len-wide `dx`
 //! via the saved indices. Launcher zeros `dx` first.
 //!

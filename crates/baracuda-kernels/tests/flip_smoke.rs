@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `FlipPlan<f32, N>` — reverse along selected
 //! axes. Bit-exact (no math, pure element copy).
 #![cfg(feature = "device-tests")]

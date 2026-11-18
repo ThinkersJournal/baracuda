@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `one_hot` plan — Category L (non-differentiable).
 //!
 //! `out[indices..., c] = 1 if c == src[indices...] else 0`. PyTorch

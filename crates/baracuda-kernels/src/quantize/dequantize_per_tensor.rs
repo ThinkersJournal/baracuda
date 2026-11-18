@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `dequantize_per_tensor` forward plan.
 //!
 //! `x = scale * (q - zero_point)`. Linear; exactly invertible (up to

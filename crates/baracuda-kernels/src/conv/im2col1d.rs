@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Im2Col1d — bespoke 1-D sliding-window unfold (Phase 19.3).
 //!
 //! 1-D analog of [`super::Im2ColPlan`]. Turns an NCL convolution

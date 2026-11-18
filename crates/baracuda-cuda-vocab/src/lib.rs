@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `baracuda-cuda-vocab` — owner source for the `cuda:` KISS §6.8 namespace
 //! vocabulary.
 //!

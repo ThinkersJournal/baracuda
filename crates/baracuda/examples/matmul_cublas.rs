@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Minimal cuBLAS matmul demo: multiply two random column-major float
 //! matrices via `cublasSgemm` and verify the result against a CPU reference.
 //!

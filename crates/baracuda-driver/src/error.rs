@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Error type for `baracuda-driver`.
 
 use baracuda_cuda_sys::{CUresult, driver};

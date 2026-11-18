@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! End-to-end example of the baracuda stack: compile CUDA C++ at runtime
 //! via NVRTC, load the resulting PTX through the Driver API, launch the
 //! kernel, verify output.

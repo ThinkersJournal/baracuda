@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Device-memory types.
 //!
 //! - [`DeviceBuffer<T>`] — owned, typed GPU allocation.

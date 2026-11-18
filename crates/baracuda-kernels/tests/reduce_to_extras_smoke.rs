@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 37 Gap 1a — direct-FFI smoke for `reduce_min_to_<dtype>_run`
 //! and `reduce_prod_to_<dtype>_run`.
 //!

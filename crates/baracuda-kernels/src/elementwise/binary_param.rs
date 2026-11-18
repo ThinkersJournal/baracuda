@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Parameterized binary elementwise plan.
 //!
 //! Sibling of [`crate::BinaryPlan`] for ops that carry a scalar parameter

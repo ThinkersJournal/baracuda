@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary Acosh backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Acosh`). Backward:
 //! `dx = dy / sqrt(x² - 1)`. Saved-x. Inputs stay in `[1.1, 5.0]` to

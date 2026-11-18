@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 59a — ALiBi smoke test for the FA2 backend.
 //!
 //! ALiBi (Attention with Linear Biases) adds a learned per-head slope

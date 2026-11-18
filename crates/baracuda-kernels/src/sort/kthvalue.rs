@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `kthvalue` plan — returns the k-th smallest value + its index along
 //! the last dimension.
 //!

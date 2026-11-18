@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for Phase 50 [`CausalConv1dPlan`] (FW).
 //!
 //! Validates the bespoke causal-conv1d FW kernel against a CPU

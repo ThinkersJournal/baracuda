@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Insert `crate::view_check::check_fits(&args.<field>)?;` at the top of every
 `can_implement` in crates/baracuda-kernels/src, one call per `TensorRef` /
 `TensorMut` field of the plan's Args struct (Option<..> fields are checked when

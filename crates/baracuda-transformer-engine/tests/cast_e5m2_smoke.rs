@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! E5M2 round-trip smoke test.
 //!
 //! E5M2 trades 1 bit of mantissa for 1 bit of exponent vs E4M3:

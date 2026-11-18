@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `MsortPlan<T>` — stable sort with tie-break
 //! on input index (Phase 9 Category O). gated behind the `device-tests` feature.
 #![cfg(feature = "device-tests")]

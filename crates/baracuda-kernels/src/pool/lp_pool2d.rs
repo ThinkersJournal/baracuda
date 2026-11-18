@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! LPPool2d — bespoke fused 2-D LP-pool (Phase 16.2).
 //!
 //! `y[..., i, j] = (Σ_{k, l ∈ window} |x[..., i*sh + k, j*sw + l]|^p)^(1/p)`

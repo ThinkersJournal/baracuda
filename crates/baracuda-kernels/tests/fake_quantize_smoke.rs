@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `FakeQuantizePlan<TIn>` — Phase 8 Milestone 8.1.
 //!
 //! Verifies `fake_quant(x) == dequant(quant(x))` cellwise — i.e. the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `IndexSelectPlan<T, N>` (Phase 7 7.3).
 //!
 //! `out[..., j, ...] = src[..., idx[j], ...]` along `select_dim` with

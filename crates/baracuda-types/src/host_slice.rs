@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! [`HostSlice`] — generic abstraction over "things that are a slice of `T`".
 
 /// Trait for host-memory values that can be viewed as `&[T]`.

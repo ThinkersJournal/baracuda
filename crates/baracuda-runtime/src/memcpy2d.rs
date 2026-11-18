@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime-API 2-D memory copies + pitched device allocations.
 //!
 //! Mirrors `baracuda_driver::memcpy2d`. `PitchedBuffer<T>` owns a

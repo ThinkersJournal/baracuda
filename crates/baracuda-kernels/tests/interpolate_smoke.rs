@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `InterpolatePlan<T>` (Phase 9 Category T;
 //! Phase 21 align_corners + scale-factor overrides + f16/bf16 fanout).
 //!

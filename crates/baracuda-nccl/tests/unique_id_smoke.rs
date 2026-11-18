@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! NcclUniqueId smoke tests — verifies `generate()` + byte-cast roundtrip.
 //!
 //! These tests require a working NCCL install (typically Linux multi-GPU

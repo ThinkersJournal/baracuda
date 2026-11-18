@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Platform detection and default library search paths.
 
 use std::path::PathBuf;

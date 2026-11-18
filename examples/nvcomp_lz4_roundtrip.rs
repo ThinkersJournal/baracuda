@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! nvCOMP LZ4 batched round-trip demo.
 //!
 //! Compresses a batch of 64-KiB chunks with mildly-redundant content,

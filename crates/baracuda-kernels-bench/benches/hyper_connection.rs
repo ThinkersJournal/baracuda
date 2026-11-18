@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! HyperConnection throughput — Phase 43 head-to-head.
 //!
 //! Validates the upstream "5-15× FW vs naive PyTorch" claim on RTX

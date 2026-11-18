@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Single-axis scan backward plan.
 //!
 //! Backward pass for the prefix-scan family.

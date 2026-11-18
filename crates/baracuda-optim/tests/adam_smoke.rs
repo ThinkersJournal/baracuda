@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Adam — single-step smoke test against a CPU reference.
 //!
 //! Builds a small synthetic parameter set, runs one AdamStepPlan

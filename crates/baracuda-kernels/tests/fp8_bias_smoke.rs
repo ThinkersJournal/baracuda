@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the FP8 bias / activation epilogue family:
 //! 16 SKUs spanning `{E4M3, E5M2} × {RCR, RRR} × {Bias, BiasRelu,
 //! BiasGelu, BiasSilu}`. One shape (128×128×128) per SKU.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Parameterized unary elementwise plan.
 //!
 //! Sibling of [`crate::UnaryPlan`] for ops that carry one or more scalar

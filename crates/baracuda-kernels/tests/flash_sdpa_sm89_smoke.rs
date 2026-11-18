@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `FlashSdpaSm89Plan` — Phase 10 Milestone 10.3.
 //!
 //! Cross-checks the sm_89 (Ada Lovelace) Flash Attention FW sibling

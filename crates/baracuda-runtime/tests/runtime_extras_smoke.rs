@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Additional GPU-gated smoke tests for the runtime-API safe wrapper —
 //! covers stream priority, peer access, managed / pinned / async memory,
 //! mem prefetch/advise, graph capture, occupancy, and func attrs.

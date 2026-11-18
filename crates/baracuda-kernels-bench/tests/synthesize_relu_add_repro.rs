@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! ROOT-CAUSE repro for the alpha.78 synthesized-relu(add) all-zero (Fuel bisect:
 //! 76/77 PASS, 78 FAIL). Unlike alpha78_relu_add_ondevice.rs (which drives the
 //! `generate` path), this drives the ACTUAL path Fuel uses — `synthesize`

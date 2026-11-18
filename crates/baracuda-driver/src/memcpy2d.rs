@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Strided (2-D) memory copies via `cuMemcpy2D`, and pitched device
 //! allocations via `cuMemAllocPitch`.
 //!

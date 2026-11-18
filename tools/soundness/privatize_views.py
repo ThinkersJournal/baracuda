@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Rewrite `TensorRef { data, shape, stride }` / `TensorMut { .. }` struct
 literals into `TensorRef::new(data, shape, stride).unwrap()` calls, now that
 the fields are private and `new` is the validated constructor. With

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Single-process multi-GPU NCCL `AllReduce(Sum)` demo.
 //!
 //! Uses `ncclCommInitAll` to bring up one communicator per visible

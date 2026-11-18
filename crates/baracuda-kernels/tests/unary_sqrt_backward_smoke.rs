@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary sqrt backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Sqrt`). Backward:
 //! `dx = dy / (2 * y)`. Saved-y. `y` is bounded well above zero

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Guard: a test in `crates/A/tests/` runs under `cargo test -p A` and NEVER under
 # `cargo test -p B`, regardless of whose code it exercises. A split moves code and
 # leaves tests where they were, and nothing in the toolchain objects — so a test

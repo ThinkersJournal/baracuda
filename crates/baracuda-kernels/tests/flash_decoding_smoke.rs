@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `FlashDecodingPlan` FW (Phase 73 follow-up).
 //!
 //! Validates the split-K decode kernel against a CPU fp32 reference.

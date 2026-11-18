@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! On-device CUDA-graph capture→replay validation for the capture-safe
 //! decode kernels this session added to unblock Fuel's `CapturedRun`:
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 17.2 — Real-GPU smoke tests for the strided SDPA backward
 //! kernel under GQA broadcast (`stride_k[1] == 0` or `stride_v[1] == 0`).
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Flash Attention backward plan (Milestone 6.6).
 //!
 //! Three-kernel deterministic BW pipeline that operates on the

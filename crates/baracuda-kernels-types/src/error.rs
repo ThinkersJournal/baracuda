@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The shared error type for the baracuda kernel facade.
 //!
 //! Defined here so every per-library wrapper and `baracuda-kernels` share one `Error`;

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! MultilabelSoftMargin loss plan — Tier-2 (Milestone 5.3).
 //!
 //! Per-row n: `-mean_c(target·log(σ(input)) + (1-target)·log(1-σ(input)))`.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Stream-ordered memory pools (Runtime API, CUDA 11.2+).
 //!
 //! Mirrors `baracuda_driver::mempool` — a pool is a device-backed

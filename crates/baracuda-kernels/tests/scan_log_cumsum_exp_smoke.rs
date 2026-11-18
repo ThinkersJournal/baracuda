@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `ScanPlan<T, N> + ScanKind::LogCumsumExp`.
 //!
 //! Forward: `y[k] = log(Σ_{j ≤ k} exp(x[j]))` (or `y[k] =

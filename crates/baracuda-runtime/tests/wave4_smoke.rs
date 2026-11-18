@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime Wave 4: graphics interop — core + GL + D3D + VDPAU + EGL + NvSci.
 //!
 //! We can't fully test graphics interop without a GL / D3D / VDPAU / EGL

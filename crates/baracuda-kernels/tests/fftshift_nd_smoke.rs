@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `FftShiftNdPlan` (N-D fftshift / ifftshift).
 //!
 //! fftshift is a pure index permutation — bit-exact across float types.

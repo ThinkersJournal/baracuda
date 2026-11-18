@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Extended launch attributes + `cudaLaunchKernelEx` (cluster launches,
 //! programmatic stream serialization, preferred shmem carveout).
 //!

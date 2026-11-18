@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 31 — direct-FFI smoke for `unary_gelu_erf_<dtype>_run`.
 //!
 //! Exact-erf-based GELU: `y = 0.5 * x * (1 + erf(x / sqrt(2)))`.

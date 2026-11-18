@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration tests for Wave-24 Driver-API additions:
 //! graph memory nodes + `cuGraphExecUpdate_v2` + device graph-mem attrs.
 

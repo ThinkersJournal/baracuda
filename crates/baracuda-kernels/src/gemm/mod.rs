@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GEMM family — unified plan-based API.
 //!
 //! Today this module hosts the integer GEMM dispatcher [`IntGemmPlan`],

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! BLAS-1 routines beyond `axpy`: `dot`, `scal`, `nrm2`, `asum`,
 //! `iamax` / `iamin`, and `copy`.
 //!

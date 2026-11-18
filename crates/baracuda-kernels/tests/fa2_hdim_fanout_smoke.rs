@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 59a — head_dim fanout smoke test for the FA2 backend.
 //!
 //! Phase 42 (Tier-1) shipped head_dim=128 only; Phase 59a vendored

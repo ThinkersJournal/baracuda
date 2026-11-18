@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `TopkPlan<T>` (Phase 9 Category O).
 //! Gated behind the `device-tests` feature.
 #![cfg(feature = "device-tests")]

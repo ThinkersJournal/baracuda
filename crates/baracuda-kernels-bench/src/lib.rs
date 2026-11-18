@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-kernels-bench
 //!
 //! Phase 10 Milestone 10.1 — benchmark harness for the `baracuda-kernels`

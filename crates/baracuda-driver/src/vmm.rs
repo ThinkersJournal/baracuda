@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CUDA Virtual Memory Management (VMM) — the fine-grained alternative to
 //! `cuMemAlloc`.
 //!

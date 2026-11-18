@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration tests for `baracuda-runtime`.
 //!
 //! Run with `cargo test -p baracuda-runtime --features device-tests` on a machine

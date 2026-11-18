@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Shared ND-pooling helpers (Phase 11.8).
 //!
 //! Wraps cuDNN's rank-agnostic Nd-pooling entry points

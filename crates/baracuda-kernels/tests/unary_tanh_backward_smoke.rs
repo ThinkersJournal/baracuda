@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary tanh backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Tanh`) across f32 / f16 /
 //! bf16 / f64. Forward: `y = tanh(x)`. Backward: `dx = dy * (1 - y²)`.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime machinery shared across baracuda crates.
 //!
 //! - [`error`] — loader errors, a generic per-library `Error<S>`, and the

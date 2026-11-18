@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `CrossEntropyLossBackwardPlan`. BW × 4 dtypes × Mean.
 //! `dinput[i, c] = (softmax(input)[i, c] - 1{c == t[i]}) · dy / N`.
 #![cfg(feature = "device-tests")]

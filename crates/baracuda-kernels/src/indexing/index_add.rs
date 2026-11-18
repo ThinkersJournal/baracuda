@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `index_add` plan — Category L (Phase 39).
 //!
 //! `dst[idx[i], ...] += src[i, ...]` along the `add_dim` axis. `idx` is

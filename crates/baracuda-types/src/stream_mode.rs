@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The default-stream semantics switch.
 //!
 //! CUDA's default stream (the null stream) has two legal behaviors:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `quantize_per_channel` backward plan via STE.
 //!
 //! `dx[i] = (dy[i] / scale[c]) * 1[qmin <= round(x[i]/scale[c])+zp[c] <= qmax]`,

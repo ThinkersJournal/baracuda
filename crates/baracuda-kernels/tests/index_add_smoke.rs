@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `IndexAddPlan<T, N>` (Phase 39 / Fuel 6c.4 Gap 5).
 //!
 //! Verifies `dst[idx[i], ...] += src[i, ...]` along an axis using

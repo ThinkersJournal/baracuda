@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `baracuda-bench run --report` — board #162 slice 2b.
 //!
 //! Runs a fixed kernel sweep under CUDA-event timing, computes the seven-number

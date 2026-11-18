@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-cuda-emit
 //!
 //! The CUDA backend for the neutral kernel generator [`unpopped`]: the

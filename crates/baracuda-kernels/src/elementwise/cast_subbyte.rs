@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Sub-byte / non-arithmetic cast plan — sibling of [`crate::CastPlan`].
 //!
 //! Phase 13.3 adds cast paths for dtypes that the classic `CastPlan`

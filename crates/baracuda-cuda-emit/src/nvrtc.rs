@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The NVRTC on-demand JIT compiler — the production source → PTX
 //! [`Compiler`](unpopped::Compiler). Carved out of
 //! `baracuda-kernelgen`'s `jit.rs` (carve step 2). The whole module is behind

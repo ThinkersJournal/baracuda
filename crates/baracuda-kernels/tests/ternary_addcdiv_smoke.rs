@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `addcdiv` — `y = a + scale * (b / c)`.
 //!
 //! Covers all 4 FP dtypes contig. f32 / f64 bit-exact (unfused

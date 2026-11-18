@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Run `cargo check` for several feature sets, apply E0616 accessor fixes, repeat
 until a set has no E0616 left. Prints the remaining (non-E0616) error summary."""
 import collections

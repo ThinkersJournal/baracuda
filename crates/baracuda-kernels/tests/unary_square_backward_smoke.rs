@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary square backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Square`).
 //! Backward: `dx = dy * 2 * x`. Saved-x, no transcendental.

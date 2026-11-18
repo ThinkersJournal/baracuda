@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 31 — direct-FFI smoke for `unary_step_<dtype>_run`, plus the
 //! Phase 74 plan-driven cases (`UnaryPlan<T, N> + UnaryKind::Step`)
 //! added when the facade gained the `Step` variant.

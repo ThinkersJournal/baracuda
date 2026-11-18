@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Kernel-layer lowering for the CUDA backend (ROADMAP row U20), **stages 2 and 3: the memory and control subset, then the four statements of board 434 C**.
 //!
 //! [`Cuda::lower_kernel`](crate::Cuda) lowers a [`KernelFn`] to one `extern "C" __global__` function. It runs

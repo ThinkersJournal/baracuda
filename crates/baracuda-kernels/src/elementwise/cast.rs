@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Cast plan — heterogeneous dtype conversion (`y = (TOut) x`).
 //!
 //! Distinct from the same-dtype [`crate::UnaryPlan`] family because the

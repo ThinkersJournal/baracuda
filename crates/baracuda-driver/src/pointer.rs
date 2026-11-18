@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Pointer attribute queries (`cuPointerGetAttribute`).
 
 use baracuda_cuda_sys::CUdeviceptr;

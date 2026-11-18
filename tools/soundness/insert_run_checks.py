@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Companion to insert_check_fits.py for plans that have NO `can_implement`.
 
 For every `pub fn run(..)` in crates/baracuda-kernels/src whose file defines no

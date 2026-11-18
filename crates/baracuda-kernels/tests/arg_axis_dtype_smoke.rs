@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `ArgReducePlan<T, N, I>` output-dtype
 //! generality (Phase 12.2 — Fuel team feedback).
 //!

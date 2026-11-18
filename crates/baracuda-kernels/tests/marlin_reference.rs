@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Marlin W4A16 GEMM vs a dequantise-then-GEMM reference at real shapes.
 //!
 //! The reference is built from the UNPACKED weights (the raw 4-bit values and

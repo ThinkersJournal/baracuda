@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for reduce-norm2 backward
 //! (`ReduceBackwardPlan<T, N> + ReduceKind::Norm2`).
 //!

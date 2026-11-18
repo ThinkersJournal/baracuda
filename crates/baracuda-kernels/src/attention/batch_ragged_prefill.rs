@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Batched ragged-KV prefill — Phase 66 Tier 2 (FlashInfer).
 //!
 //! Like [`BatchPagedPrefillPlan`](crate::BatchPagedPrefillPlan) but the

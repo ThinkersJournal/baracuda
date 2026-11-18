@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Does an UNRESTORED Cholesky loop actually enter a failure path?
 //!
 //! ⚠️ I asserted this in a commit message, a bench module doc and three peer

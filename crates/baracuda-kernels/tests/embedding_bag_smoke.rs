@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `EmbeddingBagPlan<T>` (Phase 7 Milestone 7.5).
 //!
 //! Per-bag reduction over a flat indices buffer partitioned by an

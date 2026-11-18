@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for NVIDIA nvCOMP (GPU compression).
 //!
 //! nvCOMP ships host-side batched APIs for several codecs:

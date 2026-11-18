@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! NCCL smoke test. NCCL is Linux-only in practice; on other hosts or when
 //! NCCL isn't installed the test skips gracefully instead of failing.
 #![cfg(feature = "device-tests")]

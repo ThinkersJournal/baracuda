@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime-API queries: pointer attributes, device properties, kernel
 //! attributes. Typed wrappers around the `cuda*GetAttributes` /
 //! `cudaGetDeviceProperties` family.

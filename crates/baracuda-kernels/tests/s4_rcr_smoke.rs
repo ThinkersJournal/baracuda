@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the bespoke S4 RCR Identity kernel in
 //! `baracuda-kernels-sys` (the Phase 2 int4 trailblazer).
 //!

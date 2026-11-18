@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Softmax throughput — baracuda vs cuDNN.
 //!
 //! cuDNN's `cudnnSoftmaxForward` runs on a 4-D NCHW tensor and reduces

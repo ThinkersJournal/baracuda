@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `quantized_linear` — fused W8A8 quantized matmul (Phase 8.3).
 //!
 //! The canonical inference-time LLM matmul recipe:

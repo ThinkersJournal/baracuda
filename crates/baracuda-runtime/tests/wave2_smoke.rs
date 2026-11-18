@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime Wave 2: arrays + tex/surf sys, user objects, cooperative
 //! launch, stream attach/attrs, IPC, device-flag config.
 

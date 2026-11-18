@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Per-row sampling + speculative-decode verification — Phase 66 Tier 2.
 //!
 //! Companions to [`TopKTopPSamplingPlan`](super::TopKTopPSamplingPlan):

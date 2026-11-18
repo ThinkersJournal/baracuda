@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated NVML smoke test. Requires the NVIDIA driver (not the CUDA toolkit).
 #![cfg(feature = "device-tests")]
 

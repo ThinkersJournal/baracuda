@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Pinned (page-locked) host memory.
 //!
 //! Regular Rust allocations are pageable — the kernel can move or swap

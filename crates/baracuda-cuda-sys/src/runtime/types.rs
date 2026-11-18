@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Core handle types used by the CUDA Runtime API.
 //!
 //! Most of these are typedef-compatible with the Driver API handles

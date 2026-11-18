@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime-API external memory / semaphore interop — symbol-resolution
 //! and descriptor layout checks. End-to-end import needs a Vulkan /
 //! D3D12 producer so we stop at verifying the safe wrapper compiles and

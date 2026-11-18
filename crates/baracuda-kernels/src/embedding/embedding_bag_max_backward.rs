@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `embedding_bag` Max-mode BW plan — Category M. Phase 25.
 //!
 //! Adjoint of [`crate::embedding::EmbeddingBagMaxPlan`]:

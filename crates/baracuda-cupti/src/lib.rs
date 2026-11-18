@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for CUPTI (CUDA Profiling Tools Interface).
 //!
 //! Four major surfaces are wrapped:

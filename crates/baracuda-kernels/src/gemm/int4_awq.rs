@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AWQ W4A16 GEMM plan — Phase 48 Goal B.
 //!
 //! Vendored kernel: `crates/baracuda-kernels-sys/vendor/awq/`

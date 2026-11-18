@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The `Runtime` loader — parallels [`crate::Driver`] for the CUDA Runtime API.
 //!
 //! `libcudart` does not expose a `cuGetProcAddress`-style entry-point

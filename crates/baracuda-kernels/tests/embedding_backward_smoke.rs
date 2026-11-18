@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `EmbeddingBackwardPlan<T>` (Phase 7 7.5).
 //!
 //! `dweight[indices[n], :] += dout[n, :]` along axis 0 (atomicAdd),

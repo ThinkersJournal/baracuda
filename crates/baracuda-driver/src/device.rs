@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Physical-GPU query and enumeration.
 
 use core::ffi::c_char;

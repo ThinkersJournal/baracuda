@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `index_select` plan — Category L.
 //!
 //! `out[..., j, ...] = src[..., idx[j], ...]` along the `select_dim`

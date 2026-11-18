@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Batched paged-KV decode — Phase 46 (FlashInfer cherry-pick).
 //!
 //! The key decode primitive for vLLM-style serving stacks: every request

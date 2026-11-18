@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for NVIDIA NCCL (multi-GPU collective communication).
 //!
 //! Layered on top of [`baracuda-nccl-sys`](https://docs.rs/baracuda-nccl-sys).

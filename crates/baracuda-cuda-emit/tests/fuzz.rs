@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Relocated from baracuda-kernelgen src/fuzz.rs during the Unpopped carve
 //! (step 3): the cross-backend IR fuzzer drives `generate(&Cuda)` (+ CpuC/Slang),
 //! so it lives with the CUDA backend crate. Public-API only; no widening needed.

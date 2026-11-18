@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Heterogeneous-dtype ternary plan: `where(cond, a, b)`.
 //!
 //! Distinct from [`crate::TernaryPlan`] because the cond input has a

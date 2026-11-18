@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `unsorted_segment_sum` plan — Category S, unsorted variant.
 //!
 //! `out[s, d] = Σ_{n : segment_ids[n] == s} input[n, d]` with arbitrary

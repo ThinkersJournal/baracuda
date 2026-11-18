@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The two CUDA semantics the §6.16-0009 bit-move path for `RowReduce` rests
 //! on, measured on an RTX 4070 rather than read out of the docs.
 //!

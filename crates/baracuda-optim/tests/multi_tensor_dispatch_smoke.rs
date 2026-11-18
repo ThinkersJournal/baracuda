@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Multi-tensor dispatch — measures the multi_tensor_apply speedup.
 //!
 //! Validates the load-bearing value prop of the entire crate: that a

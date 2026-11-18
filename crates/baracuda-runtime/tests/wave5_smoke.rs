@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime Wave 5: arrays + tex/surf, 3D memcpy, launch-ex, profiler.
 //!
 //! VMM, multicast and green contexts are driver-API only (libcudart does not export them);

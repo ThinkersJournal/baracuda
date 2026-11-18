@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `RMSNormPlan + NormalizationKind::RMSNorm` FW.
 //!
 //! Forward: `y = x / sqrt(mean(x², dim=norm_axis) + eps) * gamma`. We

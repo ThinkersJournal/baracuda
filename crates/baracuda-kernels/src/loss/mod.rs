@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Loss op family — Phase 5 Category R.
 //!
 //! Today wired (FW + BW × 4 FP dtypes: f32, f16, bf16, f64):

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Multi-dimensional FFT / IFFT (complex-to-complex) — `FftNdPlan<T>`
 //! for `T = Complex64` / `Complex128`. Milestone 6.8.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 31 — direct-FFI smoke for `unary_powf_<dtype>_run`.
 //!
 //! `y = pow(x, exponent)`. Exercises both integer and non-integer

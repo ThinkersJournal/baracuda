@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Conv2d throughput bench — GFLOPS across ResNet-50 block shapes ×
 //! dtypes. Gated behind the `cudnn` feature.
 //!

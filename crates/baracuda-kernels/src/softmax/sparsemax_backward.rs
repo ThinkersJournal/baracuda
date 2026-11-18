@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Sparsemax backward plan — Jacobian-vector product.
 //!
 //! For active positions (`y > 0`):

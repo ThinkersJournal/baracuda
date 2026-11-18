@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Naive Scaled Dot-Product Attention (SDPA) backward plan.
 //!
 //! Given the FW formula

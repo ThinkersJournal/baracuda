@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe cuDF bindings for the RAPIDS `libcudf` C ABI.
 //!
 //! This crate wraps the subset of cuDF that NVIDIA exposes through the

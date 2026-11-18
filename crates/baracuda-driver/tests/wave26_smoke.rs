@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for Wave-26 Driver-API additions:
 //! typed launch-attribute builders applied via `cuLaunchKernelEx`.
 

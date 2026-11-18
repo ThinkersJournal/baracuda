@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Emit the B13/B14 contraction-growth cells for on-device numeric validation:
 //! the **fused bias/activation epilogue** (B13) and the **batched
 //! `[B,M,K]·[B,K,N]`** kernel (B14). Companion generator for

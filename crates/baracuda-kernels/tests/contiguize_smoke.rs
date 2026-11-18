@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `ContiguizePlan<T, N>` — strided→contiguous
 //! materialization (Phase 13.2).
 //!

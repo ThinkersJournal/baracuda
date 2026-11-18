@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Tests for scripts/bump-version.py. Run: python -m unittest discover -s scripts -p 'test_*.py'
 
 The blind-replace test is the point: it fails for a naive `alpha.OLD -> alpha.NEW` replace.

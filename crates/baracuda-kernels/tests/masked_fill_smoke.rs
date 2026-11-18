@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `MaskedFillPlan<T, N>` (Phase 7 7.3).
 //!
 //! `out[i] = mask[i] ? value : src[i]`. f32, f64, i32, bool coverage.

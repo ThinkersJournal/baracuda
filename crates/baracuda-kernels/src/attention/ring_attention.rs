@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Ring Attention — sequence-parallel attention (Phase 56, Tier 1).
 //!
 //! Hand-port of the algorithm from:

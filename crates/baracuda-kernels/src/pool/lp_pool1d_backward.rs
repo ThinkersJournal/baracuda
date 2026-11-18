@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! LPPool1d backward (Phase 16.2). Pairs with [`super::LpPool1dPlan`].
 //!
 //! `y = (Σ_{k ∈ window} |x_k|^p)^(1/p)`

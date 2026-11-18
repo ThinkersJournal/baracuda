@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Mamba-1 selective_scan — Phase 50b (gated behind the `mamba` feature).
 //!
 //! Completes the state-space LLM coverage that Phase 50 explicitly

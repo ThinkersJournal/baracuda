@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `grid_sample` FW plan — Category T (2-D).
 //!
 //! Sample an NCHW input at arbitrary normalized (x, y) coordinates

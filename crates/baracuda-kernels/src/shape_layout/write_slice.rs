@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `write_slice` plan — Phase 13.1 trailblazer.
 //!
 //! `write_slice(dest, source, ranges) -> dest`:

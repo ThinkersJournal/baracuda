@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for NVIDIA cuSOLVER.
 //!
 //! Covers the dense API (`Dn`) for all four BLAS scalar types:

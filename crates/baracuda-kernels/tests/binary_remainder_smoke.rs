@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryPlan + BinaryKind::Remainder` —
 //! C-style remainder via `fmod`. Result sign matches `a`. Distinct from
 //! `BinaryKind::Mod` (Python-style, sign of b). Inputs avoid `b == 0`.

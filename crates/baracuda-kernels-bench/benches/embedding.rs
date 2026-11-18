@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Embedding table-lookup throughput — baracuda self-bench + PyTorch reference.
 //!
 //! Phase 73.8b — LLM workhorse op. Every LLM forward pass starts with

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Affine plan — fused `y[i] = a * x[i] + b` with scalar `a`, `b`.
 //!
 //! Phase 3 fanout from `fuel-cuda-kernels/affine.cu`. Same-dtype-input

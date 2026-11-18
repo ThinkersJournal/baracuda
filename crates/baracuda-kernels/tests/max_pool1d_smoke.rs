@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `MaxPool1dPlan` FW + BW.
 //!
 //! `[1, 2, 8]` input, window 2, stride 2, pad 0 → `[1, 2, 4]` output.

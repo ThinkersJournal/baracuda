@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryPlan + BinaryKind::FloorDivide` —
 //! `y = floor(a / b)`. Matches PyTorch's
 //! `torch.div(a, b, rounding_mode='floor')`. Inputs avoid `b == 0`.

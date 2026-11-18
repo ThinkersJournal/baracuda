@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `kernelgen` CLI basics: `--help` / `--version` succeed, an unknown flag or
 //! extra positional is a usage error, and none of them write anything.
 //! Names the crate (`baracuda_cuda_emit`) so test-crate-locality sees it.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `InstanceNormBackwardPlan`.
 //!
 //! Verifies the GroupNorm-wrapper path (num_groups == C).

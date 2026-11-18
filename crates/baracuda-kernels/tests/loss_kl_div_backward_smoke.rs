@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `KlDivLossBackwardPlan`. BW × 4 dtypes × Mean.
 //! `dinput[i] = -target[i] · dy / N`.
 #![cfg(feature = "device-tests")]

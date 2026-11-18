@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime-API graph user objects (CUDA 12.0+).
 //!
 //! Refcounted RAII slot you can attach to a graph via

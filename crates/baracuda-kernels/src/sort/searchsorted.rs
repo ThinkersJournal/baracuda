@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `searchsorted` plan — per-query binary search in a 1-D sorted array.
 //!
 //! `searchsorted(sorted_seq[L], values[N], right) -> output[N]` (i32).

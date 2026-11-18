@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `EmbeddingBagMaxBackwardPlan<T>` (Phase 25).
 //!
 //! BW pass: `dweight[output_index[b, d], d] += dout[b, d]` (atomicAdd).

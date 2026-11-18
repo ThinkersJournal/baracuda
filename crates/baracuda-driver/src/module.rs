@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Compiled module loading (PTX, CUBIN, fatbin) and kernel entry-point lookup.
 
 use core::ffi::{c_char, c_void};

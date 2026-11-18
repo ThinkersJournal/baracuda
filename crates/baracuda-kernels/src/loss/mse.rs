@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! MSE loss plan — `y = mean((pred - target)²)` (or sum / per-cell).
 //!
 //! Today wired: `Mse × {f32, f16, bf16, f64}` × `{None, Mean, Sum}`.

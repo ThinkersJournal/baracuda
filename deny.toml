@@ -1,0 +1,36 @@
+# cargo-deny configuration (template: fishstringer/deny.toml). An advisory acknowledgement is the PM's call at gate:
+# fix a vulnerability by upgrading; ignore only when no fix exists, with a reason and a 30-day expiry.
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+
+[licenses]
+version = 2
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Zlib",
+    "CC0-1.0",
+]
+
+# `publish = false` crates (baracuda-examples) carry no licence field; they are never distributed.
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# Workspace members depend on each other by `path` (dev-dependencies included); a registry wildcard (`*`) is still denied.
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The §6.16-0009 bit-move RowReduce route, COMPILED AND RUN, with the payload
 //! it exists to preserve.
 //!

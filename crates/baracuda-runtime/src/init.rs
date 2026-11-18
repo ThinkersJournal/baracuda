@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime-API initialization helpers.
 //!
 //! The CUDA Runtime API initializes lazily on first use (typically when you

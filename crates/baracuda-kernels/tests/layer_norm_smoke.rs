@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `LayerNormPlan` FW.
 //!
 //! Forward: `y = (x - mean) / sqrt(var + eps) * gamma + beta` with

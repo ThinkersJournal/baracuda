@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `forge_hello` — the canonical baracuda-forge end-to-end story.
 //!
 //! 1. `kernels/forge_hello.cu` defines `vector_add`.

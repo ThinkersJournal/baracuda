@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! SmoothL1 loss plan — piecewise:
 //! `0.5·(x/β)²·β` if `|x|<β`, else `|x| - 0.5·β`, where `x = pred - target`.
 //!

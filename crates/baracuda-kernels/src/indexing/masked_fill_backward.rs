@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `masked_fill_backward` plan — Category L BW.
 //!
 //! Adjoint of [`crate::indexing::MaskedFillPlan`]:

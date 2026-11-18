@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Direct-FFI smoke test for the **Phase 65c in-place dispatch
 //! contract** on LayerNorm. Proves that calling
 //! `baracuda_kernels_layer_norm_<dt>_run` with `x_ptr == y_ptr`

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BatchedQrPlan` (cuSOLVER `geqrfBatched`).
 //!
 //! Verifies `geqrfBatched` runs cleanly and produces sane packed-output

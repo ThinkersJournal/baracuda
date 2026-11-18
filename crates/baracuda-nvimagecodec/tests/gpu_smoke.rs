@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated nvImageCodec smoke tests: probe + decode tiny embedded images.
 //!
 //! These require both an NVIDIA GPU **and** a separately-installed

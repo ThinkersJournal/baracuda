@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `QuantizePerTokenBackwardPlan<f32>`.
 //! STE verification: gradient passes through (divided by scale) inside
 //! the un-clipped range, zero outside.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `scatter_add` plan — Category L.
 //!
 //! `out[..., index[..., j, ...], ...] += updates[..., j, ...]` along

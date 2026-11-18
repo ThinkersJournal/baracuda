@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! TripletMargin loss plan — Tier-2 (Milestone 5.3).
 //!
 //! Per-row: `max(0, ||a - p||_p - ||a - n||_p + margin)`.

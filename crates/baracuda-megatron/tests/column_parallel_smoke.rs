@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! ColumnParallelLinear — single-rank smoke test.
 //!
 //! Validates that the Column-parallel forward + backward, when run on

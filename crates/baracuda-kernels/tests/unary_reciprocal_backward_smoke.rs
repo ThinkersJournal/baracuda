@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary Reciprocal backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Reciprocal`).
 //! Backward: `dx = -dy / x²`. Saved-x, no transcendental.

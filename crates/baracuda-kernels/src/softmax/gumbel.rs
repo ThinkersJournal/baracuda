@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GumbelSoftmax forward plan — stochastic softmax with reparameterized
 //! Gumbel noise.
 //!

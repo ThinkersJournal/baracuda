@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Re-export of the `DeviceRepr` marker trait plus impls for this crate's own
 //! numeric wrapper types.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BincountPlan` (Phase 9, Category O).
 //!
 //! Validates the FFI surface (`baracuda_kernels_bincount_{i32,i64}_run`)

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Smoke tests for `baracuda-cudf`.
 //!
 //! The crate is a thin safe wrapper around the (still evolving) RAPIDS

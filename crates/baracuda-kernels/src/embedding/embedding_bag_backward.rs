@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `embedding_bag` BW plan — Category M.
 //!
 //! Adjoint of [`crate::embedding::EmbeddingBagPlan`]. For each bag `b`

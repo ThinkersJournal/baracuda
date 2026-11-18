@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `Cuda::lower_kernel`, stages 1 and 2 of ROADMAP U20: the signature and argument block, the memory and control subset,
 //! and a typed `UnsupportedKernel` (never an approximation) for everything else, naming what it declined.
 //!

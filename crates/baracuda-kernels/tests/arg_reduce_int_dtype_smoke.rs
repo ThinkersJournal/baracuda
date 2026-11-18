@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 37 Gap 1b — direct-FFI smoke for integer-dtype argmin / argmax
 //! (`arg_reduce_{argmax, argmin}_<int_dt>_{i32, i64}_run`).
 //!

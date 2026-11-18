@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `msort` (stable sort) plan + BW.
 //!
 //! Same as [`crate::sort::SortPlan`] but with stability guarantee —

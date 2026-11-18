@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for the CUDA Driver API.
 //!
 //! This crate takes the raw FFI in [`baracuda_cuda_sys`] and dresses it up

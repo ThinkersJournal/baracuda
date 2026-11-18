@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Single-axis Any / All reductions. Heterogeneous output dtype: input
 //! is `T: Element`, output is always [`Bool`] (PyTorch convention —
 //! `u8` storage, 0 = false, 1 = true).

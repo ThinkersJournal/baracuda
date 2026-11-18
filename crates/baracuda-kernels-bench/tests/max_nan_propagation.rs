@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! ON-DEVICE N2 verification: `Max` AND `Min` NaN-propagation survive the CUDA
 //! compile chain (nvrtc -> ptxas -> driver JIT) on the RTX 4070.
 //!

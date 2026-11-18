@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CUDA-idiom golden vectors for [`baracuda_cuda_parse::CUDA`].
 //!
 //! Every test here reproduces, at full fidelity (same source string, same

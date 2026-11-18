@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke for `RoiPoolPlan<T>` (Phase 9 Category T).
 #![cfg(feature = "device-tests")]
 

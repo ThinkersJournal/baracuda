@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Emit the transposed-rhs and broadcast-batch-rhs contraction LAYOUT cells for
 //! on-device numeric validation (sub-spec A, Tasks 5/8 emitter + Task 6/9 CPU
 //! oracle; this is the on-device proof of the same emitted kernels). Companion

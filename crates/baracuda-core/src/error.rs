@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Error types shared across the baracuda crates.
 
 use std::path::PathBuf;

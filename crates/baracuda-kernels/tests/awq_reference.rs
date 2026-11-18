@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AWQ W4A16 GEMM vs a dequantise-then-GEMM reference at real shapes, with
 //! non-trivial (random) zero-points.
 //!

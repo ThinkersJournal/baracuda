@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! LPPool2d backward (Phase 16.2). Pairs with [`super::LpPool2dPlan`].
 //!
 //! Same gradient math as the 1d sibling — see

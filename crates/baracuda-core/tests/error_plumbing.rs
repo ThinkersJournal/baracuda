@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Error-type plumbing edge cases. All host-only; no CUDA needed.
 
 use baracuda_core::{Error, LoaderError};

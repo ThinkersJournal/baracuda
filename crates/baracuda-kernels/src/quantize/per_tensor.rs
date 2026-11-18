@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `quantize_per_tensor` forward plan — Category P FW trailblazer.
 //!
 //! `q = clamp(round(x / scale) + zero_point, q_min, q_max)`. One scalar

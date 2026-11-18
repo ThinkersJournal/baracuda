@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 58 — DistributedAdamStepPlan single-rank smoke test.
 //!
 //! Validates the degenerate single-rank case where

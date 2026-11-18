@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Paged KV-cache append — Phase 46 (FlashInfer cherry-pick).
 //!
 //! Companion to [`crate::KvCacheAppendPlan`] (which writes into a

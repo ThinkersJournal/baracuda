@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CUDA arrays + texture / surface objects (Runtime API).
 //!
 //! Mirrors `baracuda_driver::array`. An [`Array`] is an opaque

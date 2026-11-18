@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for NVIDIA cuSPARSE.
 //!
 //! Covers the modern generic-API surface: `Handle`, `SpMat` (CSR/CSC/COO/BSR),

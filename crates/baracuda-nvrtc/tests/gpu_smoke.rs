@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test: compile a kernel via NVRTC and execute it
 //! through the Driver API.
 #![cfg(feature = "device-tests")]

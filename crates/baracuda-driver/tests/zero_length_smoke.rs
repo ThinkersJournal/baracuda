@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Zero-length DeviceBuffer short-circuit — GPU-gated.
 //!
 //! The short-circuit itself is pure bookkeeping (null pointer + len = 0),

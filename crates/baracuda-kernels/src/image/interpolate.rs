@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `interpolate` FW plan — Category T trailblazer.
 //!
 //! Spatial resample of an NCHW input via bilinear interpolation.

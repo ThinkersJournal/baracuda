@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `unique` plan — sort + consecutive-dedup composition.
 //!
 //! Composes [`crate::sort::SortPlan`] (in-place into a caller-supplied

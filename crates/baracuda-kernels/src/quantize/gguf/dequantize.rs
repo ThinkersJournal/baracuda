@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GGUF dequantize plan — unpacks a GGUF-packed weight buffer into a
 //! dense f32 tensor.
 //!

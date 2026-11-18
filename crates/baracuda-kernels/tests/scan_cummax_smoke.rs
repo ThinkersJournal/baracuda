@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `ScanPlan<T, N> + ScanKind::Cummax`.
 #![cfg(feature = "device-tests")]
 

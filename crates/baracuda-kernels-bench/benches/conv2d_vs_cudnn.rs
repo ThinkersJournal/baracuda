@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Conv2d throughput — baracuda vs raw cuDNN.
 //!
 //! baracuda's `Conv2dPlan` is **already** cuDNN-backed

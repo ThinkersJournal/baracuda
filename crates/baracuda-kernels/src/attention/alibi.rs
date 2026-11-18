@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Attention with Linear Biases (ALiBi) forward plan.
 //!
 //! Given attention scores `A: [B, H, Q, K]` and per-head slopes

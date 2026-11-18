@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `ConvTranspose2dPlan` (cuDNN wrap, Phase 11.7).
 //!
 //! Confirms the role-swap dispatch through `cudnnConvolutionBackwardData`

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Multi-dimensional RFFT (real → complex) and IRFFT (complex → real)
 //! — `RfftNdPlan<T>` / `IrfftNdPlan<T>` for `T = f32` / `f64`.
 //! Milestone 6.8.

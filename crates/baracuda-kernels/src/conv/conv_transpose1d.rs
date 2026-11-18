@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! ConvTranspose1d — 1-D transposed convolution via cuDNN.
 //!
 //! Implementation strategy mirrors [`super::conv_transpose2d`]: cuDNN

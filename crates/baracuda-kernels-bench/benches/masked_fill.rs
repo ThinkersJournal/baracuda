@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `masked_fill` throughput — baracuda self-bench + PyTorch reference.
 //!
 //! Phase 73.8c — every LLM attention kernel applies a causal / padding

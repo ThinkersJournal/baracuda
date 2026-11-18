@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for Wave-25 Driver-API additions:
 //! stream memory ops (`cuStreamWriteValue32/64_v2`,
 //! `cuStreamWaitValue32/64_v2`, `cuStreamBatchMemOp_v2`).

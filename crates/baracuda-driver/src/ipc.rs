@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Inter-Process Communication for CUDA events and allocations.
 //!
 //! Two producers / two consumers of cross-process state:

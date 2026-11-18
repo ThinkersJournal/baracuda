@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `PoissonNllLossPlan`. FW × 4 dtypes × Mean
 //! (log_input=true).
 #![cfg(feature = "device-tests")]

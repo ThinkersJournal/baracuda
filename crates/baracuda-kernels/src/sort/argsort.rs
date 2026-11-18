@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `argsort` plan — sorted indices only (no values output).
 //!
 //! `argsort(x, dim=last, descending)` returns just the i32 permutation

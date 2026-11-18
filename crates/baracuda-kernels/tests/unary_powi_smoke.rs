@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `UnaryParamPlan + UnaryKind::PowI` (Phase 12.1).
 //!
 //! Forward: `y = x^n` for fixed integer `n` (power-by-squaring).

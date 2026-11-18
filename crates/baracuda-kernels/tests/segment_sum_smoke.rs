@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `SegmentSumPlan<T>` (Phase 7 7.6).
 //!
 //! Sorted-seg-ids `segment_sum`: `out[s, d] = Σ_{n : seg[n]==s} input[n, d]`.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `roi_pool` FW plan — Category T.
 //!
 //! Max-pool variant of [`crate::image::RoiAlignPlan`]. Each output

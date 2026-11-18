@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 40 (Fuel ask Gap 6b) — multi-block radix argsort for
 //! `row_len > 1024`.
 //!

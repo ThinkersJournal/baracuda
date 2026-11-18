@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `UnaryBackwardPlan + UnaryKind::Softshrink`.
 //!
 //! Forward: `y = x - λ if x > λ; x + λ if x < -λ; else 0`. Backward:

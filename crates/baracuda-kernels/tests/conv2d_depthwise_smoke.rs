@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `Conv2dPlan` with `groups == c_in == c_out`
 //! (depthwise convolution).
 //!

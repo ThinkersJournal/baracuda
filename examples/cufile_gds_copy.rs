@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! cuFile GPUDirect Storage copy demo (Linux-only).
 //!
 //! Writes a 64 MiB device buffer into a file via cuFile, reads it

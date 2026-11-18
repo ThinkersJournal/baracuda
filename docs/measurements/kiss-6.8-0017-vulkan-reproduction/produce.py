@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """A `vulkan:` token producer written from `manifest/vulkan-vocabulary.json` ALONE.
 
 KISS-CLASSIFY-6.8-0017 condition-2 demonstration for the KISS architect.

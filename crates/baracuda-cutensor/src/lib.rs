@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for NVIDIA cuTENSOR (v2 API).
 //!
 //! cuTENSOR is NVIDIA's high-performance tensor-primitive library —

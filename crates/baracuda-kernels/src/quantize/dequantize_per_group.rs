@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `dequantize_per_group` forward plan.
 //!
 //! `y[i, j] = (q[i, j] - zp[i, g_idx]) * scale[i, g_idx]` where

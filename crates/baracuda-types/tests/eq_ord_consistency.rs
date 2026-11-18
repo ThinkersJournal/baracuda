@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `PartialEq` and `PartialOrd` must agree: `a == b` iff `partial_cmp(a, b) == Some(Equal)`.
 use baracuda_types::{BFloat16, Half};
 use core::cmp::Ordering;

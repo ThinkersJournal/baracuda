@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Matrix inverse `A^{-1}` via `getrf` + `getrs` over an identity RHS.
 //!
 //! cuSOLVER's dense API does not expose a direct `getri` equivalent

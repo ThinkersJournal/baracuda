@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `scatter` (pure assign) plan — Category L (Phase 39).
 //!
 //! `out[..., index[..., j, ...], ...] = updates[..., j, ...]` along the

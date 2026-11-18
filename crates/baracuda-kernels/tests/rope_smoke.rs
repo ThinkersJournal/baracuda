@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `RopePlan + AttentionKind::Rope` FW.
 //!
 //! For Q/K of shape `[B, H, S, D]` (D even), rotates pairs (2i, 2i+1)

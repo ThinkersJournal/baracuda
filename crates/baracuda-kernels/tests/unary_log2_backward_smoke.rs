@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary log2 backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Log2`).
 //! Backward: `dx = dy / (x * ln(2))`. Saved-x; the kernel hardcodes

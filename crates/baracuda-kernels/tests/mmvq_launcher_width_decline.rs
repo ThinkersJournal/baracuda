@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! #128: the type-0/1 MMVQ `-sys` launchers decline `ncols % 64 != 0`
 //! themselves, so a caller who uses `baracuda-kernels-sys`'s raw
 //! `extern "C"` symbols directly (bypassing `GgufMmvqPlan`, which already

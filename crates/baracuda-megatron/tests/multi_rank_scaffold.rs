@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Multi-rank scaffold — gated behind the `device-tests` feature.
 //!
 //! This test is **expected to fail** on single-GPU dev environments

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The dense functions return an error for buffers that are too small for the
 //! sizes they are given (the matrix arguments, by LAPACK's rules), instead of
 //! handing cuSOLVER a pointer it would write past. Before this check `getrf::<f32>(.., 1000, 1000, &mut a, 1000, ..)`

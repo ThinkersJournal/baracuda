@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the Phase 14.4 strided RoPE siblings.
 //!
 //! Coverage:

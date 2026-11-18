@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Single-axis scan forward plan.
 //!
 //! Length-preserving prefix scan along a single axis. Output shape ==

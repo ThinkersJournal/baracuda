@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-ozimmu
 //!
 //! Safe Rust wrapper for baracuda's clean-fork of

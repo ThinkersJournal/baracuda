@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for cuDNN.
 //!
 //! Requires cuDNN installed; see `baracuda-cudnn-sys` for path probing.

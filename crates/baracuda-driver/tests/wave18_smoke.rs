@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for Wave-18 Driver-API additions:
 //! multicast objects. End-to-end multicast requires NVSwitch fabric, so
 //! we only verify the symbols resolve and the granularity query returns.

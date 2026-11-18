@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `ConcatPlan<f32, N>` — 2-input concat.
 //!
 //! Covers concat along each axis of a 3D tensor (rank-3) plus a 1D

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! RFFT (real-to-complex) and IRFFT (complex-to-real) — `RfftPlan<T>`
 //! and `IrfftPlan<T>` for `T = f32` or `T = f64`.
 //!

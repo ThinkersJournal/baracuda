@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Cascade attention LSE merge — Phase 46 (FlashInfer cherry-pick).
 //!
 //! Cascade attention is the building block for shared-prefix serving

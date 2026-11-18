@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration tests for CUDA Graphs + async allocations.
 //!
 //! Run with: `cargo gpu-test -p baracuda-driver --features device-tests --test graph_smoke`

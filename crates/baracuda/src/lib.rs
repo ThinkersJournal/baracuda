@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `baracuda` — idiomatic Rust wrappers for the NVIDIA CUDA stack.
 //!
 //! Umbrella crate. Re-exports individual safe-API crates behind Cargo

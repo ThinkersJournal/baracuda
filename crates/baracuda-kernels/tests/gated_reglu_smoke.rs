@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the gated ReGLU forward.
 //!
 //! Forward: `y = a · relu(b) = a · max(b, 0)`. Bit-exact at f32 / f64

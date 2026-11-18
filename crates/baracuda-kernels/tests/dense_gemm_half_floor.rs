@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Output-rounding-floor check for the f16 / bf16 dense GEMM at large `k`.
 //!
 //! cuBLAS's default math mode may split K across thread blocks and reduce the partials in the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration test for Wave-30: D3D9 / D3D10 / D3D11 interop.
 //!
 //! Without a live D3D device we can't exercise registration. We verify

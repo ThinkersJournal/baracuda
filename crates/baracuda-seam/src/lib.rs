@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Profile v1 kernel-seam handshake, provider side.
 //!
 //! The `SeamHello` envelope, its validation, negotiation and wire codec live in

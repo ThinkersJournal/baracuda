@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Conv3d — NCDHW 3-D convolution via cuDNN's NdDescriptor API.
 //!
 //! Implements forward + both backward passes for 3-D convolution over

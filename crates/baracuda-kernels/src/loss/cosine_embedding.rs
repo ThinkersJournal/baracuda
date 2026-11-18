@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CosineEmbedding loss plan — Tier-2 (Milestone 5.3).
 //!
 //! **Formula** (per row):

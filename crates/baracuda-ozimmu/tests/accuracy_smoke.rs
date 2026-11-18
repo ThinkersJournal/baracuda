@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Accuracy smoke tests for the Phase 44b baracuda-owned ozIMMU.
 //!
 //! Runs a small set of well-conditioned random FP64 GEMMs at three

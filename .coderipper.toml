@@ -18,7 +18,7 @@ symbol = "baracuda-cuda-parse"
 reason = "parser built on unpopped-vocab; MAJOR.MINOR follows the unpopped release it builds against (CHANGELOG 'Versioning exception')"
 
 [[allow]]
-check = "version-consistency"
+check = "WSP-010"
 file = "crates/baracuda-cuda-seam/Cargo.toml"
 symbol = "baracuda-cuda-seam"
 reason = "seam between Unpopped and the baracuda emitters; MAJOR.MINOR follows the unpopped release it builds against (CHANGELOG 'Versioning exception'); repinned to 0.47.1 in #395"

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `IndexSelectBackwardPlan<T, N>` (Phase 7 7.3).
 //!
 //! `dsrc[..., idx[j], ...] += dout[..., j, ...]` along `select_dim`

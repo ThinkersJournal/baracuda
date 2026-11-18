@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `index_select_backward` plan — Category L BW.
 //!
 //! Adjoint of [`crate::indexing::IndexSelectPlan`]:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Flash Attention forward plan, sm_89 (Ada Lovelace) specialization
 //! (Phase 10 Milestone 10.3).
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for NVIDIA NPP (Performance Primitives).
 //!
 //! NPP is organized into ~10 separate shared libraries:

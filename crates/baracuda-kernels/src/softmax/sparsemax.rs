@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Sparsemax forward plan — projection onto the probability simplex.
 //!
 //! `y = ProjSimplex(x)` via the standard sort-then-threshold closed

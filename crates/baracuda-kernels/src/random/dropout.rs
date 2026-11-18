@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dropout — `y = mask · x / (1 - p)` with `mask ~ Bernoulli(1 - p)`.
 //!
 //! Two plans:

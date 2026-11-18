@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `EmbeddingPlan<T>` (Phase 7 Milestone 7.5).
 //!
 //! `out[n, :] = weight[indices[n], :]` with optional `padding_idx`

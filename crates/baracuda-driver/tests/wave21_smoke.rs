@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration test for Wave-21 Driver-API additions:
 //! kernel-attribute extension (cuKernel*) on library-loaded kernels.
 

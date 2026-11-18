@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 59a — sliding window smoke test for FA2.
 //!
 //! FA2's sliding window restricts each query token to attend only over

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Soundness: safe `BinaryPlan::run` must not read or write outside the
 //! `DeviceSlice`s it is handed, whatever strides the (public-field)
 //! `TensorRef` / `TensorMut` carry.

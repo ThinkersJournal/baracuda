@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `DequantizePerTokenPlan<f32, S8>`.
 //! Verifies `y[n, d] = (q[n, d] - zp[n]) * scale[n]` — exact inverse of
 //! `quantize_per_token` (modulo FW rounding).

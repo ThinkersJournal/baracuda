@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU dtype-fanout smoke tests for `ReducePlan<T, 3> +
 //! ReduceKind::Sum` across `{f16, bf16, f64}`. The `f32` cell is covered
 //! by the trailblazer file `reduce_sum_smoke.rs`.

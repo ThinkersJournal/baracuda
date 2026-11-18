@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `NllLossPlan`. FW × 4 dtypes × Mean reduction.
 //! `y = -mean(input[i, target[i]])`.
 #![cfg(feature = "device-tests")]

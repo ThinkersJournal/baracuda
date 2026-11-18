@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 36 (Fuel ask Gap 4) — direct-FFI smoke for the new fill
 //! dtypes (`u32`, `i16`, FP8 E4M3) + a representative strided case.
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for Phase 39 gather extras — `u8` index dtype.
 //!
 //! The `u8` index variant is FFI-only today (`IndexElement` sealed

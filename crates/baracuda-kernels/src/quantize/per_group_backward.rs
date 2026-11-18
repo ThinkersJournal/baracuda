@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `quantize_per_group` backward plan (Straight-Through Estimator).
 //!
 //! For index `j` along the quant axis, group index is `g = j / group_size`:

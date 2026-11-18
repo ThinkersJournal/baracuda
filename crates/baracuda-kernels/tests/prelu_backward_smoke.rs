@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `PReluBackwardPlan`. BW × 4 dtypes × {per-channel, scalar}.
 #![cfg(feature = "device-tests")]
 

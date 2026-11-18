@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! BatchNorm forward plan.
 //!
 //! Per-channel normalization across `(N, *spatial*)`:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `LuPlan` (cuSOLVER `getrf` wrap).
 //!
 //! Verifies `P · A ≈ L · U` for a general (non-singular) matrix `A`.

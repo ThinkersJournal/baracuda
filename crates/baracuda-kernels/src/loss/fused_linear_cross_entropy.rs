@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 47 — Fused Linear Cross-Entropy plan.
 //!
 //! Math / algorithm credit: LinkedIn Liger-Kernel (BSD-2-Clause),

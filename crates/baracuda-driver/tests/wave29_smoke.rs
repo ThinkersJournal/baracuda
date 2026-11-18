@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Integration test for Wave-29: graphics interop core + OpenGL.
 //!
 //! Without a live GL context we can't exercise full register / map /

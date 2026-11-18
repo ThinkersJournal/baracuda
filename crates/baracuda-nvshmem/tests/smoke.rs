@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! NVSHMEM smoke tests. NVSHMEM is Linux-only in practice and requires the
 //! NVSHMEM runtime installed *and* a multi-process launch (`nvshmrun` /
 //! `mpirun`). On hosts without it, or when run as a plain `cargo test` single

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! NLLLoss plan — `y = -mean(input[target_idx[i]])` along the feature axis.
 //!
 //! Heterogeneous-dtype: input is `T`, target is `i64` class indices.

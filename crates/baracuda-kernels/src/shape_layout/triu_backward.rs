@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `triu` backward plan (Phase 13.4).
 //!
 //! The triu mask is a constant linear projector: the forward zeros the

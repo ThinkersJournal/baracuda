@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `tril` backward plan (Phase 13.4).
 //!
 //! `d_input = tril(d_output, diagonal)` — the tril mask is its own

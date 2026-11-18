@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `ScanBackwardPlan<T, N> + ScanKind::Cumsum`.
 //!
 //! Forward: `y[i] = Σ_{j ≤ i} x[j]` (inclusive prefix sum).

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `NllLossBackwardPlan`. BW × 4 dtypes × Mean.
 //! `dinput[i, c] = -dy/N if c == target[i] else 0`.
 #![cfg(feature = "device-tests")]

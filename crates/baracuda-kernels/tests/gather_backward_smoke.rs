@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `GatherBackwardPlan<T, N>` (Phase 7 7.3).
 //!
 //! Sweeps gradients via atomicAdd — verify the per-cell accumulation

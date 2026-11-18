@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 44c — ozIMMU variant timing.
 //!
 //! Times Base / EF / RN / H ozIMMU dispatch at LLM-typical FP64

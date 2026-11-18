@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! cuFile integration test — register a temp file, write device data,
 //! read it back. Linux-only (cuFile has no Windows/macOS support).
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `PermuteBackwardPlan<T, N>` — backward of
 //! `permute` is `permute` with the inverse permutation. Bit-exact, no
 //! math.

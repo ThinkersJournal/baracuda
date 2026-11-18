@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `unsorted_segment_max_backward` plan — Category S, unsorted. Phase 25.
 //!
 //! Same recompute-argmax pattern as the sorted variant, but the BW

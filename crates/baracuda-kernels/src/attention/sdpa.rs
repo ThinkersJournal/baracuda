@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Naive Scaled Dot-Product Attention (SDPA) forward plan.
 //!
 //! Computes the standard PyTorch

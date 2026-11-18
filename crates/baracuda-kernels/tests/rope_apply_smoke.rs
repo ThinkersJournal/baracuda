@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 36 (Fuel ask Gap 2) — direct-FFI smoke for RoPE-apply with
 //! caller-supplied cos/sin tables.
 //!

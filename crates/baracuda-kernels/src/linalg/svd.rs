@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Singular value decomposition — `A = U · diag(S) · V^T`.
 //!
 //! Wraps cuSOLVER's `cusolverDnSgesvd` / `Dgesvd`.

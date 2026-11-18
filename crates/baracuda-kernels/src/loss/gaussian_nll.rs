@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GaussianNLL loss plan.
 //!
 //! FW: `y = 0.5 · mean(log(max(var, eps)) + (input - target)² / max(var, eps))`.

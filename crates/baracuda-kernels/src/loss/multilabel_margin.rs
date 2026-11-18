@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! MultilabelMargin loss plan — Tier-2 (Milestone 5.3).
 //!
 //! Per-row: sum over (j ∈ pos, i ∉ pos) of `max(0, 1 - input[j] + input[i]) / C`.

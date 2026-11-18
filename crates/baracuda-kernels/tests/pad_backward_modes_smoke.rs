@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `PadBackwardPlan<T, N>` in the non-constant
 //! modes (Reflect / Replicate / Circular), ROADMAP SA-30. The backward is
 //! the adjoint of the forward index map, so the CPU reference scatter-adds

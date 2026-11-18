@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Green contexts (CUDA 12.4+) — partition a GPU's SMs into isolated
 //! "green" subsets that each run their own stream/kernel pipeline without
 //! contending for SMs with other green contexts on the same device.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `Conv2dPlan` (cuDNN wrap).
 //!
 //! Phase 7 Milestone 7.1 trailblazer. Covers FW + BW data + BW filter

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Attention op family — Phase 6 Category K.
 //!
 //! Today's wiring (Milestone 6.1 — positional encodings, FW + BW × 4 FP

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Normalization op family — Phase 5 Category G.
 //!
 //! Length-preserving per-row normalization. Output shape equals input

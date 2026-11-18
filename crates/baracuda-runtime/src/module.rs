@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime-API library + kernel loading.
 //!
 //! Uses `cudaLibraryLoadData` (CUDA 12.0+) to load PTX / CUBIN at runtime,

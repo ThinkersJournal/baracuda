@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 16.1 — bit-exact PyTorch adaptive-pool smoke tests.
 //!
 //! Verifies the bespoke-kernel rewrite agrees with PyTorch's

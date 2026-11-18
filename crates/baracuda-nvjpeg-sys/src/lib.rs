@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Raw FFI + dynamic loader for NVIDIA nvJPEG (GPU JPEG decode/encode).
 //!
 //! `baracuda-nvjpeg` wraps this with a safe, typed API. Use this crate

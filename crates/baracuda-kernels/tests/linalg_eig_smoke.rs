@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `EigPlan` (cuSOLVER Xgeev wrap).
 //!
 //! Tests the LAPACK-packed-real output convention (real input → `[wr,

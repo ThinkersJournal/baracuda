@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! ON-DEVICE end-to-end correctness for EMITTER-GENERATED INTEGER kernels
 //! (emit -> NVRTC -> launch -> bit-exact vs a host reference), on the RTX 4070.
 //!

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Piece 3: the §6.16-0009 bit-move RowReduce route across the cells piece 2
 //! did not reach — f16 as well as bf16, `Min` as well as `Max`, `Abs` as well
 //! as `Neg`.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Dense Linalg throughput — baracuda self-bench + PyTorch reference.
 //!
 //! Wave-2 of the cross-implementation bench suite (Loss was Wave-1). cuSOLVER

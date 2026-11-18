@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Im2Col (2-D) — bespoke sliding-window unfold (Phase 19.3).
 //!
 //! `torch.nn.functional.unfold` equivalent for 2-D NCHW inputs. Turns

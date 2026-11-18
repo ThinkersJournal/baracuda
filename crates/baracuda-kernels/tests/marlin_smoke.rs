@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Descriptor-rejection test for `Int4MarlinGemmPlan`.
 //!
 //! Numerical correctness of the Marlin kernel and of `gptq_to_marlin_repack`

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 40 (Fuel 6c.4 Gap 6b spillover) — integer value-dtype fanout
 //! for indexing ops.
 //!

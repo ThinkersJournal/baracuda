@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryParamPlan + BinaryKind::Lerp`.
 //!
 //! Forward: `y = a + weight·(b - a)`. Tolerance: `4·eps` relative — the

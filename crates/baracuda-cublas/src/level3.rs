@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! BLAS-3 routines: `symm`, `hemm`, `syrk`, `herk`, `trmm`, `trsm`.
 //!
 //! Generic over `f32` / `f64` / [`Complex32`] / [`Complex64`] where the real

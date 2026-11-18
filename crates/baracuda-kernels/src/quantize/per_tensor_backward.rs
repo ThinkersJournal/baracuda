@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `quantize_per_tensor` backward plan (Straight-Through Estimator).
 //!
 //! `dx = (dy / scale) * 1[qmin <= round(x/scale)+zp <= qmax]`. The

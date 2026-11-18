@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Elementwise throughput — baracuda self-bench.
 //!
 //! Bench scope: Add, Mul (binary), ReLU, GELU (unary). At one large

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Concat (2-input `torch.cat`) throughput — baracuda self-bench + PyTorch reference.
 //!
 //! Phase 73.8a — a baracuda load-bearing shape op. The canonical use

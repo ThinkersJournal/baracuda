@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GGUF block-format quantization plans — Phase 8 Milestone 8.4.
 //!
 //! GGUF (GPT-Generated Unified Format) is the weight-storage format used

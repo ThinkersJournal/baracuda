@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 47 — Fused Linear Cross-Entropy BW smoke test.
 //!
 //! The FW pass already produces `grad_input` and `grad_weight` for

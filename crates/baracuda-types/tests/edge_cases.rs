@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Host-side edge-case tests for `baracuda-types`. Exercises numeric
 //! conversions, version parsing boundaries, DeviceRepr size invariants,
 //! and Complex-number algebra.

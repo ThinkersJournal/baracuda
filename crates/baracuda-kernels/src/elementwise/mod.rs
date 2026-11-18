@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Elementwise op family — unified plan-based API.
 //!
 //! Phase 3 of the baracuda-kernels comprehensive plan: every PyTorch

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Phrase search over Rust doc comments that is not blind to line wraps.
 
 WHY THIS EXISTS

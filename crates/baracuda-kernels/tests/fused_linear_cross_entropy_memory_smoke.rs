@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 47 — FLCE memory savings smoke test.
 //!
 //! Verifies the value prop: at a moderate vocab (V=32K) and a

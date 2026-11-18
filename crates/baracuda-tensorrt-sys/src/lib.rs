@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Raw FFI + dynamic loader for NVIDIA TensorRT (C API surface).
 //!
 //! `baracuda-tensorrt` wraps this with a safe, typed API. Use this

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Linear solve `A · X = B` via `getrf` + `getrs`.
 //!
 //! Wraps cuSOLVER's `cusolverDnSgetrf` / `Dgetrf` (LU factorization

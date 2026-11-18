@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! End-to-end Driver-API example: compile a tiny CUDA kernel at runtime
 //! via NVRTC, load it through the Driver-API `Module`, launch it, copy
 //! the result back, and verify.

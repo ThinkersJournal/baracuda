@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GroupNorm forward plan.
 //!
 //! Splits the channel axis into `num_groups` groups; normalizes per

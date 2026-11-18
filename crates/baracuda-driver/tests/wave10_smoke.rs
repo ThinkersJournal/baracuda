@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! GPU-gated integration tests for Wave-10 Driver-API additions:
 //! 3-D arrays + `cuMemcpy3D` + mipmapped arrays.
 

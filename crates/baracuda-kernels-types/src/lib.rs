@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-kernels-types
 //!
 //! The **device-coupled** half of the baracuda kernel-facade vocabulary: the

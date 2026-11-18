@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for unary Atanh backward
 //! (`UnaryBackwardPlan<T, 3> + UnaryKind::Atanh`). Backward:
 //! `dx = dy / (1 - x²)`. Saved-x, no transcendental. Inputs stay in

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Smoke tests for the FlashInfer sort-free sampling plan, via the
 //! `baracuda-flashinfer` safe facade — Phase 66.
 //!

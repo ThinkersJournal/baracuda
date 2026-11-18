@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Pure-Python (no GPU, no dependencies) check of the Sinkhorn-Knopp adjoint.
 
 Forward, as in mHC.cu: K = exp(H); repeat `iters` times: divide each row by its sum, then each column by its sum.

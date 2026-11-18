@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `UnaryPlan + UnaryKind::Elu` across f32 /
 //! f16 / bf16 / f64. α is hardcoded to 1.0 in the kernel (PyTorch
 //! default).

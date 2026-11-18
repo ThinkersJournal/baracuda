@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `embedding_bag` FW plan — Category M.
 //!
 //! Per-bag reduction over a flat `indices` array partitioned by the

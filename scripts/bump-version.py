@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Bump the workspace version `0.1.0-alpha.OLD` -> `0.1.0-alpha.NEW`, and nothing else.
 
 Usage: python scripts/bump-version.py OLD NEW      (run from the repo root; edits tracked files)

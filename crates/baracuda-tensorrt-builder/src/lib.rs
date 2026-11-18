@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust API for the NVIDIA TensorRT **builder**: define a network layer by
 //! layer, configure the build, and get a serialized engine that
 //! [`baracuda_tensorrt::Runtime::deserialize_engine`] loads.

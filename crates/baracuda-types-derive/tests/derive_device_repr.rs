@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Direct integration tests for the `#[derive(DeviceRepr)]` proc-macro
 //! in `baracuda-types-derive`.
 //!

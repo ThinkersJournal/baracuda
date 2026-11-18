@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `QrPlan` (cuSOLVER geqrf + ormqr wrap).
 //!
 //! Verifies `Q · R ≈ A` and `Q^T · Q ≈ I` for a general matrix `A`.

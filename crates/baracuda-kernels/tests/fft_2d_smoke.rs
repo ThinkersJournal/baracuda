@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `FftNdPlan` (rank 2, C2C) — Milestone 6.8.
 //!
 //! Round-trip identity: `IFFT2(FFT2(x)) ≈ x` to within `1e-4` (f32) /

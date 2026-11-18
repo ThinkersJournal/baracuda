@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `ReducePlan<T, 3> + ReduceKind::Norm2`
 //! across `{f32, f16, bf16, f64}`. Shape `[4, 16, 32]` with axis-1
 //! reduction (matches the standard reduce smoke shape).

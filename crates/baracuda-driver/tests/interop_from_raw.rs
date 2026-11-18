@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Interop ownership tests for `from_raw` (transfer) / `borrow_raw` (borrow)
 //! on the cross-framework driver handles (Context / Stream / Event / Device).
 //!

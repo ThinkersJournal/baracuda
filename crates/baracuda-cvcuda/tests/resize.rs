@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CV-CUDA integration test — build tensors and submit a Resize.
 //!
 //! CV-CUDA ships as Linux binaries only (as of 2026). On Windows this

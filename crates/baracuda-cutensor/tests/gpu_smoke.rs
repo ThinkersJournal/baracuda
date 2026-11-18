@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! cuTENSOR presence probe. cuTENSOR is a separate NVIDIA download and
 //! is not part of the default CUDA Toolkit install — the test gracefully
 //! skips if the library isn't available.

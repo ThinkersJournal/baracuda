@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `BinaryPlan + BinaryKind::Fmin` —
 //! IEEE 754 `fmin(a, b)`. NaN-aware: returns the non-NaN operand
 //! when exactly one input is NaN. Bit-exact across all dtypes.

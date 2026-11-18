@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! AvgPool1d — NCL 1-D average-pool via cuDNN's Nd-pooling API.
 //!
 //! Sibling of [`super::AvgPool2dPlan`] for the rank-3 case. Defaults to

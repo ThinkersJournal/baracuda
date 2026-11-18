@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `Nf4MmvqMultiMPlan` — Phase 53
 //! (bitsandbytes NF4 vendor, M ∈ {1, 2, 4, 8} batched-decode GEMV).
 //!

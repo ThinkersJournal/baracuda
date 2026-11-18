@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 47 — Fused Linear Cross-Entropy FW smoke test.
 //!
 //! Verifies the FLCE plan against an unfused PyTorch-style reference:

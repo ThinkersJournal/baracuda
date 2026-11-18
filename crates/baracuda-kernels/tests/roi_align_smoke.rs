@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke for `RoiAlignPlan<T>` (Phase 9 Category T).
 //! Single full-image RoI on a 1×1×4×4 input pooled to 2×2 →
 //! the exact torchvision-convention bilinear average per bin. gated behind the `device-tests` feature.

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `CUresult` — the Driver API status enum — plus its `CudaStatus` impl.
 //!
 //! Modelled as `#[repr(transparent)] struct CUresult(pub i32)` rather than a

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `sort` plan — Category O trailblazer.
 //!
 //! `sort(x, dim=last, descending)` returns sorted values AND sorted

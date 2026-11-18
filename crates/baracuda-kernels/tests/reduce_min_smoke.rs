@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `ReducePlan<T, 3> + ReduceKind::Min`
 //! across `{f32, f16, bf16, f64}`. One canonical case per dtype:
 //! shape `[4, 16, 32]` with axis-1 reduction.

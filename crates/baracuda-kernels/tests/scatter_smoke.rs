@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `ScatterPlan<T, N>` (Phase 39 / Fuel 6c.4 Gap 5).
 //!
 //! Verifies the pure-assign scatter (no accumulation; last writer wins

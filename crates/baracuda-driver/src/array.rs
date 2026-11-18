@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! CUDA arrays + texture / surface objects.
 //!
 //! A [`Array`] is an opaque on-device layout optimized for texture fetches

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: MIT OR Apache-2.0
 # Guard: a CR detector must be validated on THIS shell before its answer means
 # anything, and the natural way to validate one is single-sided and useless.
 #

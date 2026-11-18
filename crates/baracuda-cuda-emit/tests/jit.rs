@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! JIT synthesis tests that require a real backend (`&Cuda`) or the NVRTC compiler.
 //!
 //! Relocated from `baracuda-kernelgen` `src/jit.rs`'s `mod tests` during the

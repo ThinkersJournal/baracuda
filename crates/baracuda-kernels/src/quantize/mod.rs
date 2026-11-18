@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Quantization op family — Category P.
 //!
 //! Phase 8 splits across two parallel milestones:

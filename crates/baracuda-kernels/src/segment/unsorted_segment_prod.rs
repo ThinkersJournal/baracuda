@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `unsorted_segment_prod` plan — Category S, unsorted. Phase 25.
 //!
 //! `out[s, d] = Π_{n : segment_ids[n] == s} input[n, d]` with arbitrary

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `fake_quantize` forward plan — per-tensor, FP roundtrip.
 //!
 //! `y = scale * (clamp(round(x / scale) + zp, q_min, q_max) - zp)`. The

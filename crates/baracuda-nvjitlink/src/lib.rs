@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for NVIDIA nvJitLink — the modern CUDA 12+ JIT linker.
 //!
 //! Supersedes the driver API's `cuLink*` family with a cleaner interface

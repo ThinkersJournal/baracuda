@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! BCEWithLogits loss plan — numerically stable BCE for raw logits.
 //!
 //! FW: `term[i] = max(x, 0) - x · target + log(1 + exp(-|x|))` where

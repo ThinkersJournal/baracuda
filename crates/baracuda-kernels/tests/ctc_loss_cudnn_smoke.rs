@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for [`CtcLossCudnnPlan<T>`] — Phase 7 Milestone
 //! 7.4 sibling of the bespoke `CtcLossPlan`.
 //!

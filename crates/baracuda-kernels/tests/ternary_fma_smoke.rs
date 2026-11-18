@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `TernaryPlan<T, N> + TernaryKind::Fma`
 //! across f32 / f16 / bf16 / f64 (contig) and f32 (strided with
 //! broadcast on `c`).

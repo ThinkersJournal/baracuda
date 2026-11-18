@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Minimal cuBLAS `Sgemm` demo.
 //!
 //! Multiplies two small column-major `f32` matrices on the GPU and

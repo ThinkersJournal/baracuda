@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Zero-cost conversions between `baracuda-driver` and `baracuda-runtime`
 //! handles.
 //!

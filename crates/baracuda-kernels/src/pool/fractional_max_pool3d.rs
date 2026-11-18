@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! FractionalMaxPool3d — bespoke kernel (Phase 16.3).
 //!
 //! 3-D sibling of [`super::fractional_max_pool2d`]. See that module for

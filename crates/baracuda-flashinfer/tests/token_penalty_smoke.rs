@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Smoke test for the bespoke token-penalty logit transform — Phase 66
 //! Tier 2. Native baracuda op (not behind the `flashinfer` feature).
 //!

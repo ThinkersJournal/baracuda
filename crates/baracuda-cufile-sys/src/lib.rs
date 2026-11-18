@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Raw FFI + dynamic loader for NVIDIA cuFile (GPUDirect Storage).
 //!
 //! Linux-only: cuFile calls `ibverbs` + NVIDIA's GDS kernel driver and has

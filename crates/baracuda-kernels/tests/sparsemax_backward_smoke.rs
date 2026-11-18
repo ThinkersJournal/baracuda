@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `SparsemaxBackwardPlan` (Milestone 5.4).
 //!
 //! BW formula: for active positions (`y > 0`),

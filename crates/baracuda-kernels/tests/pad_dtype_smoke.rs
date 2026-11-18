@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `PadPlan<{f16,bf16,f64}, N> +
 //! PadMode::Constant` — dtype fanout of the f32 trailblazer in
 //! `pad_smoke.rs`.

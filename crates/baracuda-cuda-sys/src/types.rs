@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Core handle types used by the CUDA Driver API.
 //!
 //! These mirror the C typedefs in `cuda.h`. Pointer-typed handles

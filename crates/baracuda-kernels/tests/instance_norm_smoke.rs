@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `InstanceNormPlan` FW.
 //!
 //! Verifies that InstanceNorm = GroupNorm with `num_groups == C` (wires

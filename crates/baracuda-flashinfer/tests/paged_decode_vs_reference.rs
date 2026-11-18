@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU numerics check of `BatchPagedDecodePlan` against a contiguous
 //! SDPA reference.
 //!

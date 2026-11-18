@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test documenting the `scatter_add` backward routing.
 //!
 //! `scatter_add` BW reuses the FW `gather` kernel — `dupdates = gather(dout,

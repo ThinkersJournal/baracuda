@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Proc-macros for `baracuda-types`: `#[derive(DeviceRepr)]`.
 //!
 //! `#[derive(KernelArg)]` is deliberately *not* provided: `KernelArg` is

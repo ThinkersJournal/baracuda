@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Top-K throughput — baracuda self-bench + PyTorch reference.
 //!
 //! Phase 73.8e — `torch.topk(x, k, dim=-1, largest=True)` for sampling,

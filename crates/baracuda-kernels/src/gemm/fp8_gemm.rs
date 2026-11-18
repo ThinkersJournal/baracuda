@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! FP8 GEMM plan.
 //!
 //! Full Phase 2 surface: 20 SKUs spanning

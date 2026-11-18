@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Smoke tests for the cuVS safe wrapper.
 //!
 //! These require BOTH a CUDA GPU **and** a working NVIDIA RAPIDS / cuVS

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! `segment_max` plan — Category S, sorted variant.
 //!
 //! `out[s, d] = max_{n : segment_ids[n] == s} input[n, d]`. Requires

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for `ArgReducePlan<{f16,bf16,f64}, N>` — dtype
 //! fanout of the f32 trailblazer in `arg_reduce_smoke.rs`.
 //!

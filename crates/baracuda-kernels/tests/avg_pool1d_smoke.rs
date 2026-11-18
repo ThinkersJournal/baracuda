@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for `AvgPool1dPlan` FW + BW.
 #![cfg(feature = "cudnn")]
 #![cfg(feature = "device-tests")]

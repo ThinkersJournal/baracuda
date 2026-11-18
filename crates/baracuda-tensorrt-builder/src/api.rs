@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 use std::cell::RefCell;
 use std::ffi::CString;
 use std::marker::PhantomData;
