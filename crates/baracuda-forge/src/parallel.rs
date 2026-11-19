@@ -1,5 +1,8 @@
 // Origin: guoqingbao/cudaforge@aa77db3 src/parallel.rs (MIT OR Apache-2.0 per its Cargo.toml; no LICENSE file upstream);
 // vs upstream after comment/whitespace stripping: 43 lines differ. See ../NOTICE.
+// Credit: original work by Guoqing Bao (cudaforge, https://github.com/guoqingbao/cudaforge), declared `MIT OR Apache-2.0`
+// in its Cargo.toml (checked at aa77db3 and 336033a); upstream ships no licence file, so no upstream licence text is reproduced here.
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Parallel build configuration.
 
 use glob::Pattern;
