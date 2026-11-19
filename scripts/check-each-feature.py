@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """Compile every declared cargo feature of every workspace crate, one at a time.
 
 Why: a feature that gates code is only as good as the job that builds it. Three
