@@ -29,8 +29,13 @@ are the work of:
   combined) and the n-blocking transform on the int8 GEMM call to
   recover scaling at large N.
 - The reference implementation we ported the patches from is
-  **`RIKEN-RCCS/accelerator_for_ozIMMU`** (MIT-licensed) —
-  <https://github.com/RIKEN-RCCS/accelerator_for_ozIMMU>. The repo
+  **`RIKEN-RCCS/accelerator_for_ozIMMU`** (MIT-licensed, "Copyright (c) 2024
+  RIKEN R-CCS"; full text under "License" below) —
+  <https://github.com/RIKEN-RCCS/accelerator_for_ozIMMU>. The commit the patches
+  were ported from was not recorded; it was re-read at upstream HEAD
+  `d6462fe479c000b17364b0a7fdce9980a976ac65` (2025-12-10). Upstream's `LICENSE`
+  (blob `5800728dc90f81a6dbe6aa097b345827b4b7dc63`) has one commit, `c4a46cf`
+  (2024-09-20, the repo's first), so the text below covers every upstream commit. The repo
   ships full source-replacement directories (one per variant)
   rather than diff patches; baracuda Phase 44c reads them, lifts
   the algorithmic deltas, and applies them to baracuda's already-
@@ -105,6 +110,36 @@ The original ozIMMU code is MIT-licensed. The full text follows:
 MIT License
 
 Copyright (c) 2023 enp1s0
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
+The patches ported from `RIKEN-RCCS/accelerator_for_ozIMMU` (Phase 44c: the
+nearest-rounding splitter and error-free summation in `cuda/split.cu`,
+`cuda/split.hpp` and `cuda/gemm.cu`) are MIT-licensed too, under their own
+copyright holder. Verbatim `LICENSE` from that repository
+(`d6462fe479c000b17364b0a7fdce9980a976ac65`):
+
+```
+MIT License
+
+Copyright (c) 2024 RIKEN R-CCS
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

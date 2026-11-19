@@ -1,0 +1,3 @@
+kind: add the missing RIKEN MIT notice to baracuda-ozimmu-sys ATTRIBUTION.md
+---
+`crates/baracuda-ozimmu-sys/ATTRIBUTION.md` named `RIKEN-RCCS/accelerator_for_ozIMMU` as the source of the Phase 44c patches (`cuda/split.cu`, `cuda/split.hpp`, `cuda/gemm.cu`) and called it MIT-licensed, but reproduced only enp1s0's licence text. It now carries upstream's `LICENSE` verbatim ("Copyright (c) 2024 RIKEN R-CCS", blob 5800728d, unchanged since upstream's first commit) and records that the port commit was not recorded (re-read at upstream HEAD d6462fe4). Documentation only; no source file touched or stamped.
