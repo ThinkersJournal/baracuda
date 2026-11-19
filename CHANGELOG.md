@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.175 - 2026-11-18
+
+`Graph::edges`, `GraphNode::dependencies` and `GraphNode::dependent_nodes` now truncate the buffer to the count the driver returned on the second call, so a graph that shrank between the size query and the fetch no longer yields null `GraphNode`s. `IvfFlat` build and search now reject a null params pointer from `*_params_create` instead of dereferencing it. Each fix has a unit test that fails with the fix removed (verified by sabotage). Resolves CodeQL alerts #1, #2, #4, #5, #7, #8.
+
 ## 0.1.0-alpha.174 - 2026-11-17
 
 Every source file without one gets `// SPDX-License-Identifier: MIT OR Apache-2.0` (`# ` for py/sh/ps1) via `tools/add-spdx-headers.py` (file set mirrors CodeRipper SUP-016, enumerated from `git ls-files`): 1289 of 1292 missing before, 67 after. 58 sit in 8 crates with a NOTICE/ATTRIBUTION/third-party record and 9 more mention "derived from"/"ported from" in their first 60 lines (PM provenance control); all 67 are left for a per-file decision. One line is added at the top of each file (after a shebang), so line numbers in those files move by one; the R6 reviews and the sweep cite lines at a stated ref and are not renumbered. `abi-manifest` check ok and `cargo check` of core, driver, cuda-emit and optim pass; `cargo fmt --all` could not run here (Windows argument length) and the full CI is the check.
