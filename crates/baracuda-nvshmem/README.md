@@ -3,6 +3,8 @@
 Safe Rust wrappers for the **NVIDIA NVSHMEM host API** — the OpenSHMEM
 symmetric-heap, one-sided GPU communication model.
 
+> **Experimental, outside the API freeze** (PM ruling 2026-11-19). Nothing else in the workspace calls this crate (`baracuda-kernels` has it behind a default-off feature, the `baracuda` facade does not re-export it) and its device tests are not run in CI, so its API may change without the usual notice. It stays in the workspace and keeps building. It leaves this state only by a later ruling once it has a caller and device tests. See `docs/planning/api-freeze/r6/nvshmem.md`.
+
 NVSHMEM is the fine-grained, one-sided complement to [`baracuda-nccl`]'s
 collectives: every PE (typically one GPU) allocates from a *symmetric heap*
 at a shared virtual address, and any PE can `put` / `get` directly into
