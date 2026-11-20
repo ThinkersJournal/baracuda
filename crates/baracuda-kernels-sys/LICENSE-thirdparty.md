@@ -232,3 +232,35 @@ but ships no LICENSE file at any commit (G-K-1 in `PROVENANCE.md`); `guoqingbao/
   the nvcc build on a 16-thread machine. Defaults as of 2026-10-29:
   `baracuda-kernels` is `default = ["sm80", "fa2"]` (`Cargo.toml:23`, FA2
   on), `baracuda-kernels-sys` is `default = ["sm80"]` (FA2 off).
+
+### LinkedIn Liger-Kernel (Phase 47: Fused Linear Cross-Entropy) - algorithm credit only
+
+- **Upstream**: <https://github.com/linkedin/Liger-Kernel>,
+  `src/liger_kernel/ops/fused_linear_cross_entropy.py` (Triton; Pin-Lun Hsu et al.,
+  LinkedIn, 2024). **License**: BSD-2-Clause.
+- **What baracuda has**: a clean-room CUDA reimplementation of the same chunked-tile
+  algorithm. **No Liger source is vendored** (each credit line below says so), so no Liger
+  licence text is carried and no upstream commit is recorded; this is a credit for the
+  algorithm, not a copy.
+- **Credit lines in**: `kernels/include/baracuda_flce.cuh`, `kernels/loss/flce_fp.cu`, the
+  Phase 47 comments in `build.rs` and `src/lib.rs` (the latter in the middle of the file,
+  not at its head), and `PROVENANCE.md`.
+
+### huggingface/candle flash-attn kernels (Phase 60: head_dim 160, 224, 512)
+
+- **Upstream**: <https://github.com/huggingface/candle>, `candle-flash-attn/kernels/`.
+  **License**: MIT OR Apache-2.0; text at `vendor/flash-attention/LICENSE-candle-{MIT,APACHE}`
+  (see the table above; those files carry no copyright line).
+- **Files**: the 12 `vendor/flash-attention/src/flash_fwd_hdim{160,224,512}_{fp16,bf16}_{,causal}_sm80.cu`.
+  Their own headers still read "Copyright (c) 2023/2024, Tri Dao" (FA2's original); the
+  candle-side change is the `namespace_config.h` include and `FLASH_NAMESPACE` wrap
+  (+5 lines each), as recorded in `vendor/flash-attention/VENDOR.md`.
+- **Sources**: hd160 and hd224 from `EricLBuehler/candle` `main` as resolved at
+  `132643dc466cffefa133630565c0fbc2b62889b0` (2025-07-09), originally vendored to candle by
+  Laurent Mazare (PR #245, `huggingface/candle@2ce5f125`); hd224 restored by Michael Feil
+  (PR #2688, `@71cd6d55`). hd512 from `huggingface/candle@5430d32c97c687973c53a4e65fac318d9be2a834`,
+  added by Eric Buehler (PR #3417, merged 2026-03-28; SMEM opt-in path).
+- **Also candle-derived** (edits to FA2 files, per `VENDOR.md`): `static_switch.h`,
+  `flash_fwd_launch_template.h`, and comment-only notes in `flash_bwd_launch_template.h`.
+- **Full record**: `vendor/flash-attention/VENDOR.md`; the Phase 60 comments in `build.rs`
+  name the same candle sources.
