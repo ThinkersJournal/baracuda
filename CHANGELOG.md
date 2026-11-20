@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.176 - 2026-11-20
+
+`crates/baracuda-ozimmu-sys/ATTRIBUTION.md` named `RIKEN-RCCS/accelerator_for_ozIMMU` as the source of the Phase 44c patches (`cuda/split.cu`, `cuda/split.hpp`, `cuda/gemm.cu`) and called it MIT-licensed, but reproduced only enp1s0's licence text. It now carries upstream's `LICENSE` verbatim ("Copyright (c) 2024 RIKEN R-CCS", blob 5800728d, unchanged since upstream's first commit) and records that the port commit was not recorded (re-read at upstream HEAD d6462fe4). Also adds R6 API-freeze reviews `docs/planning/api-freeze/r6/{cupti,curand,nvrtc,core,nvshmem,cufile,nvimagecodec,kernels-types}.md` (49, 41, 36, 47, 40, 31, 40 and 76 census rows; counts spot-checked against source). Comment and header lines only, no code change (CireSnave 2026-11-19 ruling "461: A."): 8 files outside any provenance crate get the workspace SPDX line (skipped by the guard only on the word "derived" in own-maths prose); `baracuda-forge` credits Guoqing Bao's cudaforge (Cargo.toml `MIT OR Apache-2.0` at aa77db3 and 336033a, no upstream licence file) on 9 files, SPDX on the 8 modified ones; `baracuda-ozimmu-sys` stamps its 3 ours-only files and credits enp1s0 (MIT 2023) on 11 derived files, plus RIKEN R-CCS (MIT 2024) on the 5 that share RIKEN variant-only lines; `NF4_CODEBOOK` credits the bitsandbytes table. Nothing published, no version change requested.
+
 ## 0.1.0-alpha.175 - 2026-11-18
 
 `Graph::edges`, `GraphNode::dependencies` and `GraphNode::dependent_nodes` now truncate the buffer to the count the driver returned on the second call, so a graph that shrank between the size query and the fetch no longer yields null `GraphNode`s. `IvfFlat` build and search now reject a null params pointer from `*_params_create` instead of dereferencing it. Each fix has a unit test that fails with the fix removed (verified by sabotage). Resolves CodeQL alerts #1, #2, #4, #5, #7, #8.
