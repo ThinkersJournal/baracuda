@@ -87,12 +87,13 @@ but ships no LICENSE file at any commit (G-K-1 in `PROVENANCE.md`); `guoqingbao/
   - `kernels/gguf/dequantize.cu` — 11 `extern "C"` host launchers
     (`baracuda_kernels_dequantize_<qtype>_run`) wrapping the dequant
     kernels. f32 output only (f16 output deferred).
-  - `kernels/gguf/mmvq.cu` — 10 `extern "C"` host launchers
-    (`baracuda_kernels_mmvq_<qtype>_run`) wrapping the FP-activation
-    MMVQ kernels for Q4_0 / Q4_1 / Q5_0 / Q5_1 / Q8_0 / Q2_K / Q3_K /
-    Q4_K / Q5_K / Q6_K. Q8_K is excluded (llama.cpp / Fuel reserve it
-    as a CPU-side intermediate; no MMVQ specialization upstream).
-    f32 activation, f32 output.
+  - `kernels/gguf/mmvq.cu` — 132 `extern "C"` host launchers
+    (`baracuda_kernels_mmvq_<qtype>[_actstrided][_<dtype>]_{run,can_implement}`) wrapping the
+    FP-activation MMVQ kernels: 11 block formats (Q4_0 / Q4_1 / Q5_0 / Q5_1 / Q8_0 / Q2_K /
+    Q3_K / Q4_K / Q5_K / Q6_K / Q8_K) x activation dtype (f32 = no suffix, `f16`, `bf16`) x
+    {contiguous, `_actstrided`} x {`_run`, `_can_implement`}. Counted from the file at this
+    ref: 98 literal definitions plus 34 macro instantiations (`BCDA_MMVQ_*_LAUNCHER`), equal to
+    the 132 non-batched `baracuda_kernels_mmvq_*` symbols in `abi/abi-manifest.tsv`.
 
   Adaptation summary:
   - Replaced Fuel's `extern "C" __global__ void <name>(...)` direct
