@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
+// Also contains code ported from RIKEN-RCCS/accelerator_for_ozIMMU@d6462fe (MIT, Copyright (c) 2024 RIKEN R-CCS).
 // baracuda_shim.cu — bridge between the C++ ozIMMU surface (under
 // `mtk::ozimmu::`) and the flat C ABI consumed by
 // `baracuda-ozimmu-sys/src/lib.rs`.
