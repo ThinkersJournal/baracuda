@@ -105,13 +105,21 @@ but ships no LICENSE file at any commit (G-K-1 in `PROVENANCE.md`); `guoqingbao/
     super-block layout.
   - Dropped the q8_1-staging tile-based MMQ matmul family
     (`mul_mat_q*`, `load_tiles_q*` / `allocate_tiles_q*` template
-    machinery). **Correction (2026-10-14 provenance audit):** the
-    earlier text said the `quantize_q8_1` kernel and the q8_1-staging
-    MMVQ path were also dropped; they now ship, in
+    machinery). **Correction (2026-10-14 provenance audit, re-read at
+    `d9b28b6f0` and at this ref):** the earlier text said the
+    `quantize_q8_1` kernel and the q8_1-staging MMVQ path were also dropped;
+    at the audit they shipped, in
     `kernels/gguf/{mmvq_batched,mmvq_multim,quantize_q8_1}.cu` and
-    `kernels/include/baracuda_mmvq_{batched,multim}.cuh`, which are
-    llama.cpp-derived (via Fuel/candle; see
-    `vendor/fuel-q8_1/` and `PROVENANCE.md`).
+    `kernels/include/baracuda_mmvq_{batched,multim}.cuh`. Of those,
+    `kernels/gguf/mmvq_batched.cu` and `kernels/include/baracuda_mmvq_batched.cuh`
+    **still ship** (removed in `87957c575`, restored byte-identical in
+    `d9b28b6f0`: same git blob before the removal, at the restore and now). Their
+    SPDX headers name llama.cpp (MIT) and Fuel (MIT OR Apache-2.0), and the audit
+    record (`docs/provenance/adapted-and-sweep.tsv`) lists them as
+    "llama.cpp/Fuel (header)", adapted, with no candle step recorded for these two.
+    `mmvq_multim.cu`, `quantize_q8_1.cu` and `baracuda_mmvq_multim.cuh` were
+    removed in `87957c575` together with `vendor/fuel-q8_1/` (see the removal note
+    above and `PROVENANCE.md`).
   - Dropped Fuel's `indexed_moe_forward_*` (Fuel-specific fused MoE
     op; not on baracuda's roadmap).
   - Q4_0 + Phi-2 dequant fixup: searched Fuel's git log
