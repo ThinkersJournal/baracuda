@@ -18,8 +18,8 @@ Verified blob-for-blob against upstream by `docs/provenance/licence-files-verifi
 
 | origin | file | upstream commit |
 |---|---|---|
-| huggingface/candle (MIT OR Apache-2.0; the licence files carry no copyright line) | `LICENSES/candle-LICENSE-{MIT,APACHE}`, also `vendor/flash-attention/LICENSE-candle-*`, `vendor/fuel-q8_1/LICENSE-candle-*` | `fd8448d2` |
-| ggerganov/llama.cpp / ggml (MIT, "Copyright (c) 2023 Georgi Gerganov") | `LICENSES/llama.cpp-LICENSE`, `vendor/fuel-q8_1/LICENSE-llama.cpp` | `0a5eebb45d` |
+| huggingface/candle (MIT OR Apache-2.0; the licence files carry no copyright line) | `LICENSES/candle-LICENSE-{MIT,APACHE}`, also `vendor/flash-attention/LICENSE-candle-*` | `fd8448d2` |
+| ggerganov/llama.cpp / ggml (MIT, "Copyright (c) 2023 Georgi Gerganov") | `LICENSES/llama.cpp-LICENSE` | `0a5eebb45d` |
 | enp1s0/cutf (MIT, Mutsuki Ootomo) | `LICENSES/cutf-LICENSE` | `bd2a372` |
 | deepreinforce-ai/CUDA-L2 (MIT) | `crates/baracuda-kernels-bench/external/cuda-l2-probes/LICENSE-CUDA-L2.txt` | `dbe0177` |
 | Maratyszcza/FP16 (MIT; origin library of `fp16.h`'s Dukhan-copyrighted routines) | `vendor/flashinfer/LICENSE-FP16` | `782eea12` |
