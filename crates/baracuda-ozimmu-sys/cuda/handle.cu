@@ -1,3 +1,5 @@
+// Credit: derived from enp1s0/ozIMMU@08eea92 (MIT, Copyright (c) 2023 enp1s0), modified by baracuda;
+// licence text and history: crates/baracuda-ozimmu-sys/ATTRIBUTION.md.
 // handle.cu — RAII / lifecycle for `mtk::ozimmu::handle`.
 //
 // Allocates the embedded cuBLAS handle, the working-memory scratch

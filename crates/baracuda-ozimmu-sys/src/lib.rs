@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-ozimmu-sys
 //!
 //! Raw FFI bindings + static-link wiring for baracuda's clean-fork of
@@ -27,9 +28,9 @@
 //!
 //! ## Provenance
 //!
-//! Phase 44 (alpha.56) vendored ozIMMU upstream under
+//! Phase 44 (alpha.56) carried a copy of the ozIMMU upstream tree under
 //! `vendor/ozimmu/` + a `cutf` git submodule. Phase 44b (alpha.57)
-//! retired both: the algorithm is in the literature (Ootomo / Ozaki /
+//! retired both (no upstream tree remains): the algorithm is in the literature (Ootomo / Ozaki /
 //! Yokota, "DGEMM on Integer Matrix Multiplication Unit", IJHPCA
 //! 2024, [arXiv:2306.11975](https://arxiv.org/abs/2306.11975)), the
 //! original MIT-licensed reference implementation is preserved under

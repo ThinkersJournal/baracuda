@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // baracuda_shim.cu — bridge between the C++ ozIMMU surface (under
 // `mtk::ozimmu::`) and the flat C ABI consumed by
 // `baracuda-ozimmu-sys/src/lib.rs`.

@@ -1,3 +1,6 @@
+// Credit: derived from enp1s0/ozIMMU@08eea92 (MIT, Copyright (c) 2023 enp1s0), modified by baracuda;
+// licence text and history: crates/baracuda-ozimmu-sys/ATTRIBUTION.md.
+// Also contains code ported from RIKEN-RCCS/accelerator_for_ozIMMU@d6462fe (MIT, Copyright (c) 2024 RIKEN R-CCS).
 // split.hpp — kernel-launch entry points for the Ozaki int8 splitter
 // and the mantissa-loss histogram used by `fp64_int8_auto`.
 //

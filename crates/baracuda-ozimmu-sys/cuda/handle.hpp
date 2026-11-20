@@ -1,3 +1,5 @@
+// Credit: derived from enp1s0/ozIMMU@08eea92 (MIT, Copyright (c) 2023 enp1s0), modified by baracuda;
+// licence text and history: crates/baracuda-ozimmu-sys/ATTRIBUTION.md.
 // handle.hpp — internal state of an ozIMMU session.
 //
 // Holds the cuBLAS handle, the bound stream, the working-memory
