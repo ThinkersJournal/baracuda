@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Col2Im1d — inverse of [`super::Im2Col1dPlan`] (Phase 19.3).
 //!
 //! Scatters a column-shaped matrix back into its NCL source. Used by

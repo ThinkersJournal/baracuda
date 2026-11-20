@@ -1,3 +1,5 @@
+// Credit: derived from enp1s0/ozIMMU@08eea92 (MIT, Copyright (c) 2023 enp1s0), modified by baracuda;
+// licence text and history: crates/baracuda-ozimmu-sys/ATTRIBUTION.md.
 // cublas_helper.hpp — FP64 GEMM emulated via FP32 cuBLAS calls.
 //
 // The Ozaki path is the primary backend; this f32-emulated path is

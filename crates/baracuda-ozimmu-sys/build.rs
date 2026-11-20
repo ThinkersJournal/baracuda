@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Build script for `baracuda-ozimmu-sys` (Phase 44b — clean fork).
 //!
 //! Compiles the baracuda-owned ozIMMU implementation into a single

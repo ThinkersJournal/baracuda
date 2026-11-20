@@ -1,3 +1,5 @@
+// Credit: derived from enp1s0/ozIMMU@08eea92 (MIT, Copyright (c) 2023 enp1s0), modified by baracuda;
+// licence text and history: crates/baracuda-ozimmu-sys/ATTRIBUTION.md.
 // cublas_helper.cu — FP64-as-FP32 GEMM emulator.
 //
 // Round-trips A / B / C through fp32 with cublasSgemm (real) or

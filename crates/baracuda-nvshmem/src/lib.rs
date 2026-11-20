@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe Rust wrappers for the **NVIDIA NVSHMEM host API**.
 //!
+//! **Experimental, outside the API freeze** (PM ruling 2026-11-19): no other crate calls this one and its device tests are not run in CI, so its API may change
+//! without the usual notice. It stays in the workspace and keeps building. See `docs/planning/api-freeze/r6/nvshmem.md`.
+//!
 //! NVSHMEM is the OpenSHMEM symmetric-heap model on GPUs: every PE
 //! (processing element — typically one GPU) allocates from a *symmetric
 //! heap* at a shared virtual address, and any PE can read/write another PE's

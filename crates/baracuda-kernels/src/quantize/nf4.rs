@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! NF4 (NormalFloat 4-bit) dequant + GEMV plans — Phase 53.
 //!
 //! Vendored kernels: `crates/baracuda-kernels-sys/vendor/bitsandbytes/`
@@ -819,6 +820,9 @@ unsafe fn dispatch_gemv_multim<T: Nf4Activation>(
 /// device-side switch table. The values come from the inverse CDF of
 /// `N(0, 1)` evaluated at the 16-quantile midpoints with the zero
 /// quantile pinned to exactly 0.0.
+///
+/// Credit: these 16 values are the QLoRA / bitsandbytes NF4 table (Dettmers et al.,
+/// MIT); licence text at `crates/baracuda-kernels-sys/vendor/bitsandbytes/LICENSE`.
 pub const NF4_CODEBOOK: [f32; 16] = [
     -1.0,
     -0.696_192_8,
