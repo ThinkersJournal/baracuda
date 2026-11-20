@@ -59,7 +59,7 @@ the 2026-10-14 audit: every **PM** row except the upstream-only licence gaps was
 
 | id | gap | status |
 |---|---|---|
-| G-FA-1 | Candle's licence (MIT OR Apache-2.0) and notice are not carried in `vendor/flash-attention`; the 12 candle-sourced `.cu` files carry Tri Dao's BSD-3 header only | PM |
+| G-FA-1 | At the 2026-10-14 audit, candle's licence (MIT OR Apache-2.0) had no text in `vendor/flash-attention`. Closed in alpha.102 (§3a): `LICENSE-candle-MIT` and `LICENSE-candle-APACHE` are tracked there, byte-verified against candle `fd8448d2` (`docs/provenance/licence-files-verified.tsv`). The 12 candle-sourced `.cu` files themselves still carry only Tri Dao's BSD-3 header (re-read 2026-11-20: 8 x 2023, 4 x 2024) | FIXED alpha.102 |
 | G-Q8-1 | `vendor/fuel-q8_1` credits llama.cpp and xinfer but **nowhere names candle** and carries no candle licence, though `quantized.cu` is a candle blob | PM |
 | G-K-1 | No MIT/Apache text for candle, ggml (`Copyright (c) 2023-2026 The ggml authors`) or attention.rs outside `vendor/`; `LICENSE-llama.cpp` exists but the md does not reference it | PM |
 | G-LIC-1 | `LICENSE` not byte-identical to upstream (VENDOR.md says verbatim): bitsandbytes (copyright line changed from Facebook to Dettmers), causal-conv1d (copyright line changed), mamba (Apache text reworded), xformers (preamble dropped, reformatted), apex (reformatted) | PM |
