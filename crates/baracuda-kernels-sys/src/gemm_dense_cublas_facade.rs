@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 74 — dense floating-point GEMM FFI facade (cuBLAS-backed).
 //!
 //! Closes the Fuel 2026-06-10 ask ("dense FP GEMM family in

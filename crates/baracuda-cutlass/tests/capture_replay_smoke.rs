@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Stream-capture regression coverage for the alpha.9 / alpha.10 /
 //! alpha.11 / alpha.12 plan surfaces.
 //!

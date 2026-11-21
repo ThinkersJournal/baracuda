@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the alpha.15 int8 SKUs:
 //! `{S8, U8} × Rcr × {Identity, Bias, BiasRelu, BiasGelu, BiasSilu}`
 //! with the bias variants exercised against both `f32` and `i32` bias

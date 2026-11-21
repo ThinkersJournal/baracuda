@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the alpha.13 TF32 bias family.
 //!
 //! Coverage: f32 (TF32 path) × Rcr × {Bias, BiasRelu, BiasGelu, BiasSilu}.

@@ -16,6 +16,17 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.177 - 2026-11-21
+
+Documentation, licence-header and CI-only; no code or ABI change.
+
+- **Credits and notices:** `baracuda-cutlass-sys/build.rs` credits cudaforge (Guoqing Bao); `baracuda_simt_broadcast_epilogue.h` reproduces NVIDIA's CUTLASS BSD-3-Clause block (v4.2.0, compared against upstream); `baracuda-kernels-sys` `LICENSE-thirdparty.md` gains the Liger and candle rows and pointer lines on `build.rs`/`lib.rs`; `n_blocking_smoke.rs` says only the chunking it exercises is ported from RIKEN-RCCS.
+- **Retractions and labels:** G-FA-1 and G-Q8-1 retracted in `PROVENANCE.md`/`VENDOR.md`; version labels SHA-first; the llama.cpp correction note and the `mmvq.cu` launcher count (132) match the files.
+- **A2:** nine llama.cpp/ggml/cutf-derived files in `baracuda-kernels-sys` change `SPDX-License-Identifier` from `MIT OR Apache-2.0` to `MIT`; holder lines unchanged.
+- **Stamps:** 37 baracuda-written files in the cutlass, cutlass-kernels-sys, cutlass-sys, kernels-sys, tensorrt and transformer-engine-sys crates gain our SPDX line (1 line each; each was skipped only by the provenance-crate rule).
+- **CI:** `device-tests.yml` and `device-tests-kernel-features.yml` drop `dtolnay/rust-toolchain` (it installs into the shared RUSTUP_HOME; board 429 stage 2) and print CARGO_HOME/RUSTUP_HOME in a probe step.
+- **Verified:** `cargo check` with `DOCS_RS=1` on the touched crates (including tests); `tools/add-spdx-headers.py` dry run: 8 skips left, all intentional.
+
 ## 0.1.0-alpha.176 - 2026-11-20
 
 `crates/baracuda-ozimmu-sys/ATTRIBUTION.md` named `RIKEN-RCCS/accelerator_for_ozIMMU` as the source of the Phase 44c patches (`cuda/split.cu`, `cuda/split.hpp`, `cuda/gemm.cu`) and called it MIT-licensed, but reproduced only enp1s0's licence text. It now carries upstream's `LICENSE` verbatim ("Copyright (c) 2024 RIKEN R-CCS", blob 5800728d, unchanged since upstream's first commit) and records that the port commit was not recorded (re-read at upstream HEAD d6462fe4). Also adds R6 API-freeze reviews `docs/planning/api-freeze/r6/{cupti,curand,nvrtc,core,nvshmem,cufile,nvimagecodec,kernels-types}.md` (49, 41, 36, 47, 40, 31, 40 and 76 census rows; counts spot-checked against source). Comment and header lines only, no code change (CireSnave 2026-11-19 ruling "461: A."): 8 files outside any provenance crate get the workspace SPDX line (skipped by the guard only on the word "derived" in own-maths prose); `baracuda-forge` credits Guoqing Bao's cudaforge (Cargo.toml `MIT OR Apache-2.0` at aa77db3 and 336033a, no upstream licence file) on 9 files, SPDX on the 8 modified ones; `baracuda-ozimmu-sys` stamps its 3 ours-only files and credits enp1s0 (MIT 2023) on 11 derived files, plus RIKEN R-CCS (MIT 2024) on the 5 that share RIKEN variant-only lines; `NF4_CODEBOOK` credits the bitsandbytes table. Nothing published, no version change requested.

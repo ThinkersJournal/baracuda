@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 23 — `baracuda-kernels-sys` C-ABI FFI wrappers for the
 //! cuRAND-backed random-sampling family.
 //!

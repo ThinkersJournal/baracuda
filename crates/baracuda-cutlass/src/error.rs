@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Error types for `baracuda-cutlass`.
 
 // The type itself lives in `baracuda-kernels-types` (SA-35); re-exported here so

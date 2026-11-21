@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 24 — `baracuda-kernels-sys` C-ABI FFI re-export surface for the
 //! CUTLASS-backed GEMM family.
 //!

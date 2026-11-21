@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Compile-time shared-memory capacity guard for the sm_80 CUTLASS kernels.
 //
 // WHY THIS EXISTS (issue #87)

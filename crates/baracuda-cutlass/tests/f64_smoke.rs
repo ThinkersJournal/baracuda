@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for f64 (DGEMM via Ampere FP64 tensor cores).
 //!
 //! Coverage: `f64 × {Rcr, Rrr} × {Identity, Bias, BiasRelu, BiasGelu,

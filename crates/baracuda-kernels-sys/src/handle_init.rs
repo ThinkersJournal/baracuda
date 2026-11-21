@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Process-wide serialisation of cuBLAS / cuSOLVER handle creation.
 //!
 //! `cublasCreate_v2` and `cusolverDnCreate` return `NOT_INITIALIZED`

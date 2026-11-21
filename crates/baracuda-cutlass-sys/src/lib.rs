@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-cutlass-sys
 //!
 //! Header acquisition for NVIDIA CUTLASS as a baracuda workspace dependency.

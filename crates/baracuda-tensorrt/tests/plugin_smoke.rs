@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! The plugin registry against a real TensorRT: register the built-in plugins,
 //! list and look up creators, and refuse a library that is not there.
 //!

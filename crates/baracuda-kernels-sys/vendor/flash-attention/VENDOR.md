@@ -27,7 +27,8 @@ byte-identical to FA `v2.8.3`@`060c9188`):** the 12 candle-sourced `flash_fwd_hd
 candle's `cuda_is_sm8x`), `flash_bwd_launch_template.h` (+20: comment-only Phase 60 notes).
 The hd160/224 sources are `EricLBuehler/candle` `main` as resolved at `132643dc466cffefa133630565c0fbc2b62889b0` (2025-07-09); the
 candle commits cited below are origin history. Candle is `MIT OR Apache-2.0`; its licence text is
-**not yet carried here** (tracked as gap G-FA-1 in `PROVENANCE.md`).
+carried here as `LICENSE-candle-MIT` and `LICENSE-candle-APACHE` (byte-verified against candle `fd8448d2` in
+`docs/provenance/licence-files-verified.tsv`; gap G-FA-1 is closed in `PROVENANCE.md` section 3a).
 baracuda's own license (dual MIT / Apache-2.0) sits alongside; the
 vendored FA2 sources retain BSD-3-Clause independently.
 

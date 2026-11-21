@@ -53,14 +53,14 @@ headers name llama.cpp ggml-cuda and guoqingbao/attention.rs as the origins.
 
 Legend: **FIXED** = corrected in this PR (documentation only). **PM** = touches a vendored file, a
 licence text or a source header, so it needs a PM decision (§4). Statuses in the tables are as of
-the 2026-10-14 audit: every **PM** row except the upstream-only licence gaps was applied in §3a-§3c.
+the 2026-10-14 audit: every **PM** row except the upstream-only licence gaps was applied in §3a-§3c. **Version labels:** the SHA is the primary label; a version is given only where read from the manifest at that SHA. The `0.0.1-alpha.N` line ended at the `0.1.0` reset (`3d97927a6`, 2026-10-23, manifest `0.1.0-alpha.1`), so `0.0.1-alpha.102` (2026-10-14) and `0.1.0-alpha.79` (2026-11-01) are on different lines and their numbers do not order the events.
 
 ### Licence / notice text missing or not verbatim
 
 | id | gap | status |
 |---|---|---|
-| G-FA-1 | Candle's licence (MIT OR Apache-2.0) and notice are not carried in `vendor/flash-attention`; the 12 candle-sourced `.cu` files carry Tri Dao's BSD-3 header only | PM |
-| G-Q8-1 | `vendor/fuel-q8_1` credits llama.cpp and xinfer but **nowhere names candle** and carries no candle licence, though `quantized.cu` is a candle blob | PM |
+| G-FA-1 | At the 2026-10-14 audit, candle's licence (MIT OR Apache-2.0) had no text in `vendor/flash-attention`. Closed in `29c86a496` (§3a; manifest `0.0.1-alpha.102`): `LICENSE-candle-MIT` and `LICENSE-candle-APACHE` are tracked there, byte-verified against candle `fd8448d2` (`docs/provenance/licence-files-verified.tsv`). The 12 candle-sourced `.cu` files themselves still carry only Tri Dao's BSD-3 header (re-read 2026-11-20: 8 x 2023, 4 x 2024) | FIXED `29c86a496` |
+| G-Q8-1 | At the 2026-10-14 audit (`66f660dc1`), `vendor/fuel-q8_1` credited llama.cpp and xinfer, no file in it named candle and it carried no `LICENSE-candle-*`, though `quantized.cu` is a candle blob (both re-read at that ref: 0 files naming candle, no candle licence file). Fixed the same day: candle licence texts in `29c86a496` (manifest `0.0.1-alpha.102`), candle named in `README.md` in `a886b67f3` (`0.0.1-alpha.104`). The directory itself was removed in `87957c575` (manifest `0.1.0-alpha.79`, first tag containing it `v0.1.0-alpha.80`; see the Removed note below), so nothing under `vendor/fuel-q8_1` is tracked now | FIXED `29c86a496` / `a886b67f3`; directory removed `87957c575` |
 | G-K-1 | No MIT/Apache text for candle, ggml (`Copyright (c) 2023-2026 The ggml authors`) or attention.rs outside `vendor/`; `LICENSE-llama.cpp` exists but the md does not reference it | PM |
 | G-LIC-1 | `LICENSE` not byte-identical to upstream (VENDOR.md says verbatim): bitsandbytes (copyright line changed from Facebook to Dettmers), causal-conv1d (copyright line changed), mamba (Apache text reworded), xformers (preamble dropped, reformatted), apex (reformatted) | PM |
 | G-LIC-2 | `AUTHORS` in causal-conv1d and mamba is rewritten prose, not upstream's | PM |
@@ -98,7 +98,7 @@ the 2026-10-14 audit: every **PM** row except the upstream-only licence gaps was
 | G-CUTLASS-1 | `baracuda-cutlass{,-kernels}-sys/NOTICE` and `baracuda-cutlass/NOTICE` SKU descriptions are stale (not a licence defect) | open (docs; separate) |
 | G-FI-3 | `vendor/flashinfer/VENDOR.md` places `fp16.h` under `attention/`; the file is `include/flashinfer/fp16.h`. `fastdiv.cuh` has dead code (`numer`, `q` computed twice) — correctness not assessed | open |
 
-## 3a. Licence-file bucket applied (PR alpha.102, 2026-10-14)
+## 3a. Licence-file bucket applied (#174 `29c86a496`, manifest `0.0.1-alpha.102`, 2026-10-14)
 
 PM-approved (`TASK` 13:06Z). New files and replaced files are **upstream bytes**; `docs/provenance/licence-files-verified.tsv` compares each staged blob id with the upstream blob id (18/18 identical). No `.cu/.cuh/.h/.rs` file is in the diff. Pin policy for the previously unpinned origins: the last upstream commit **on or before the 2026-05-28 vendor date** (for each, the licence blob is also unchanged at upstream HEAD); it is a date-bounded pin, not a recovered vendor-time commit.
 
@@ -134,7 +134,7 @@ Comment-only edits; `docs/provenance/header-comment-changes-verified.tsv` shows,
 
 **Open, upstream-only:** `guoqingbao/attention.rs` and `guoqingbao/cudaforge` ship no LICENSE file (only a `Cargo.toml` `license` field), so no verbatim licence text can be carried. Asking each upstream to add one would resolve it; **filed 2026-10-24 (PM-approved, from the bot account):** https://github.com/guoqingbao/attention.rs/issues/117 and https://github.com/guoqingbao/cudaforge/issues/13.
 
-## 3c. Pins bucket applied (PR alpha.104, 2026-10-14)
+## 3c. Pins bucket applied (#176 `a886b67f3`, manifest `0.0.1-alpha.104`, 2026-10-14)
 
 Recorded in each directory's `VENDOR.md` / `README.md`. **Date-bounded, not vendor-time:** for the origins that recorded no commit, the reference is the last upstream commit on or before the 2026-05-28 vendor date; the true vendor-time commit is not recoverable, and each entry says so.
 
@@ -185,4 +185,4 @@ Derived files that were absent from `LICENSE-thirdparty.md` at audit time (heade
 
 Method: `git log --follow` for the first-add commit; read-only parse of the PNG chunks (`caBX` = C2PA JUMBF box) at `origin/main` `1dd782a2`. `assets/README.txt` ("Placeholder ... barracuda.jpg ... attached to your Claude chat") is a stale placeholder note that does not describe the current file.
 
-**Removed in alpha.79 (2026-11-01, board 307):** `vendor/fuel-q8_1`, `kernels/gguf/{mmvq_multim,quantize_q8_1}.cu`, `kernels/include/baracuda_{mmvq_multim,moe}.cuh`, `kernels/moe/*`. Rows above for those files (G-Q8-1, G-H-2, G-FQ-1, the fuel-q8_1 chain) and `docs/provenance/*.tsv` are the record of what shipped through alpha.78; the files are in git history.
+**Removed in `87957c575` (2026-11-01, board 307; manifest `0.1.0-alpha.79` at that commit, first tag containing it `v0.1.0-alpha.80`):** `vendor/fuel-q8_1`, `kernels/gguf/{mmvq_multim,quantize_q8_1}.cu`, `kernels/include/baracuda_{mmvq_multim,moe}.cuh`, `kernels/moe/*`. Rows above for those files (G-Q8-1, G-H-2, G-FQ-1, the fuel-q8_1 chain) and `docs/provenance/*.tsv` are the record of what shipped through alpha.78; the files are in git history.

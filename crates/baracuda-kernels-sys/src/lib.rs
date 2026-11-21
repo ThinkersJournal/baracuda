@@ -1,3 +1,6 @@
+// Third-party credits for this crate (Liger-Kernel algorithm credit, candle flash-attn head_dim sources, FA2, llama.cpp, others):
+// crates/baracuda-kernels-sys/LICENSE-thirdparty.md and PROVENANCE.md at the repo root.
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-kernels-sys
 //!
 //! Raw `extern "C"` entry points for compiled bespoke kernels.

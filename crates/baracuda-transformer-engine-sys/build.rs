@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Build script for `baracuda-transformer-engine-sys` (Phase 55).
 //!
 //! Compiles the vendored TransformerEngine FP8 cast + delayed-scaling

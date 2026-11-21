@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the alpha.12 Rrr-layout bias family.
 //!
 //! Coverage: {Bias, BiasRelu, BiasGelu, BiasSilu} × {f16, bf16} × Rrr.

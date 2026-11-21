@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-transformer-engine-sys
 //!
 //! Raw FFI bindings + static-link wiring for the

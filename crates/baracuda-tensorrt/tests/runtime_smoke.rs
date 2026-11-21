@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Runtime-path smoke tests for `baracuda-tensorrt`.
 //!
 //! The inference tests are gated behind the `device-tests` feature: they require a working TensorRT

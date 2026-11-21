@@ -18,8 +18,8 @@ Verified blob-for-blob against upstream by `docs/provenance/licence-files-verifi
 
 | origin | file | upstream commit |
 |---|---|---|
-| huggingface/candle (MIT OR Apache-2.0; the licence files carry no copyright line) | `LICENSES/candle-LICENSE-{MIT,APACHE}`, also `vendor/flash-attention/LICENSE-candle-*`, `vendor/fuel-q8_1/LICENSE-candle-*` | `fd8448d2` |
-| ggerganov/llama.cpp / ggml (MIT, "Copyright (c) 2023 Georgi Gerganov") | `LICENSES/llama.cpp-LICENSE`, `vendor/fuel-q8_1/LICENSE-llama.cpp` | `0a5eebb45d` |
+| huggingface/candle (MIT OR Apache-2.0; the licence files carry no copyright line) | `LICENSES/candle-LICENSE-{MIT,APACHE}`, also `vendor/flash-attention/LICENSE-candle-*` | `fd8448d2` |
+| ggerganov/llama.cpp / ggml (MIT, "Copyright (c) 2023 Georgi Gerganov") | `LICENSES/llama.cpp-LICENSE` | `0a5eebb45d` |
 | enp1s0/cutf (MIT, Mutsuki Ootomo) | `LICENSES/cutf-LICENSE` | `bd2a372` |
 | deepreinforce-ai/CUDA-L2 (MIT) | `crates/baracuda-kernels-bench/external/cuda-l2-probes/LICENSE-CUDA-L2.txt` | `dbe0177` |
 | Maratyszcza/FP16 (MIT; origin library of `fp16.h`'s Dukhan-copyrighted routines) | `vendor/flashinfer/LICENSE-FP16` | `782eea12` |
@@ -66,7 +66,7 @@ but ships no LICENSE file at any commit (G-K-1 in `PROVENANCE.md`); `guoqingbao/
     function template + per-pair explicit specializations covering
     the half-precision endpoints.
 
-> **Removed in 0.1.0-alpha.80 (2026-11-01, board 307 / CireSnave ruling):** `gguf/mmvq_multim.cu`, `gguf/quantize_q8_1.cu`,
+> **Removed in `87957c575` (2026-11-01, board 307 / CireSnave ruling; manifest `0.1.0-alpha.79` at that commit, first tag containing it `v0.1.0-alpha.80`):** `gguf/mmvq_multim.cu`, `gguf/quantize_q8_1.cu`,
 > `include/baracuda_{mmvq_multim,moe}.cuh`, `moe/*.cu` and `vendor/fuel-q8_1/`, with their Rust wrappers and 97 FFI symbols. The attribution entries
 > below for those files and for attention.rs (MoE) describe code no longer shipped; kept as the record of what shipped through alpha.78.
 
@@ -87,12 +87,13 @@ but ships no LICENSE file at any commit (G-K-1 in `PROVENANCE.md`); `guoqingbao/
   - `kernels/gguf/dequantize.cu` — 11 `extern "C"` host launchers
     (`baracuda_kernels_dequantize_<qtype>_run`) wrapping the dequant
     kernels. f32 output only (f16 output deferred).
-  - `kernels/gguf/mmvq.cu` — 10 `extern "C"` host launchers
-    (`baracuda_kernels_mmvq_<qtype>_run`) wrapping the FP-activation
-    MMVQ kernels for Q4_0 / Q4_1 / Q5_0 / Q5_1 / Q8_0 / Q2_K / Q3_K /
-    Q4_K / Q5_K / Q6_K. Q8_K is excluded (llama.cpp / Fuel reserve it
-    as a CPU-side intermediate; no MMVQ specialization upstream).
-    f32 activation, f32 output.
+  - `kernels/gguf/mmvq.cu` — 132 `extern "C"` host launchers
+    (`baracuda_kernels_mmvq_<qtype>[_actstrided][_<dtype>]_{run,can_implement}`) wrapping the
+    FP-activation MMVQ kernels: 11 block formats (Q4_0 / Q4_1 / Q5_0 / Q5_1 / Q8_0 / Q2_K /
+    Q3_K / Q4_K / Q5_K / Q6_K / Q8_K) x activation dtype (f32 = no suffix, `f16`, `bf16`) x
+    {contiguous, `_actstrided`} x {`_run`, `_can_implement`}. Counted from the file at this
+    ref: 98 literal definitions plus 34 macro instantiations (`BCDA_MMVQ_*_LAUNCHER`), equal to
+    the 132 non-batched `baracuda_kernels_mmvq_*` symbols in `abi/abi-manifest.tsv`.
 
   Adaptation summary:
   - Replaced Fuel's `extern "C" __global__ void <name>(...)` direct
@@ -105,13 +106,21 @@ but ships no LICENSE file at any commit (G-K-1 in `PROVENANCE.md`); `guoqingbao/
     super-block layout.
   - Dropped the q8_1-staging tile-based MMQ matmul family
     (`mul_mat_q*`, `load_tiles_q*` / `allocate_tiles_q*` template
-    machinery). **Correction (2026-10-14 provenance audit):** the
-    earlier text said the `quantize_q8_1` kernel and the q8_1-staging
-    MMVQ path were also dropped; they now ship, in
+    machinery). **Correction (2026-10-14 provenance audit, re-read at
+    `d9b28b6f0` and at this ref):** the earlier text said the
+    `quantize_q8_1` kernel and the q8_1-staging MMVQ path were also dropped;
+    at the audit they shipped, in
     `kernels/gguf/{mmvq_batched,mmvq_multim,quantize_q8_1}.cu` and
-    `kernels/include/baracuda_mmvq_{batched,multim}.cuh`, which are
-    llama.cpp-derived (via Fuel/candle; see
-    `vendor/fuel-q8_1/` and `PROVENANCE.md`).
+    `kernels/include/baracuda_mmvq_{batched,multim}.cuh`. Of those,
+    `kernels/gguf/mmvq_batched.cu` and `kernels/include/baracuda_mmvq_batched.cuh`
+    **still ship** (removed in `87957c575`, restored byte-identical in
+    `d9b28b6f0`: same git blob before the removal, at the restore and now). Their
+    SPDX headers name llama.cpp (MIT) and Fuel (MIT OR Apache-2.0), and the audit
+    record (`docs/provenance/adapted-and-sweep.tsv`) lists them as
+    "llama.cpp/Fuel (header)", adapted, with no candle step recorded for these two.
+    `mmvq_multim.cu`, `quantize_q8_1.cu` and `baracuda_mmvq_multim.cuh` were
+    removed in `87957c575` together with `vendor/fuel-q8_1/` (see the removal note
+    above and `PROVENANCE.md`).
   - Dropped Fuel's `indexed_moe_forward_*` (Fuel-specific fused MoE
     op; not on baracuda's roadmap).
   - Q4_0 + Phi-2 dequant fixup: searched Fuel's git log
@@ -232,3 +241,35 @@ but ships no LICENSE file at any commit (G-K-1 in `PROVENANCE.md`); `guoqingbao/
   the nvcc build on a 16-thread machine. Defaults as of 2026-10-29:
   `baracuda-kernels` is `default = ["sm80", "fa2"]` (`Cargo.toml:23`, FA2
   on), `baracuda-kernels-sys` is `default = ["sm80"]` (FA2 off).
+
+### LinkedIn Liger-Kernel (Phase 47: Fused Linear Cross-Entropy) - algorithm credit only
+
+- **Upstream**: <https://github.com/linkedin/Liger-Kernel>,
+  `src/liger_kernel/ops/fused_linear_cross_entropy.py` (Triton; Pin-Lun Hsu et al.,
+  LinkedIn, 2024). **License**: BSD-2-Clause.
+- **What baracuda has**: a clean-room CUDA reimplementation of the same chunked-tile
+  algorithm. **No Liger source is vendored** (each credit line below says so), so no Liger
+  licence text is carried and no upstream commit is recorded; this is a credit for the
+  algorithm, not a copy.
+- **Credit lines in**: `kernels/include/baracuda_flce.cuh`, `kernels/loss/flce_fp.cu`, the
+  Phase 47 comments in `build.rs` and `src/lib.rs` (the latter in the middle of the file,
+  not at its head), and `PROVENANCE.md`.
+
+### huggingface/candle flash-attn kernels (Phase 60: head_dim 160, 224, 512)
+
+- **Upstream**: <https://github.com/huggingface/candle>, `candle-flash-attn/kernels/`.
+  **License**: MIT OR Apache-2.0; text at `vendor/flash-attention/LICENSE-candle-{MIT,APACHE}`
+  (see the table above; those files carry no copyright line).
+- **Files**: the 12 `vendor/flash-attention/src/flash_fwd_hdim{160,224,512}_{fp16,bf16}_{,causal}_sm80.cu`.
+  Their own headers still read "Copyright (c) 2023/2024, Tri Dao" (FA2's original); the
+  candle-side change is the `namespace_config.h` include and `FLASH_NAMESPACE` wrap
+  (+5 lines each), as recorded in `vendor/flash-attention/VENDOR.md`.
+- **Sources**: hd160 and hd224 from `EricLBuehler/candle` `main` as resolved at
+  `132643dc466cffefa133630565c0fbc2b62889b0` (2025-07-09), originally vendored to candle by
+  Laurent Mazare (PR #245, `huggingface/candle@2ce5f125`); hd224 restored by Michael Feil
+  (PR #2688, `@71cd6d55`). hd512 from `huggingface/candle@5430d32c97c687973c53a4e65fac318d9be2a834`,
+  added by Eric Buehler (PR #3417, merged 2026-03-28; SMEM opt-in path).
+- **Also candle-derived** (edits to FA2 files, per `VENDOR.md`): `static_switch.h`,
+  `flash_fwd_launch_template.h`, and comment-only notes in `flash_bwd_launch_template.h`.
+- **Full record**: `vendor/flash-attention/VENDOR.md`; the Phase 60 comments in `build.rs`
+  name the same candle sources.

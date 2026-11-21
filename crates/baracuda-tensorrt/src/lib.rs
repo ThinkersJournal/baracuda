@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Safe-ish TensorRT runtime-side bindings.
 //!
 //! Scope is inference only: load a serialized engine (e.g. produced by

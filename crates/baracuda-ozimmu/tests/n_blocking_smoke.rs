@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 44c — n-blocking smoke test for the ozIMMU dispatch.
 //!
 //! `matmul_core` automatically chunks `n > 12288` int8 GEMM launches
-//! into 8192-wide pieces (ported from
-//! RIKEN-RCCS/accelerator_for_ozIMMU's `acc/gemm.cu`). This test
+//! into 8192-wide pieces (the chunking is ported from
+//! RIKEN-RCCS/accelerator_for_ozIMMU's `acc/gemm.cu`, credited in
+//! `ATTRIBUTION.md`; this test is baracuda-written and black-box). It
 //! forces that path with `n = 16384` and verifies:
 //!
 //!   - The chunked launch succeeds without status errors.

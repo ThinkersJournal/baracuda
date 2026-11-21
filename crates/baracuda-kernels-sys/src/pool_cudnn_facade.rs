@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! cuDNN pool FFI facade (Phase 19.1).
 //!
 //! Exposes `extern "C"` wrappers for the non-adaptive `MaxPool{1,2,3}d` /
