@@ -35,7 +35,17 @@ jobs:
     timeout-minutes: 720
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: dtolnay/rust-toolchain@686976e191b89faba57d3206551f0f330d8cb249 # stable
+      # No dtolnay/rust-toolchain: it installs into the shared RUSTUP_HOME (board 429 stage 2,
+      # docs/RUST-ACL-STAGE2.md in the portfolio). This runner has Rust from the machine install,
+      # and rust-toolchain.toml pins 1.98.0, so cargo is called directly; the probe records where
+      # CARGO_HOME / RUSTUP_HOME point and which toolchain is active.
+      - name: toolchain probe (CARGO_HOME, RUSTUP_HOME, rustc)
+        shell: bash
+        run: |
+          echo "CARGO_HOME=$CARGO_HOME RUSTUP_HOME=$RUSTUP_HOME"
+          command -v cargo rustc
+          cargo --version
+          rustc --version
       # Takes the machine-wide gpu-run lock (shared with Fuel/Vulkane) and fails the step
       # if any test fails, if a required device resource is absent, or if 0 tests passed.
       - name: cargo gpu-test (baracuda-driver, device-tests)
