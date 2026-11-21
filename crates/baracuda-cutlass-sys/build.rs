@@ -1,3 +1,7 @@
+// Credit: the git-fetching strategy (sparse checkout, file-locked cache directory, stale-lock cleanup) is derived from cudaforge
+// by Guoqing Bao (https://github.com/guoqingbao/cudaforge, aa77db3), declared `MIT OR Apache-2.0` in its Cargo.toml; upstream ships
+// no licence file, so no upstream licence text is reproduced here. Copyright (c) 2025 Guoqing Bao. See NOTICE.
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Acquire CUTLASS headers and emit Cargo metadata for downstream consumers.
 //!
 //! Resolution order:
