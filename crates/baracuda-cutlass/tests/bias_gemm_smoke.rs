@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for bias-fused GEMM (alpha.10).
 //!
 //! Computes `D = alpha*AB + beta*C + bias_broadcast(N)` and compares

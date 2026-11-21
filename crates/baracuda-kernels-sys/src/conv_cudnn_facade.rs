@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase 19.2 — `baracuda-kernels-sys` C-ABI FFI wrappers for the
 //! cuDNN-backed convolution family.
 //!

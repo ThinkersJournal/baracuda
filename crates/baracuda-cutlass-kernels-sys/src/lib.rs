@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-cutlass-kernels-sys
 //!
 //! Raw `extern "C"` entry points for compiled CUTLASS template

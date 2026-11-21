@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test: f16 + bf16 GEMM RCR sm80 against a CPU reference.
 //!
 //! Marked gated behind the `device-tests` feature so `cargo test --workspace` is GPU-free by default.

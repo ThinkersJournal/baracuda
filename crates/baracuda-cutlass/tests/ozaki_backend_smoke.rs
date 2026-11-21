@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for the `BackendKind::Ozaki` FP64 `GemmPlan` path (vendored ozIMMU).
 //!
 //! Gated behind the `device-tests` feature and the `ozimmu` feature. It also pins the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Phase-30 cuBLAS backend smoke test for `GemmPlan`.
 //!
 //! Validates the cuBLAS-routing fast-path against a host CPU reference

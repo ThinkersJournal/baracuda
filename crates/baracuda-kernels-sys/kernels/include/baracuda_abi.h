@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // baracuda C-ABI version: the single source of truth for `baracuda_kernels_abi_version()`.
 //
 // An independent integer (SONAME-style), NOT the crate version. Bump it by hand ONLY when the

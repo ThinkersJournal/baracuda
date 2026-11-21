@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the alpha.11 bias + activation SKUs:
 //! `BiasRelu`, `BiasGelu`, `BiasSilu` over f16 + bf16 on Rcr × sm_80.
 //!

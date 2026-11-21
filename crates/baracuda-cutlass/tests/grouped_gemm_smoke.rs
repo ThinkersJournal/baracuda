@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke test for grouped GEMM (Phase 4d).
 //!
 //! Models the Fuel team's headline use case: an MoE expert MLP, where each

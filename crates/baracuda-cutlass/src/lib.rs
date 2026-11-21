@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! # baracuda-cutlass
 //!
 //! Safe Rust wrapper for compiled CUTLASS kernels in the baracuda

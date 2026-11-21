@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Plan-based GEMM and grouped-GEMM API.
 
 use core::ffi::c_void;

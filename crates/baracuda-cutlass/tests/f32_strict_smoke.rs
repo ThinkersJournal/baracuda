@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for F32Strict (SIMT, full IEEE 754 binary32).
 //!
 //! Coverage: `F32Strict × {Rcr, Rrr} × {Identity, Bias, BiasRelu,

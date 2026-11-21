@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Value types for the CUTLASS plan-based API.
 //!
 //! All types here are pure data — no hidden device allocations, no

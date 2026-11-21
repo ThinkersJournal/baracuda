@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for the alpha.9 kernel SKUs:
 //!
 //! - Rrr layout (f16, bf16) — row-major × row-major matmul

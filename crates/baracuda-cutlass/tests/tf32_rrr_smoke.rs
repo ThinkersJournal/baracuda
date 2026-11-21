@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Real-GPU smoke tests for TF32 RRR coverage (Phase 1.1).
 //!
 //! Coverage: f32 (TF32 path) × Rrr × {Identity, Bias, BiasRelu, BiasGelu,
