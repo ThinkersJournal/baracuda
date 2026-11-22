@@ -44,6 +44,10 @@
  *     soft_cap_pre_tanh_scale, custom_mask_ptr), v_scale (Params has none, so 1.0f), the
  *     block_valid_mask test is KEPT. The partition_kv flag is KEPT (runtime).
  *   - cg::this_thread_block().sync() written as __syncthreads() (identical for a thread block).
+ *   - U19 slice-5 param flatten (mechanical, no logic edit): the kernel no longer takes the
+ *     `DecodeParamsHalf` struct. It takes 16 buffer (pointer) params plus ONE scalar-only
+ *     `DecodeScalars` struct; `compute_qk` lost its (unread) `params` arg; `partition_kv` is a
+ *     uint32 in the scalar struct. The local `paged_kv` is rebuilt from the params.
  *   - The `#if __CUDACC_VER_MAJOR__ >= 12 ... griddepcontrol` blocks and the
  *     FLASHINFER_CP_ASYNC_ENABLED fallbacks are kept verbatim.
  *
@@ -161,6 +165,28 @@ struct DecodeParamsHalf {
   int32_t* kv_chunk_size_ptr;
   bool* block_valid_mask;
   bool partition_kv;
+};
+
+// ---- U19 flatten: the ONE scalar-only struct param of the kernel (pointer fields are separate
+// buffer params, see the kernel signature). Scalars of BatchDecodeParams + paged_kv_t, same order. ----
+struct DecodeScalars {
+  uint32_t padded_batch_size;
+  uint32_t num_qo_heads;
+  int32_t q_stride_n;
+  int32_t q_stride_h;
+  int32_t window_left;
+  float logits_soft_cap;
+  float sm_scale;
+  float rope_rcp_scale;
+  float rope_rcp_theta;
+  uint32_t partition_kv;  // 0/1 (was bool)
+  uint_fastdiv page_size;  // paged_kv.page_size: d_, m_, l_
+  uint32_t num_heads;
+  uint32_t head_dim;
+  uint32_t batch_size;
+  uint32_t stride_page;
+  uint32_t stride_n;
+  uint32_t stride_h;
 };
 
 // ---- math.cuh ----
@@ -307,7 +333,7 @@ __device__ __forceinline__ void state_merge(State& st, const float* other_o, flo
 }
 
 // ---- decode.cuh: compute_qk (bdx=16, tile_size = bdy*tile_size_per_bdx = 4, kNone) ----
-__device__ __forceinline__ void compute_qk(const DecodeParamsHalf& params, float sm_scale_log2,
+__device__ __forceinline__ void compute_qk(float sm_scale_log2,
                                            const half* smem, const float* q_vec,
                                            uint32_t iter_base, uint32_t iter_bound, float* s,
                                            State& st, const uint32_t tx, const uint32_t tz) {
@@ -382,7 +408,11 @@ __device__ __forceinline__ void sync_state(State& st, float* smem, float* smem_m
 
 // ---- decode.cuh: BatchDecodeWithPagedKVCacheKernel + ...Device, one configuration ----
 __global__ void BatchDecodeWithPagedKVCacheKernel_f16_d128_g1_none(
-    const __grid_constant__ DecodeParamsHalf params) {
+    half* q_ptr, int32_t* q_rope_offset, half* o_ptr, float* lse_ptr, float* maybe_alibi_slopes,
+    int32_t* request_indices, int32_t* kv_tile_indices, int32_t* o_indptr,
+    int32_t* kv_chunk_size_ptr, bool* block_valid_mask_ptr, half* k_data, half* v_data,
+    int32_t* indices, int32_t* indptr, int32_t* last_page_len, int32_t* rope_pos_offset,
+    const __grid_constant__ DecodeScalars params) {
   extern __shared__ uint8_t smem[];
   const uint32_t bx = blockIdx.x;
   const uint32_t by = blockIdx.y;
@@ -390,21 +420,25 @@ __global__ void BatchDecodeWithPagedKVCacheKernel_f16_d128_g1_none(
   const uint32_t ty = threadIdx.y;
   const uint32_t tz = threadIdx.z;
 
-  const half* q = params.q;
-  half* o = params.o;
-  float* lse = params.lse;
-  const PagedKvHalf paged_kv = params.paged_kv;
-  const bool* block_valid_mask = params.block_valid_mask;
+  const half* q = q_ptr;
+  half* o = o_ptr;
+  float* lse = lse_ptr;
+  const PagedKvHalf paged_kv = {params.page_size, params.num_heads,  params.head_dim,
+                                params.batch_size, params.stride_page, params.stride_n,
+                                params.stride_h,   k_data,            v_data,
+                                indices,           indptr,            last_page_len,
+                                rope_pos_offset};
+  const bool* block_valid_mask = block_valid_mask_ptr;
   const uint32_t num_qo_heads = params.num_qo_heads;
-  const bool partition_kv = params.partition_kv;
+  const bool partition_kv = params.partition_kv != 0;
 
   constexpr uint32_t head_dim = BDX * VEC_SIZE;
-  const uint32_t batch_idx = params.request_indices[bx];
-  const uint32_t kv_tile_idx = params.kv_tile_indices[bx];
+  const uint32_t batch_idx = request_indices[bx];
+  const uint32_t kv_tile_idx = kv_tile_indices[bx];
   const uint32_t kv_head_idx = by;
   const uint32_t qo_head_idx = kv_head_idx * BDY + ty;
   if (block_valid_mask && !block_valid_mask[bx]) return;
-  const uint32_t kv_chunk_size = *(params.kv_chunk_size_ptr);
+  const uint32_t kv_chunk_size = *kv_chunk_size_ptr;
   const uint32_t kv_len = paged_get_length(paged_kv, batch_idx);
   const uint32_t max_chunk_size = partition_kv ? kv_chunk_size : kv_len;
   const uint32_t chunk_start = partition_kv ? kv_tile_idx * max_chunk_size : 0;
@@ -500,7 +534,7 @@ __global__ void BatchDecodeWithPagedKVCacheKernel_f16_d128_g1_none(
     // compute qk
     cp_async_wait_group_3();
     __syncthreads();
-    compute_qk(params, sm_scale_log2,
+    compute_qk(sm_scale_log2,
                k_smem + (stage_idx * BDZ + tz) * BDY * TILE_SIZE_PER_BDX * head_dim, q_vec,
                iter * TILE_SIZE_PER_BDX * BDY * BDZ, chunk_size, s, st, tx, tz);
     __syncthreads();

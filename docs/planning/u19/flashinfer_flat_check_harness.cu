@@ -112,7 +112,8 @@ int run_case(int B, int H, int page, int maxlen, int seed, bool want_lse, int* n
   // flat: same bytes reinterpreted into the plain struct (checks layout equality too)
   static_assert(sizeof(Params)==sizeof(flat_decode::DecodeParamsHalf),"layout size");
   flat_decode::DecodeParamsHalf fp; memcpy(&fp,&p,sizeof(fp)); fp.o=do2; fp.lse=want_lse?dl2:nullptr;
-  flat_decode::BatchDecodeWithPagedKVCacheKernel_f16_d128_g1_none<<<dim3(B,H),dim3(16,1,8),flat_decode::SMEM_BYTES>>>(fp);
+  flat_decode::DecodeScalars sc{fp.padded_batch_size,fp.num_qo_heads,fp.q_stride_n,fp.q_stride_h,fp.window_left,fp.logits_soft_cap,fp.sm_scale,fp.rope_rcp_scale,fp.rope_rcp_theta,(uint32_t)fp.partition_kv,fp.paged_kv.page_size,fp.paged_kv.num_heads,fp.paged_kv.head_dim,fp.paged_kv.batch_size,fp.paged_kv.stride_page,fp.paged_kv.stride_n,fp.paged_kv.stride_h};
+  flat_decode::BatchDecodeWithPagedKVCacheKernel_f16_d128_g1_none<<<dim3(B,H),dim3(16,1,8),flat_decode::SMEM_BYTES>>>(fp.q,fp.q_rope_offset,fp.o,fp.lse,fp.maybe_alibi_slopes,fp.request_indices,fp.kv_tile_indices,fp.o_indptr,fp.kv_chunk_size_ptr,fp.block_valid_mask,fp.paged_kv.k_data,fp.paged_kv.v_data,fp.paged_kv.indices,fp.paged_kv.indptr,fp.paged_kv.last_page_len,fp.paged_kv.rope_pos_offset,sc);
   CK(cudaGetLastError()); CK(cudaDeviceSynchronize());
   std::vector<half> o1(qn),o2(qn); std::vector<float> l1(B*H),l2(B*H);
   CK(cudaMemcpy(o1.data(),do1,qn*2,cudaMemcpyDeviceToHost));CK(cudaMemcpy(o2.data(),do2,qn*2,cudaMemcpyDeviceToHost));
