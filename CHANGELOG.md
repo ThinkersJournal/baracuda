@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.178 - 2026-11-21
+
+R6 review records for the 13 remaining crates (cuda-vocab, cuvs, megatron, transformer-engine, cudf, npp, ozimmu, cutlass-kernels-sys, facade, nvjitlink, build, flashinfer, types-derive); ROADMAP Mamba-1 stale-row fix. Adds `docs/planning/u19/`: a hand-flattened FlashInfer paged decode kernel (f16, d128, group 1) with buffer params plus one scalar struct, and its bitwise harness against the vendored original (sm89, 30 cases, diff_o=0 diff_lse=0). Docs only; no crate code changes.
+
 ## 0.1.0-alpha.177 - 2026-11-21
 
 Documentation, licence-header and CI-only; no code or ABI change.
