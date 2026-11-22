@@ -43,12 +43,77 @@ use unpopped_convert::Frontend;
 /// supplies its own `Frontend` and this crate stops naming `tree_sitter_cuda`
 /// at all" (that crate name was never built; this one is its replacement,
 /// alongside `baracuda-cuda-emit` rather than bundled with it).
+///
+/// `tree-sitter-cuda` 0.21 does not accept an `__align__(..)` specifier between `__shared__` and
+/// the type (`extern __shared__ __align__(alignof(T)) uint8_t smem[];`, FlashInfer's dynamic
+/// shared-memory idiom; issue #420). The parser is therefore handed a copy of `src` in which each
+/// such `__align__(..)` span is blanked to spaces, **byte for byte** (newlines kept), so every node
+/// offset and line number still refers to the caller's original `src`. Only that one span shape is
+/// touched; any other source reaches the parser unchanged.
 pub fn parse_cuda(src: &str) -> Option<Tree> {
     let mut parser = Parser::new();
     parser
         .set_language(&tree_sitter_cuda::LANGUAGE.into())
         .ok()?;
-    parser.parse(src, None)
+    match blank_shared_align(src) {
+        Some(blanked) => parser.parse(blanked, None),
+        None => parser.parse(src, None),
+    }
+}
+
+/// `Some(copy)` with every `__shared__ __align__( .. )` alignment span blanked, or `None` when
+/// the source has none (the common case: no allocation).
+fn blank_shared_align(src: &str) -> Option<Vec<u8>> {
+    const SHARED: &[u8] = b"__shared__";
+    const ALIGN: &[u8] = b"__align__";
+    let b = src.as_bytes();
+    let mut out: Option<Vec<u8>> = None;
+    let mut i = 0;
+    while let Some(off) = find(&b[i..], SHARED) {
+        let mut j = i + off + SHARED.len();
+        while j < b.len() && b[j].is_ascii_whitespace() {
+            j += 1;
+        }
+        if b[j..].starts_with(ALIGN) {
+            let start = j;
+            j += ALIGN.len();
+            while j < b.len() && b[j].is_ascii_whitespace() {
+                j += 1;
+            }
+            if j < b.len() && b[j] == b'(' {
+                let mut depth = 0usize;
+                let mut k = j;
+                while k < b.len() {
+                    match b[k] {
+                        b'(' => depth += 1,
+                        b')' => {
+                            depth -= 1;
+                            if depth == 0 {
+                                break;
+                            }
+                        }
+                        _ => {}
+                    }
+                    k += 1;
+                }
+                if k < b.len() {
+                    let buf = out.get_or_insert_with(|| b.to_vec());
+                    for byte in &mut buf[start..=k] {
+                        if *byte != 10 {
+                            *byte = b' ';
+                        }
+                    }
+                    j = k + 1;
+                }
+            }
+        }
+        i = j;
+    }
+    out
+}
+
+fn find(hay: &[u8], needle: &[u8]) -> Option<usize> {
+    hay.windows(needle.len()).position(|w| w == needle)
 }
 
 /// CUDA constructs that aren't IR-expressible -- their presence means the
