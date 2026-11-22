@@ -608,8 +608,8 @@ Trailblazer-only scope; deferred for future phases:
 ## Phase 50 — Mamba-2 SSD + causal-conv1d (complete; shipped alpha.57)
 
 Opens the state-space LLM class — Mamba-2 8B, Codestral-Mamba,
-Falcon-Mamba, Zamba2. Mamba-1 `selective_scan` deferred to
-Phase 50b pending a v1-specific consumer (Mamba-7B).
+Falcon-Mamba, Zamba2. Mamba-1 `selective_scan` shipped in
+Phase 50b (alpha.57); see that section.
 
 - **causal-conv1d** (Tri Dao, BSD-3-Clause) hand-port at
   `crates/baracuda-kernels-sys/kernels/conv/causal_conv1d_*.cu`.
@@ -636,7 +636,6 @@ Phase 50b pending a v1-specific consumer (Mamba-7B).
 
 Trailblazer-only scope; deferred:
 
-- **Mamba-1 selective_scan** — Phase 50b if a v1-specific consumer asks.
 - **Variable-length sequences** (`cu_seqlens` style).
 - **Paged SSM state** (analog of paged-attention).
 - **Mamba-2 chunk-aware perf kernel**: the FFI accepts `chunk_size`
