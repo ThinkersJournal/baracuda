@@ -1,3 +1,0 @@
-kind: docs: API-freeze census feature-expansion list adds `baracuda-kernels-sys cudnn` (119 macro-made rows missing)
----
-Adds `docs/planning/api-freeze/macro-census-unchecked.md` and one line in `tool/expand-features.txt`. Closing the "not checked" list of the api-freeze README: `baracuda-kernels` (features add 415 items, 0 macro-made), `baracuda-kernels-sys` (features add 369, of which 119 macro-made, all behind `cudnn`: the `pool_cudnn_facade.rs` `*_pool_*_pair!` wrappers, absent from `items.tsv`), `baracuda-cuvs`, `baracuda-flashinfer` and the `baracuda` facade (no macros). Tables not regenerated (PM ruling 2026-11-19). Docs only; verified by nightly `-Zunpretty=expanded` with default vs per-feature builds, no code change.

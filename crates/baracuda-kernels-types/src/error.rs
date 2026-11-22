@@ -64,10 +64,69 @@ pub enum Error {
 
     /// CUTLASS reported an internal error during launch (typically a
     /// kernel-launch failure surfaced through `cudaGetLastError`).
-    #[error("baracuda-cutlass: kernel internal error (status code {0})")]
+    ///
+    /// A code of `1000 + n` means `cudaFuncSetAttribute` failed with CUDA runtime
+    /// error `n`; the message then names it (`1035` -> `cudaErrorInsufficientDriver`).
+    #[error("baracuda-cutlass: kernel internal error (status code {0}{detail})", detail = kernel_status_detail(.0))]
     KernelInternal(i32),
 
     /// Underlying baracuda-driver error (context, stream, etc.).
     #[error("baracuda-cutlass: driver error: {0}")]
     Driver(#[from] baracuda_driver::Error),
+}
+
+/// Name of a CUDA runtime `cudaError_t` that `cudaFuncSetAttribute` (the call behind a `1000 + n`
+/// kernel status) can return. A deliberately small table, kept in this crate because it must not
+/// depend on `baracuda-cuda-sys` (the full table is `cudaError_t::name` there); unknown codes
+/// return `None` and are printed as the bare number.
+pub(crate) const fn cuda_runtime_error_name(code: i32) -> Option<&'static str> {
+    Some(match code {
+        1 => "cudaErrorInvalidValue",
+        2 => "cudaErrorMemoryAllocation",
+        3 => "cudaErrorInitializationError",
+        9 => "cudaErrorInvalidConfiguration",
+        35 => "cudaErrorInsufficientDriver",
+        98 => "cudaErrorInvalidDeviceFunction",
+        100 => "cudaErrorNoDevice",
+        101 => "cudaErrorInvalidDevice",
+        209 => "cudaErrorNoKernelImageForDevice",
+        700 => "cudaErrorIllegalAddress",
+        701 => "cudaErrorLaunchOutOfResources",
+        719 => "cudaErrorLaunchFailure",
+        999 => "cudaErrorUnknown",
+        _ => return None,
+    })
+}
+
+/// The `: CUDA runtime error n = name` suffix of a `KernelInternal` message, empty for a code below
+/// 1000 (a CUTLASS status, not a wrapped CUDA error).
+fn kernel_status_detail(code: &i32) -> String {
+    match code.checked_sub(1000) {
+        Some(n) if n > 0 => match cuda_runtime_error_name(n) {
+            Some(name) => format!(": CUDA runtime error {n} = {name}"),
+            None => format!(": CUDA runtime error {n}"),
+        },
+        _ => String::new(),
+    }
+}
+
+#[cfg(test)]
+mod kernel_status_tests {
+    use super::*;
+
+    #[test]
+    fn code_1035_names_insufficient_driver() {
+        let msg = Error::KernelInternal(1035).to_string();
+        assert!(msg.contains("status code 1035"), "{msg}");
+        assert!(msg.contains("CUDA runtime error 35 = cudaErrorInsufficientDriver"), "{msg}");
+    }
+
+    #[test]
+    fn unknown_wrapped_code_prints_the_number_and_bare_status_is_unchanged() {
+        assert!(Error::KernelInternal(1999).to_string().ends_with("(status code 1999: CUDA runtime error 999 = cudaErrorUnknown)"));
+        assert!(Error::KernelInternal(1888).to_string().ends_with("(status code 1888: CUDA runtime error 888)"));
+        // control: a bare CUTLASS status gets no suffix
+        assert_eq!(Error::KernelInternal(5).to_string(), "baracuda-cutlass: kernel internal error (status code 5)");
+        assert_eq!(Error::KernelInternal(1000).to_string(), "baracuda-cutlass: kernel internal error (status code 1000)");
+    }
 }
