@@ -250,8 +250,7 @@ fn test_gpu(args: &[String]) -> ExitCode {
         // would otherwise surface as a bare `53` (run 45011473589). Name the full code.
         eprintln!(
             "xtask test-gpu: child exit code {exit} (0x{:08X}) does not fit an exit status; low byte {} reported",
-            exit as u32,
-            exit as u8
+            exit as u32, exit as u8
         );
     }
     ExitCode::from(exit as u8)
