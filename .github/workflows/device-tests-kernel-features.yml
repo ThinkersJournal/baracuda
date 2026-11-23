@@ -44,6 +44,16 @@ jobs:
         env:
           BARACUDA_RESULTS_FILE: device-test-results-kernels-bnb-nf4.json
         run: cargo gpu-test -p baracuda-kernels --features bnb_nf4,device-tests --test nf4_gemv_smoke --test nf4_multim_smoke --test nf4_dequant_smoke
+      # The cudnn test binaries link cudnn64_9.dll, which lives in <cuDNN>/bin/<cuda>/x64 and is
+      # not on the runner's PATH (run 45011473589: exit_code -1073741515 = 0xC0000135
+      # STATUS_DLL_NOT_FOUND, 0 tests run). Put the newest bin dir on PATH for the steps that follow.
+      - name: cuDNN runtime DLLs on PATH
+        shell: bash
+        run: |
+          dll=$(ls -d "/c/Program Files/NVIDIA/CUDNN"/v*/bin/*/x64/cudnn64_9.dll 2>/dev/null | sort -V | tail -n 1)
+          test -n "$dll" || { echo "no cudnn64_9.dll under C:\Program Files\NVIDIA\CUDNN"; exit 1; }
+          echo "cudnn runtime: $dll"
+          cygpath -w "$(dirname "$dll")" >> "$GITHUB_PATH"
       - name: cargo gpu-test (baracuda-kernels, cudnn, device-tests)
         shell: bash
         env:
