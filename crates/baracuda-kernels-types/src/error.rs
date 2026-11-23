@@ -118,15 +118,32 @@ mod kernel_status_tests {
     fn code_1035_names_insufficient_driver() {
         let msg = Error::KernelInternal(1035).to_string();
         assert!(msg.contains("status code 1035"), "{msg}");
-        assert!(msg.contains("CUDA runtime error 35 = cudaErrorInsufficientDriver"), "{msg}");
+        assert!(
+            msg.contains("CUDA runtime error 35 = cudaErrorInsufficientDriver"),
+            "{msg}"
+        );
     }
 
     #[test]
     fn unknown_wrapped_code_prints_the_number_and_bare_status_is_unchanged() {
-        assert!(Error::KernelInternal(1999).to_string().ends_with("(status code 1999: CUDA runtime error 999 = cudaErrorUnknown)"));
-        assert!(Error::KernelInternal(1888).to_string().ends_with("(status code 1888: CUDA runtime error 888)"));
+        assert!(
+            Error::KernelInternal(1999)
+                .to_string()
+                .ends_with("(status code 1999: CUDA runtime error 999 = cudaErrorUnknown)")
+        );
+        assert!(
+            Error::KernelInternal(1888)
+                .to_string()
+                .ends_with("(status code 1888: CUDA runtime error 888)")
+        );
         // control: a bare CUTLASS status gets no suffix
-        assert_eq!(Error::KernelInternal(5).to_string(), "baracuda-cutlass: kernel internal error (status code 5)");
-        assert_eq!(Error::KernelInternal(1000).to_string(), "baracuda-cutlass: kernel internal error (status code 1000)");
+        assert_eq!(
+            Error::KernelInternal(5).to_string(),
+            "baracuda-cutlass: kernel internal error (status code 5)"
+        );
+        assert_eq!(
+            Error::KernelInternal(1000).to_string(),
+            "baracuda-cutlass: kernel internal error (status code 1000)"
+        );
     }
 }

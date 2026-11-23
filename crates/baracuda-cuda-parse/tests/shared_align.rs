@@ -6,7 +6,10 @@
 use baracuda_cuda_parse::parse_cuda;
 
 fn has_error(src: &str) -> bool {
-    parse_cuda(src).expect("parser loads").root_node().has_error()
+    parse_cuda(src)
+        .expect("parser loads")
+        .root_node()
+        .has_error()
 }
 
 const ONE_LINE: &str = "template <typename TempStorage>\n__global__ void k(float* a) {\n  extern __shared__ __align__(alignof(TempStorage)) uint8_t smem[];\n  a[0] = 1.0f;\n}\n";
@@ -26,7 +29,9 @@ fn extern_shared_align_split_over_three_lines_parses_without_error() {
 #[test]
 fn controls_plain_shared_parses_and_broken_source_still_errors() {
     // control 1: the same kernel without __align__ parses clean (the query can say "no error").
-    assert!(!has_error("__global__ void k(float* a) {\n  extern __shared__ uint8_t smem[];\n  a[0] = 1.0f;\n}\n"));
+    assert!(!has_error(
+        "__global__ void k(float* a) {\n  extern __shared__ uint8_t smem[];\n  a[0] = 1.0f;\n}\n"
+    ));
     // control 2: has_error is live (genuinely broken source is still reported, the workaround hides nothing else).
     assert!(has_error("__global__ void k(float* a) { a[0] = ; }"));
 }
@@ -36,7 +41,10 @@ fn workaround_does_not_move_byte_offsets() {
     // The declaration's following statement must sit at the same byte offset the ORIGINAL source has.
     let tree = parse_cuda(ONE_LINE).expect("parser loads");
     let at = ONE_LINE.find("a[0] = 1.0f;").unwrap();
-    let node = tree.root_node().descendant_for_byte_range(at, at + 1).unwrap();
+    let node = tree
+        .root_node()
+        .descendant_for_byte_range(at, at + 1)
+        .unwrap();
     assert_eq!(&ONE_LINE[node.start_byte()..node.end_byte()].trim(), &"a");
 }
 
@@ -44,14 +52,20 @@ fn workaround_does_not_move_byte_offsets() {
 /// (sampling.cuh:303, 430, 509, 739, 787-789). Other lines of the file are out of scope here.
 #[test]
 fn vendored_flashinfer_sampling_has_no_error_on_its_smem_declarations() {
-    let src = include_str!("../../baracuda-kernels-sys/vendor/flashinfer/include/flashinfer/sampling.cuh");
+    let src = include_str!(
+        "../../baracuda-kernels-sys/vendor/flashinfer/include/flashinfer/sampling.cuh"
+    );
     let align_lines: Vec<usize> = src
         .lines()
         .enumerate()
         .filter(|(_, l)| l.contains("__align__") && !l.trim_start().starts_with("//"))
         .map(|(i, _)| i)
         .collect();
-    assert!(align_lines.len() >= 6, "control: expected the declaration lines, found {}", align_lines.len());
+    assert!(
+        align_lines.len() >= 6,
+        "control: expected the declaration lines, found {}",
+        align_lines.len()
+    );
     let tree = parse_cuda(src).expect("parser loads");
     let mut bad = Vec::new();
     let mut stack = vec![tree.root_node()];
@@ -66,5 +80,8 @@ fn vendored_flashinfer_sampling_has_no_error_on_its_smem_declarations() {
         let mut c = n.walk();
         stack.extend(n.children(&mut c));
     }
-    assert!(bad.is_empty(), "ERROR/MISSING nodes on __align__ lines (1-based start,end): {bad:?}");
+    assert!(
+        bad.is_empty(),
+        "ERROR/MISSING nodes on __align__ lines (1-based start,end): {bad:?}"
+    );
 }
