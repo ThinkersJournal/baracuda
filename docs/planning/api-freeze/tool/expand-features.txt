@@ -1,3 +1,4 @@
 baracuda-cuvs-sys cuvs
 baracuda-tensorrt-builder shim
 baracuda-tensorrt shim
+baracuda-kernels-sys cudnn

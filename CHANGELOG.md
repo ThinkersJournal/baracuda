@@ -16,6 +16,14 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.179 - 2026-11-22
+
+`Error::KernelInternal(1035)` now prints `status code 1035: CUDA runtime error 35 = cudaErrorInsufficientDriver` (a small named table in `baracuda-kernels-types` for the codes `cudaFuncSetAttribute` returns; unknown codes print the bare number, a bare CUTLASS status below 1000 prints as before). Added after self-hosted run 44939649104 failed `tf32_gemm_rcr_sm80_64_64_32` with an unnamed `KernelInternal(1035)`; the test passes 7/7 locally on the same machine and the runner-side cause is not established. Verified by 2 unit tests (35 -> name, unknown code, bare status control) and a mutation (renaming 35's entry fails the test).
+
+`baracuda_cuda_parse::parse_cuda` now accepts `extern __shared__ __align__(alignof(T)) uint8_t smem[];` (issue #420, FlashInfer `sampling.cuh`, 10 kernels): `tree-sitter-cuda` 0.21 rejects it, so the `__align__(..)` span after `__shared__` is blanked to spaces byte for byte (newlines kept) in a copy handed to the parser; offsets and lines still refer to the caller's source, any other source is parsed unchanged. 5 tests (one-line and 3-line split forms, a real-file check of `sampling.cuh`'s declarations, offset preservation, controls), failing before the change; disabling the normaliser fails 3 of them.
+
+Docs: adds `docs/planning/api-freeze/macro-census-unchecked.md` and one line in `tool/expand-features.txt`, closing the api-freeze README's "not checked" list: `baracuda-kernels` (features add 415 items, 0 macro-made), `baracuda-kernels-sys` (features add 369, 119 macro-made, all behind `cudnn`: the `pool_cudnn_facade.rs` `*_pool_*_pair!` wrappers, absent from `items.tsv`), `baracuda-cuvs`, `baracuda-flashinfer` and the `baracuda` facade (no macros). Census tables not regenerated (PM ruling 2026-11-19).
+
 ## 0.1.0-alpha.178 - 2026-11-21
 
 R6 review records for the 13 remaining crates (cuda-vocab, cuvs, megatron, transformer-engine, cudf, npp, ozimmu, cutlass-kernels-sys, facade, nvjitlink, build, flashinfer, types-derive); ROADMAP Mamba-1 stale-row fix. Adds `docs/planning/u19/`: a hand-flattened FlashInfer paged decode kernel (f16, d128, group 1) with buffer params plus one scalar struct, and its bitwise harness against the vendored original (sm89, 30 cases, diff_o=0 diff_lse=0). Docs only; no crate code changes.
