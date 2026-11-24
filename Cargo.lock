@@ -1139,21 +1139,21 @@ checksum = "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48"
 
 [[package]]
 name = "fireline-announce"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63012ca1bf1264c5998b1b1bdcc541f86368ff65df85d5d2051756960f48d9f6"
+checksum = "85ab7e623eec6118421d3531883059d4cc83c7a13e5724948866a77fc46443e8"
 
 [[package]]
 name = "fireline-grammar"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9aea092cd0269cece1eb0f6073f602c22861fd904a7bfb773308d39b714d7ec"
+checksum = "3018ed83e1b97d3ecc7c087396efdd32c611ebe9abb4a6c894ee637477f047c4"
 
 [[package]]
 name = "fireline-synth"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "55337529505e4e967a49d17ed068b9a69ed21331f8aa824a8acf5413b7296873"
+checksum = "41499287325d2d056b9d0f2dd34e02656b563c6119b5280b739f5611edbbcf5e"
 dependencies = [
  "fireline-grammar",
  "unpopped-vocab",
