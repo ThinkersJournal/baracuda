@@ -63,9 +63,8 @@ use unpopped::backend::{GeneratedKernel, LowerError, Spelling};
 use unpopped::exec::{ExecId, Extent, MemorySpace, Scope};
 use unpopped::ir::{BinaryOp, ReduceOp, ScalarExpr};
 use unpopped::kernel::{
-    CacheHint,
-    Block, BufferRole, CollectiveKind, KernelFn, ParamKind, Place, ShuffleMode, Stmt, VoteKind,
-    check_kernel,
+    Block, BufferRole, CacheHint, CollectiveKind, KernelFn, ParamKind, Place, ShuffleMode, Stmt,
+    VoteKind, check_kernel,
 };
 use unpopped::kernel_interface::{KernelInterface, LaunchBounds, ParamsBlock, ParamsBlockField};
 use unpopped::types::{Ty, infer_ty_in};

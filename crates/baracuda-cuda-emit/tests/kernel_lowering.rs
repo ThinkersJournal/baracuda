@@ -10,8 +10,8 @@ use unpopped::backend::{Backend, LowerError};
 use unpopped::exec::{AllocDecl, ExecId, Extent, LaunchShape, MemorySpace};
 use unpopped::ir::{BinaryOp, ScalarExpr};
 use unpopped::kernel::{
-    Block, CacheHint, BufferRole, CollectiveKind, KernelFn, LocalDecl, Param, Place, ShuffleMode, Stmt,
-    VoteKind, check_kernel,
+    Block, BufferRole, CacheHint, CollectiveKind, KernelFn, LocalDecl, Param, Place, ShuffleMode,
+    Stmt, VoteKind, check_kernel,
 };
 use unpopped_vocab::ElementKind;
 
@@ -384,18 +384,32 @@ fn async_source(valid: Option<ScalarExpr>, cache: CacheHint, l2: Option<u32>) ->
 fn cp_async_valid_emits_the_src_size_zero_fill_form() {
     let src = async_source(Some(ScalarExpr::ConstInt(0, I32)), CacheHint::Auto, None);
     // the 4th operand is src-size in bytes; without it the hardware reads all `cp-size` bytes and zero-fills nothing
-    assert!(src.contains("[%0], [%1], %2, %3;"), "no src-size operand:
-{src}");
-    assert!(src.contains("\"r\"(_n)"), "src-size not passed:
-{src}");
+    assert!(
+        src.contains("[%0], [%1], %2, %3;"),
+        "no src-size operand:
+{src}"
+    );
+    assert!(
+        src.contains("\"r\"(_n)"),
+        "src-size not passed:
+{src}"
+    );
     assert!(src.contains("unsigned _n = (unsigned)_v * 4u;"), "{src}");
     // `valid` 0 reads nothing: the source place (which traps when out of range) is only evaluated when _v > 0
-    let guard = src.find("if (_v > 0) {").expect("source place not guarded by _v > 0");
+    let guard = src
+        .find("if (_v > 0) {")
+        .expect("source place not guarded by _v > 0");
     let read = src.rfind("_g = &p0[").expect("source address assigned");
-    assert!(guard < read, "source place evaluated outside the _v > 0 guard:
-{src}");
-    assert!(src.contains("_v > 1) __trap();"), "valid above elems must trap:
-{src}");
+    assert!(
+        guard < read,
+        "source place evaluated outside the _v > 0 guard:
+{src}"
+    );
+    assert!(
+        src.contains("_v > 1) __trap();"),
+        "valid above elems must trap:
+{src}"
+    );
 }
 
 #[test]
@@ -403,8 +417,11 @@ fn cp_async_without_valid_has_no_src_size_operand() {
     // the seeded-miss counterpart: the default form must stay the 3 operand copy
     let src = async_source(None, CacheHint::Auto, None);
     assert!(src.contains("[%0], [%1], %2;"), "{src}");
-    assert!(!src.contains("%3"), "src-size leaked into a copy that has no `valid`:
-{src}");
+    assert!(
+        !src.contains("%3"),
+        "src-size leaked into a copy that has no `valid`:
+{src}"
+    );
 }
 
 #[test]
@@ -412,15 +429,25 @@ fn cp_async_cache_operator_and_l2_prefetch_are_emitted_or_refused() {
     // `.cg` is 16 byte copies only and an L2 prefetch is 64/128/256: unpopped's checker refuses both first; the emitter
     // refuses them too (a backstop), so a kernel that skips the checker is not silently lowered to `.ca` / no prefetch.
     for (cache, l2, want) in [
-        (CacheHint::Global, None, "`.cg` cache operator copies 16 bytes only"),
+        (
+            CacheHint::Global,
+            None,
+            "`.cg` cache operator copies 16 bytes only",
+        ),
         (CacheHint::Auto, Some(100), "L2 prefetch of 100 bytes"),
     ] {
         let k = async_kernel(async_with(None, cache, l2));
         assert!(check_kernel(&k).is_err(), "the checker accepted {want}");
-        assert!(detail(Cuda.lower_kernel(&k)).contains("ill-formed"), "{want}");
+        assert!(
+            detail(Cuda.lower_kernel(&k)).contains("ill-formed"),
+            "{want}"
+        );
     }
     let src = async_source(None, CacheHint::All, Some(128));
-    assert!(src.contains("cp.async.ca.shared.global.L2::128B [%0]"), "{src}");
+    assert!(
+        src.contains("cp.async.ca.shared.global.L2::128B [%0]"),
+        "{src}"
+    );
 }
 
 /// One warp: every lane contributes 1.0 and receives the warp's sum.
