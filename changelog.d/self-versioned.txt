@@ -1,0 +1,4 @@
+# emitter crates carry the Unpopped version they work with (CireSnave one-version exception)
+crates/baracuda-cuda-emit/Cargo.toml
+crates/baracuda-cuda-parse/Cargo.toml
+crates/baracuda-cuda-seam/Cargo.toml
