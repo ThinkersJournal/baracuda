@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.182 - 2026-11-23
+
+`unpopped`, `unpopped-vocab`, `unpopped-convert`, `unpopped-cpu-c` go from `~0.47.0` to `~0.56.5`, `fishstringer-slang-*` from `~0.3.0` to `~0.4.3`. `fireline-grammar`/`-synth`/`-announce` go from `~0.5` to `~0.6` (0.6.0 is on unpopped-vocab `~0.56.0`, so one vocab version in the graph). `baracuda-cuda-emit` now emits `Stmt::CopyAsync`'s `valid` (the `cp.async` src-size zero-fill form; `valid` 0 reads nothing and the source place is not evaluated), the `.ca`/`.cg` operator and `.L2::NB` prefetch, and names `Stmt::For`'s `unroll` hint instead of ignoring it with `..`. Measured with DOCS_RS=1 stubs and no CUDA: `-types`, `-kernels-types`, `-cuda-vocab`, `-cuda-parse`, `-cuda-emit` check and test green (emit: 12 kernel_lowering tests incl. 3 new text-level pins of the emitted instruction; no GPU ran; a mutation dropping `valid` fails the new pin). `baracuda-cuda-seam` (17 unit + 4 seam_pin tests, pin updated to ~0.6; no source change needed) and `baracuda-seam` (8) also green under DOCS_RS=1. NOT built: the forge/CUDA crates (`baracuda-kernels-sys`).
+
 ## 0.1.0-alpha.181 - 2026-11-23
 
 Adds `tools/instantiation-list.py`, which runs `nvcc -E` on every `.cu` in one kernels-sys directory and prints a TSV of (symbol, launcher, template args, source file, site line), plus a ROADMAP row. Run over `kernels/elementwise` at main 012ec162a: 220 `.cu`, 1515 symbols, 0 duplicates, 12 without a recoverable launcher (affine f16/bf16, prelu); other directories not run. No crate code changes.
