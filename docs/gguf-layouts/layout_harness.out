@@ -1,0 +1,47 @@
+STRUCT block_ctl sizeof=18 alignof=2
+FIELD block_ctl d offset=0 elem=half count=1 bytes=2
+FIELD block_ctl qs offset=2 elem=uint8_t count=16 bytes=16
+STRUCT block_q4_0 sizeof=18 alignof=2
+FIELD block_q4_0 d offset=0 elem=half count=1 bytes=2
+FIELD block_q4_0 qs offset=2 elem=uint8_t count=16 bytes=16
+STRUCT block_q4_1 sizeof=20 alignof=4
+FIELD block_q4_1 dm offset=0 elem=half2 count=1 bytes=4
+FIELD block_q4_1 qs offset=4 elem=uint8_t count=16 bytes=16
+STRUCT block_q5_0 sizeof=22 alignof=2
+FIELD block_q5_0 d offset=0 elem=half count=1 bytes=2
+FIELD block_q5_0 qh offset=2 elem=uint8_t count=4 bytes=4
+FIELD block_q5_0 qs offset=6 elem=uint8_t count=16 bytes=16
+STRUCT block_q5_1 sizeof=24 alignof=4
+FIELD block_q5_1 dm offset=0 elem=half2 count=1 bytes=4
+FIELD block_q5_1 qh offset=4 elem=uint8_t count=4 bytes=4
+FIELD block_q5_1 qs offset=8 elem=uint8_t count=16 bytes=16
+STRUCT block_q8_0 sizeof=34 alignof=2
+FIELD block_q8_0 d offset=0 elem=half count=1 bytes=2
+FIELD block_q8_0 qs offset=2 elem=int8_t count=32 bytes=32
+STRUCT block_q2_K sizeof=84 alignof=4
+FIELD block_q2_K scales offset=0 elem=uint8_t count=16 bytes=16
+FIELD block_q2_K qs offset=16 elem=uint8_t count=64 bytes=64
+FIELD block_q2_K dm offset=80 elem=half2 count=1 bytes=4
+STRUCT block_q3_K sizeof=110 alignof=2
+FIELD block_q3_K hmask offset=0 elem=uint8_t count=32 bytes=32
+FIELD block_q3_K qs offset=32 elem=uint8_t count=64 bytes=64
+FIELD block_q3_K scales offset=96 elem=uint8_t count=12 bytes=12
+FIELD block_q3_K d offset=108 elem=half count=1 bytes=2
+STRUCT block_q4_K sizeof=144 alignof=4
+FIELD block_q4_K dm offset=0 elem=half2 count=1 bytes=4
+FIELD block_q4_K scales offset=4 elem=uint8_t count=12 bytes=12
+FIELD block_q4_K qs offset=16 elem=uint8_t count=128 bytes=128
+STRUCT block_q5_K sizeof=176 alignof=4
+FIELD block_q5_K dm offset=0 elem=half2 count=1 bytes=4
+FIELD block_q5_K scales offset=4 elem=uint8_t count=12 bytes=12
+FIELD block_q5_K qh offset=16 elem=uint8_t count=32 bytes=32
+FIELD block_q5_K qs offset=48 elem=uint8_t count=128 bytes=128
+STRUCT block_q6_K sizeof=210 alignof=2
+FIELD block_q6_K ql offset=0 elem=uint8_t count=128 bytes=128
+FIELD block_q6_K qh offset=128 elem=uint8_t count=64 bytes=64
+FIELD block_q6_K scales offset=192 elem=int8_t count=16 bytes=16
+FIELD block_q6_K d offset=208 elem=half count=1 bytes=2
+STRUCT block_q8_K sizeof=292 alignof=4
+FIELD block_q8_K d offset=0 elem=float count=1 bytes=4
+FIELD block_q8_K qs offset=4 elem=int8_t count=256 bytes=256
+FIELD block_q8_K bsums offset=260 elem=int16_t count=16 bytes=32

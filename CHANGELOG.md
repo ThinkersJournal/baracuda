@@ -16,6 +16,12 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.180 - 2026-11-23
+
+`docs/gguf-layouts/` holds a compiled nvcc harness (`layout_harness.cu`), its output and a table of `sizeof`/`alignof`/`offsetof` for every field of the eleven GGUF block structs in `baracuda_gguf.cuh` (q4_0, q4_1, q5_0, q5_1, q8_0, q2_K, q3_K, q4_K, q5_K, q6_K, q8_K), for Unpopped's caller-stated `StructLayout`s. Verified by running the harness under nvcc 13.3.33 with a control struct (`{half d; uint8_t qs[16]}`: 18 bytes, `d`@0, `qs`@2) predicted before the run.
+
+CI: the kernel-feature-sets workflow's cudnn step has never run a test: scheduled run 45011473589 built for 61 minutes, then every cudnn test binary died at once with `exit_code -1073741515` (0xC0000135 `STATUS_DLL_NOT_FOUND`: `cudnn64_9.dll` is in `<cuDNN>/bin/<cuda>/x64`, not on the runner PATH), 0 passed, which `xtask` showed as a bare `53` (the NTSTATUS truncated to its low byte). The workflow now puts the newest cuDNN `bin` directory on PATH before that step, and `xtask test-gpu` prints the full code in hex when it does not fit an exit status. Not yet verified on the runner: the next scheduled run is the test.
+
 ## 0.1.0-alpha.179 - 2026-11-22
 
 `Error::KernelInternal(1035)` now prints `status code 1035: CUDA runtime error 35 = cudaErrorInsufficientDriver` (a small named table in `baracuda-kernels-types` for the codes `cudaFuncSetAttribute` returns; unknown codes print the bare number, a bare CUTLASS status below 1000 prints as before). Added after self-hosted run 44939649104 failed `tf32_gemm_rcr_sm80_64_64_32` with an unnamed `KernelInternal(1035)`; the test passes 7/7 locally on the same machine and the runner-side cause is not established. Verified by 2 unit tests (35 -> name, unknown code, bare status control) and a mutation (renaming 35's entry fails the test).
