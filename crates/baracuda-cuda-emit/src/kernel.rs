@@ -63,6 +63,7 @@ use unpopped::backend::{GeneratedKernel, LowerError, Spelling};
 use unpopped::exec::{ExecId, Extent, MemorySpace, Scope};
 use unpopped::ir::{BinaryOp, ReduceOp, ScalarExpr};
 use unpopped::kernel::{
+    CacheHint,
     Block, BufferRole, CollectiveKind, KernelFn, ParamKind, Place, ShuffleMode, Stmt, VoteKind,
     check_kernel,
 };
@@ -451,7 +452,19 @@ impl Cx<'_> {
     /// `cp.async` of `elems` consecutive elements, global to `Shared` (PTX `cp.async.ca`; sm_80 or newer). Exact, so every
     /// condition the hardware needs that the IR does not guarantee is checked and traps: bounds of the whole run, a unit
     /// innermost stride on the source, and the natural alignment of both addresses.
-    fn copy_async(&mut self, dst: &Place, src: &Place, elems: u32) -> Result<(), LowerError> {
+    /// `cp.async` of `elems` elements (ROADMAP U13). `valid` (`src-size`): only that many source elements are read and the rest
+    /// of the destination is zero-filled by the hardware; `0` reads nothing, so the source place is then NOT evaluated (it
+    /// may point anywhere, even out of range). `cache`: `.ca` (default) or `.cg` (16 byte copies only). `l2_prefetch`:
+    /// `.L2::64B`, `128B` or `256B`.
+    fn copy_async(
+        &mut self,
+        dst: &Place,
+        src: &Place,
+        elems: u32,
+        valid: Option<&ScalarExpr>,
+        cache: CacheHint,
+        l2_prefetch: Option<u32>,
+    ) -> Result<(), LowerError> {
         let (Place::Alloc { alloc, index }, Place::Logical { buffer, coords }) = (dst, src) else {
             return Err(refuse(format!(
                 "kernel `{}`: `CopyAsync` between these places is not lowered (a `Shared` allocation from a global buffer is)",
@@ -459,13 +472,40 @@ impl Cx<'_> {
             )));
         };
         let elem = self.k.allocs[*alloc as usize].elem;
-        let bytes = size_align(elem).map_or(0, |s| s * elems);
+        let esize = size_align(elem).unwrap_or(0);
+        let bytes = esize * elems;
         if !matches!(bytes, 4 | 8 | 16) {
             return Err(refuse(format!(
                 "kernel `{}`: `CopyAsync` of {elems} x {elem:?} is {bytes} bytes (cp.async moves 4, 8 or 16)",
                 self.k.name
             )));
         }
+        let op = match cache {
+            CacheHint::Auto | CacheHint::All => "ca",
+            CacheHint::Global if bytes == 16 => "cg",
+            CacheHint::Global => {
+                return Err(refuse(format!(
+                    "kernel `{}`: `CopyAsync` with the `.cg` cache operator copies 16 bytes only, this is {bytes}",
+                    self.k.name
+                )));
+            }
+            _ => {
+                return Err(refuse(format!(
+                    "kernel `{}`: `CopyAsync` cache hint {cache:?} is not lowered",
+                    self.k.name
+                )));
+            }
+        };
+        let prefetch = match l2_prefetch {
+            None => String::new(),
+            Some(n @ (64 | 128 | 256)) => format!(".L2::{n}B"),
+            Some(n) => {
+                return Err(refuse(format!(
+                    "kernel `{}`: `CopyAsync` L2 prefetch of {n} bytes (cp.async takes 64, 128 or 256)",
+                    self.k.name
+                )));
+            }
+        };
         let Extent::Static(n) = self.k.allocs[*alloc as usize].extent else {
             return Err(refuse(format!(
                 "kernel `{}`: `CopyAsync` into a dynamic allocation is not lowered yet",
@@ -477,27 +517,61 @@ impl Cx<'_> {
         let tn = type_name(elem).unwrap_or_default();
         self.line("{");
         self.depth += 1;
-        let g = self.place(src)?;
-        let s = self.place(dst)?;
-        if elems > 1 {
+        if let Some(v) = valid {
+            // Predicated copy: `_v` source elements are read, the rest of the destination is zero-filled by `src-size`.
+            let s = self.place(dst)?;
+            let ve = self.ex(v)?;
+            self.line(&format!("long long _v = (long long)({ve});"));
+            self.line(&format!("if (_v < 0 || _v > {elems}) __trap();"));
+            self.line(&format!("unsigned _n = (unsigned)_v * {esize}u;"));
+            self.line(&format!(
+                "const {tn}* _g = &p{buffer}[0]; unsigned _s = (unsigned)__cvta_generic_to_shared(&{s});"
+            ));
+            self.line(&format!("if (_s & {}) __trap();", bytes - 1));
+            // `_v == 0` reads nothing: the source place is not evaluated (it may be out of range).
+            self.line("if (_v > 0) {");
+            self.depth += 1;
+            let g = self.place(src)?;
             let last = coords.len() - 1;
             let c = self.ex(&coords[last])?;
             self.line(&format!(
-                "if (a.b{buffer}_stride[{last}] != 1 || (long long)({c}) + {elems} > a.b{buffer}_shape[{last}]) __trap();"
+                "if (a.b{buffer}_stride[{last}] != 1 || (long long)({c}) + _v > a.b{buffer}_shape[{last}]) __trap();"
             ));
+            self.line(&format!("_g = &{g};"));
+            self.line(&format!(
+                "if (((unsigned long long)_g) & {}) __trap();",
+                bytes - 1
+            ));
+            self.depth -= 1;
+            self.line("}");
             let i = self.ex(index)?;
             self.line(&format!("if ((long long)({i}) + {elems} > {n}) __trap();"));
+            self.line(&format!(
+                "asm volatile(\"cp.async.{op}.shared.global{prefetch} [%0], [%1], %2, %3;\" :: \"r\"(_s), \"l\"(_g), \"n\"({bytes}), \"r\"(_n) : \"memory\");"
+            ));
+        } else {
+            let g = self.place(src)?;
+            let s = self.place(dst)?;
+            if elems > 1 {
+                let last = coords.len() - 1;
+                let c = self.ex(&coords[last])?;
+                self.line(&format!(
+                    "if (a.b{buffer}_stride[{last}] != 1 || (long long)({c}) + {elems} > a.b{buffer}_shape[{last}]) __trap();"
+                ));
+                let i = self.ex(index)?;
+                self.line(&format!("if ((long long)({i}) + {elems} > {n}) __trap();"));
+            }
+            self.line(&format!(
+                "const {tn}* _g = &{g}; unsigned _s = (unsigned)__cvta_generic_to_shared(&{s});"
+            ));
+            self.line(&format!(
+                "if ((((unsigned long long)_g) | (unsigned long long)_s) & {}) __trap();",
+                bytes - 1
+            ));
+            self.line(&format!(
+                "asm volatile(\"cp.async.{op}.shared.global{prefetch} [%0], [%1], %2;\" :: \"r\"(_s), \"l\"(_g), \"n\"({bytes}) : \"memory\");"
+            ));
         }
-        self.line(&format!(
-            "const {tn}* _g = &{g}; unsigned _s = (unsigned)__cvta_generic_to_shared(&{s});"
-        ));
-        self.line(&format!(
-            "if ((((unsigned long long)_g) | (unsigned long long)_s) & {}) __trap();",
-            bytes - 1
-        ));
-        self.line(&format!(
-            "asm volatile(\"cp.async.ca.shared.global [%0], [%1], %2;\" :: \"r\"(_s), \"l\"(_g), \"n\"({bytes}) : \"memory\");"
-        ));
         self.depth -= 1;
         self.line("}");
         Ok(())
@@ -742,7 +816,9 @@ impl Cx<'_> {
                 end,
                 step,
                 body,
-                ..
+                // `unroll` is a non-semantic hint (ROADMAP U18) that this emitter does not emit yet; named, not `..`,
+                // so the next field unpopped adds to `Stmt::For` is a compile error here again.
+                unroll: _,
             } => {
                 let t = self.local_ctype(*local)?;
                 let ety = self.k.locals[*local as usize].elem;
@@ -774,8 +850,14 @@ impl Cx<'_> {
                 self.scope(body)?;
                 self.line("}");
             }
-            // ATTEMPT ONLY, NOT MERGEABLE: `valid` (zero-fill), `cache`, `l2_prefetch` are NOT emitted yet (unpopped 0.56 U13).
-            Stmt::CopyAsync { dst, src, elems, .. } => self.copy_async(dst, src, *elems)?,
+            Stmt::CopyAsync {
+                dst,
+                src,
+                elems,
+                valid,
+                cache,
+                l2_prefetch,
+            } => self.copy_async(dst, src, *elems, valid.as_ref(), *cache, *l2_prefetch)?,
             Stmt::AsyncCommit => {
                 self.async_used = true;
                 self.flagged = true;
