@@ -53,9 +53,9 @@ baracuda-nvrtc = { workspace = true, optional = true }
 # a number here becomes a citation with no invalidation the next time either bumps.)
 # Test-only: no lib code depends on them. Kept as registry deps (not path) so
 # `cargo package` ships a tree that resolves for downloaders.
-unpopped-cpu-c = "~0.47.0"
-fishstringer-slang-emit = "~0.3.0"
-fishstringer-slang-parse = "~0.3.0"
+unpopped-cpu-c = "~0.56.5"
+fishstringer-slang-emit = "~0.4.3"
+fishstringer-slang-parse = "~0.4.3"
 # Runs the emitted Fma / Cast / Bitcast kernels on the device (`tests/typed_exprs.rs`).
 baracuda-driver = { workspace = true, features = ["test-support"] }
 # The CUDA `Frontend` for `tests/convert.rs` (unpopped 0.30 removed it from `unpopped::convert`).
