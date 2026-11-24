@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.181 - 2026-11-23
+
+Adds `tools/instantiation-list.py`, which runs `nvcc -E` on every `.cu` in one kernels-sys directory and prints a TSV of (symbol, launcher, template args, source file, site line), plus a ROADMAP row. Run over `kernels/elementwise` at main 012ec162a: 220 `.cu`, 1515 symbols, 0 duplicates, 12 without a recoverable launcher (affine f16/bf16, prelu); other directories not run. No crate code changes.
+
 ## 0.1.0-alpha.180 - 2026-11-23
 
 `docs/gguf-layouts/` holds a compiled nvcc harness (`layout_harness.cu`), its output and a table of `sizeof`/`alignof`/`offsetof` for every field of the eleven GGUF block structs in `baracuda_gguf.cuh` (q4_0, q4_1, q5_0, q5_1, q8_0, q2_K, q3_K, q4_K, q5_K, q6_K, q8_K), for Unpopped's caller-stated `StructLayout`s. Verified by running the harness under nvcc 13.3.33 with a control struct (`{half d; uint8_t qs[16]}`: 18 bytes, `d`@0, `qs`@2) predicted before the run.
