@@ -742,6 +742,7 @@ impl Cx<'_> {
                 end,
                 step,
                 body,
+                ..
             } => {
                 let t = self.local_ctype(*local)?;
                 let ety = self.k.locals[*local as usize].elem;
@@ -773,7 +774,8 @@ impl Cx<'_> {
                 self.scope(body)?;
                 self.line("}");
             }
-            Stmt::CopyAsync { dst, src, elems } => self.copy_async(dst, src, *elems)?,
+            // ATTEMPT ONLY, NOT MERGEABLE: `valid` (zero-fill), `cache`, `l2_prefetch` are NOT emitted yet (unpopped 0.56 U13).
+            Stmt::CopyAsync { dst, src, elems, .. } => self.copy_async(dst, src, *elems)?,
             Stmt::AsyncCommit => {
                 self.async_used = true;
                 self.flagged = true;
