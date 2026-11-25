@@ -388,7 +388,7 @@ Block-bitonic sort + topk: one block per row. `row_len ≤ SORT_MAX_ROW = 1024`,
 | `SortPlan<T>` | Bespoke | FW: `{f32, f64, i32, i64}` | `row_len ≤ 1024` | ✓ | ✓ via `SortBackwardPlan` (`{f32, f64}` only) | Block-bitonic. |
 | `ArgsortPlan<T>` | Bespoke | FW: `{f32, f64, i32, i64}` | any `row_len`: `≤ 1024` block-bitonic (no workspace), `> 1024` multi-block CUB radix (needs a workspace) | ✓ | N/A | Returns sorted indices (`argsort.rs:9-15`). |
 | `MsortPlan<T>` | Bespoke | `{f32, f64}` | `row_len ≤ 1024` | ✓ | ✓ via `MsortBackwardPlan` | Multi-segment sort. |
-| `TopkPlan<T>` | Bespoke | `{f32, f64}` | `k ≤ 64`, `row_len ≤ 1024` | ✓ | ✓ via `TopkBackwardPlan` | |
+| `TopkPlan<T>` | Bespoke | `{f32, f64}` | `k ≤ 64`, `row_len ≤ 1024` | ✓ | ✓ via `TopkBackwardPlan` | Order contract: **NaN is the largest value**, ties break to the **lowest index** (torch.topk / Fuel CPU convention). Up to alpha.186 a NaN in a row could drop a larger finite value and ties were unordered (device test `tests/topk_nan_ties.rs`). Declines: `f16`/`bf16`, `k > 64`, `row_len > 1024`. |
 | `KthvaluePlan<T>` | Bespoke | `{f32, f64}` | `k+1 ≤ 64`, `row_len ≤ 1024` | ✓ | ✓ via `KthvalueBackwardPlan` | |
 | `UniquePlan<T>` | Bespoke | `{f32, f64, i32}` | per-row | ✓ | N/A | Set-valued op. |
 | `UniqueConsecutivePlan<T>` | Bespoke | `{f32, f64, i32}` | per-row | ✓ | N/A | Run-length unique. |
