@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.185 - 2026-11-24
+
+The three emitter crates carry the Unpopped version they work with (one-version exception) and move to 0.56.12; their `unpopped`, `unpopped-vocab`, `unpopped-convert` and `unpopped-cpu-c` dependencies move to the published `~0.56.12` line. No source change. Supersedes the unpublished `baracuda-cuda-seam` 0.56.6.
+
 ## 0.1.0-alpha.184 - 2026-11-24
 
 `baracuda-cuda-seam` (`fireline-grammar`, `fireline-synth`) and `baracuda-seam` (`fireline-announce`) move to FireLine 0.7.0 (strict DVRS reader, contract v4/v5, op_facts; 0.7.0 is on unpopped-vocab `~0.56.0`). No seam source change was needed; `seam_pin` updated to `~0.7`. Measured with `DOCS_RS=1`, no CUDA, no GPU: `cargo check -p baracuda-cuda-seam -p baracuda-seam --all-targets` 0 errors; `cargo test` of both: 17 unit + 4 `seam_pin` and 8 pass; `tools/kiss-ref-diff` `cargo check --locked` ok (its lock needs no change). Not built: the forge/CUDA crates. `baracuda-cuda-seam` goes 0.56.5 -> 0.56.6 (published 0.56.5 requires fireline `~0.6`; emit and parse stay 0.56.5, content unchanged; listed in `changelog.d/self-versioned.txt`).
