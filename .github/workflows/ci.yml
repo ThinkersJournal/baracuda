@@ -218,7 +218,8 @@ jobs:
           [ -n "$WSVER" ] || { echo "cannot derive the workspace version"; exit 1; }
           cargo doc --locked --no-deps \
           -p baracuda-cuda-emit \
-          -p baracuda-hip-emit \n          -p baracuda-cuda-seam \
+          -p baracuda-hip-emit \
+          -p baracuda-cuda-seam \
           -p baracuda-cuda-vocab \
           -p baracuda-cuda-parse \
           -p baracuda-types@$WSVER \
