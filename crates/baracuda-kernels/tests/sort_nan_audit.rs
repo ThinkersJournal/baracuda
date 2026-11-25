@@ -259,8 +259,13 @@ fn audit(
             for (r, row) in rows.iter().enumerate() {
                 for (tag, got) in [("f32", &g32[r]), ("f64", &g64[r])] {
                     if let Some(v) = violation(row, got, descending, stable) {
+                        let kind = if row.iter().any(|x| x.is_nan()) {
+                            "[nan-row]"
+                        } else {
+                            "[no-nan-row]"
+                        };
                         out.push(format!(
-                            "{name} {tag} n={n} descending={descending} row {r}: {v}"
+                            "{kind} {name} {tag} n={n} descending={descending} row {r}: {v}"
                         ));
                     }
                 }
@@ -271,7 +276,18 @@ fn audit(
 }
 
 fn report(name: &str, v: Vec<String>) {
-    eprintln!("sort_nan_audit: {name}: {} violation(s)", v.len());
+    let with_nan = v.iter().filter(|m| m.starts_with("[nan-row]")).count();
+    eprintln!(
+        "sort_nan_audit: {name}: {} violation(s): {with_nan} in rows with a NaN, {} in rows without one",
+        v.len(),
+        v.len() - with_nan
+    );
+    // Show the first violation of each kind, so a defect in NaN-free rows is not hidden behind the NaN ones.
+    for kind in ["[nan-row]", "[no-nan-row]"] {
+        if let Some(m) = v.iter().find(|m| m.starts_with(kind)) {
+            eprintln!("sort_nan_audit: first {m}");
+        }
+    }
     assert!(
         v.is_empty(),
         "{name}: {} violation(s) (NaN largest; stable only for msort); first 6:\n{}",

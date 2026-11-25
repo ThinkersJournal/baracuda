@@ -150,43 +150,38 @@ __host__ __device__ inline int32_t next_pow2_i32(int32_t v) {
     return p;
 }
 
-// Strict-less comparator for the bitonic ladder. `STABLE == 1` adds the
-// tie-break-on-index so equal-keys preserve input order (stable sort
-// / msort). `ORDER == 1` is ascending; `0` is descending.
+// Comparator for the bitonic ladder: decides whether `a` must be swapped with `b`.
 //
-// Both `a_idx` / `b_idx` are the ORIGINAL element indices (what
-// indices[col] / indices[ixj] hold). The comparator decides which one
-// should appear FIRST in the sorted output.
+// The order is a STRICT TOTAL order over (value, index) pairs: **NaN is the largest value**, and equal values (and NaN against NaN) are
+// ordered by ascending ORIGINAL index (`a_idx`, `b_idx`), independent of the block direction and of `STABLE`. A bitonic network is
+// only correct for a strict weak order; the previous comparator called a NaN "equal to everything" (neither `<` nor `>`), which broke
+// it (an unsorted row, or a NaN in the middle of the output), and its stable tie-break flipped with the block direction, which broke
+// stability (a row without a NaN came out with equal keys in descending index order). `STABLE` is kept for the callers' signature:
+// with the index tie-break every instantiation is now stable and deterministic.
+//
+// `ORDER == 1` is ascending (NaN last), `0` is descending (NaN first). `ascending_block` is the bitonic block direction: it only
+// chooses which position receives the element that comes first in the output order.
 template <typename T, int ORDER, int STABLE>
 __device__ inline bool cmp_swap_needed(
     T a, T b, int32_t a_idx, int32_t b_idx, bool ascending_block)
 {
-    // For STABLE: equal keys → prefer smaller index in ascending block
-    // (so smaller-idx comes first), prefer larger index in descending
-    // block (so larger-idx stays at higher position → equivalent of
-    // preserving original order from the back). For ORDER == descending
-    // sort, the macro-level "ascending_block" parameter flips meaning;
-    // the cmp_swap is computed as if for ascending then negated.
-
+    const bool a_nan = (a != a);
+    const bool b_nan = (b != b);
+    // "a is strictly smaller than b", NaN largest.
+    const bool a_lt_b = (!a_nan && b_nan) || (a < b);
+    const bool b_lt_a = (a_nan && !b_nan) || (b < a);
     bool a_first;
-    if (ORDER == 1) {  // ascending sort
-        if (a < b) a_first = true;
-        else if (a > b) a_first = false;
-        else { // equal keys
-            if (STABLE == 0) a_first = true; // arbitrary
-            else a_first = ascending_block ? (a_idx < b_idx) : (a_idx > b_idx);
-        }
-    } else {           // descending sort
-        if (a > b) a_first = true;
-        else if (a < b) a_first = false;
-        else {
-            if (STABLE == 0) a_first = true;
-            else a_first = ascending_block ? (a_idx < b_idx) : (a_idx > b_idx);
-        }
+    if (ORDER == 1) {          // ascending sort: smaller first
+        if (a_lt_b) a_first = true;
+        else if (b_lt_a) a_first = false;
+        else a_first = (a_idx < b_idx);
+    } else {                   // descending sort: larger first
+        if (b_lt_a) a_first = true;
+        else if (a_lt_b) a_first = false;
+        else a_first = (a_idx < b_idx);
     }
-    // In an ascending bitonic block we want `a_first` (smaller-sort-key)
-    // at position `col`; if that's already the case, no swap. In a
-    // descending bitonic block, swap iff `a_first`.
+    // An ascending bitonic block wants the element that comes first in the output order at the lower position (swap if it is not);
+    // a descending block wants the later one there (swap iff `a` comes first).
     return ascending_block ? (!a_first) : a_first;
 }
 
