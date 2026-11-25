@@ -198,8 +198,11 @@ __global__ void sdpa_row_softmax_kernel(
         int64_t base = row * (int64_t)k_len;
         // Pass 1a — row max.
         float m = -INFINITY;
+        // A NaN or +inf score makes the whole row NaN (torch.softmax); it must not be read as "fully masked" (all -inf), which writes zeros.
+        bool poison = false;
         for (int32_t j = 0; j < k_len; ++j) {
             float v = load_as_f32<T>(scores[base + j]);
+            if (v != v || v == INFINITY) { poison = true; continue; }
             if (v > m) m = v;
         }
         // Edge case: all -inf (e.g. fully masked row under causal mask
@@ -210,13 +213,17 @@ __global__ void sdpa_row_softmax_kernel(
         bool row_all_neg_inf = !isfinite(m);
         // Pass 1b — sum of exp.
         float s = 0.0f;
-        if (!row_all_neg_inf) {
+        if (!row_all_neg_inf && !poison) {
             for (int32_t j = 0; j < k_len; ++j) {
                 s += expf(load_as_f32<T>(scores[base + j]) - m);
             }
         }
         // Pass 2 — per-cell write.
-        if (row_all_neg_inf || s == 0.0f) {
+        if (poison) {
+            for (int32_t j = 0; j < k_len; ++j) {
+                attn[base + j] = store_from_f32<T>(NAN);
+            }
+        } else if (row_all_neg_inf || s == 0.0f) {
             for (int32_t j = 0; j < k_len; ++j) {
                 attn[base + j] = store_from_f32<T>(0.0f);
             }
@@ -245,18 +252,24 @@ __global__ void sdpa_row_softmax_kernel<double>(
     for (int64_t row = tid; row < total_rows; row += step) {
         int64_t base = row * (int64_t)k_len;
         double m = -INFINITY;
+        bool poison = false;   // NaN or +inf score: the row is NaN (see the float kernel)
         for (int32_t j = 0; j < k_len; ++j) {
             double v = scores[base + j];
+            if (v != v || v == INFINITY) { poison = true; continue; }
             if (v > m) m = v;
         }
         bool row_all_neg_inf = !isfinite(m);
         double s = 0.0;
-        if (!row_all_neg_inf) {
+        if (!row_all_neg_inf && !poison) {
             for (int32_t j = 0; j < k_len; ++j) {
                 s += exp(scores[base + j] - m);
             }
         }
-        if (row_all_neg_inf || s == 0.0) {
+        if (poison) {
+            for (int32_t j = 0; j < k_len; ++j) {
+                attn[base + j] = (double)NAN;
+            }
+        } else if (row_all_neg_inf || s == 0.0) {
             for (int32_t j = 0; j < k_len; ++j) {
                 attn[base + j] = 0.0;
             }
@@ -305,7 +318,7 @@ __global__ void sdpa_out_kernel(
         for (int32_t kk = 0; kk < k_len; ++kk) {
             float av = load_as_f32<T>(attn[a_base + kk]);
             float vv = load_as_f32<T>(v[v_base + (int64_t)kk * d_v]);
-            acc += av * vv;
+            if (av != 0.0f) acc += av * vv;   // zero weight skips the product (a NaN value at a masked-out position is unspecified, not guaranteed)
         }
         y[lin] = store_from_f32<T>(acc);
     }
@@ -336,7 +349,7 @@ __global__ void sdpa_out_kernel<double>(
         int64_t v_base = ((int64_t)b * heads + h) * k_len * d_v + dv;
         double acc = 0.0;
         for (int32_t kk = 0; kk < k_len; ++kk) {
-            acc += attn[a_base + kk] * v[v_base + (int64_t)kk * d_v];
+            { double a_w = attn[a_base + kk]; if (a_w != 0.0) acc += a_w * v[v_base + (int64_t)kk * d_v]; }   // zero weight skips the product (masked-out NaN value: unspecified)
         }
         y[lin] = acc;
     }
@@ -958,7 +971,7 @@ __global__ void sdpa_out_strided_kernel(
             float av = load_as_f32<T>(attn[a_base + kk]);
             int64_t v_off = (int64_t)b * svb + (int64_t)h * svh + (int64_t)kk * svs + (int64_t)dv;
             float vv = load_as_f32<T>(v[v_off]);
-            acc += av * vv;
+            if (av != 0.0f) acc += av * vv;   // zero weight skips the product (a NaN value at a masked-out position is unspecified, not guaranteed)
         }
         y[y_outer + (int64_t)dv] = store_from_f32<T>(acc);
     }
