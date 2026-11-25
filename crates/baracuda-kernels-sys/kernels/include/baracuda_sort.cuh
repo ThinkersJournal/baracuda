@@ -150,38 +150,42 @@ __host__ __device__ inline int32_t next_pow2_i32(int32_t v) {
     return p;
 }
 
-// Comparator for the bitonic ladder: decides whether `a` must be swapped with `b`.
+// THE shared order for every bitonic selection/sort in this library (sort, argsort, msort, topk): one definition, included by
+// `baracuda_topk.cuh`, so the two can never disagree again.
 //
-// The order is a STRICT TOTAL order over (value, index) pairs: **NaN is the largest value**, and equal values (and NaN against NaN) are
-// ordered by ascending ORIGINAL index (`a_idx`, `b_idx`), independent of the block direction and of `STABLE`. A bitonic network is
-// only correct for a strict weak order; the previous comparator called a NaN "equal to everything" (neither `<` nor `>`), which broke
-// it (an unsorted row, or a NaN in the middle of the output), and its stable tie-break flipped with the block direction, which broke
-// stability (a row without a NaN came out with equal keys in descending index order). `STABLE` is kept for the callers' signature:
-// with the index tie-break every instantiation is now stable and deterministic.
-//
-// `ORDER == 1` is ascending (NaN last), `0` is descending (NaN first). `ascending_block` is the bitonic block direction: it only
-// chooses which position receives the element that comes first in the output order.
-template <typename T, int ORDER, int STABLE>
-__device__ inline bool cmp_swap_needed(
-    T a, T b, int32_t a_idx, int32_t b_idx, bool ascending_block)
+// `total_order_precedes<T, ORDER>(a, b, a_idx, b_idx)` is true when element `a` precedes element `b` in the output. It is a STRICT
+// TOTAL order over (value, index) pairs with distinct indices: **NaN is the largest value**, and equal values (and NaN against NaN)
+// are ordered by ascending ORIGINAL index, independent of the block direction. A bitonic network is only correct for a strict weak
+// order. The previous comparator called a NaN "equal to everything" (neither `<` nor `>`), which broke it (unsorted output, or a larger
+// finite value dropped by topk: [1, NaN, 9, 2] k = 2 returned [2, NaN]), and its stable tie-break flipped with the block direction,
+// which broke msort's stability on rows WITHOUT a NaN. `ORDER == 1` is ascending (NaN last), `0` is descending (NaN first).
+template <typename T, int ORDER>
+__device__ inline bool total_order_precedes(T a, T b, int32_t a_idx, int32_t b_idx)
 {
     const bool a_nan = (a != a);
     const bool b_nan = (b != b);
     // "a is strictly smaller than b", NaN largest.
     const bool a_lt_b = (!a_nan && b_nan) || (a < b);
     const bool b_lt_a = (a_nan && !b_nan) || (b < a);
-    bool a_first;
-    if (ORDER == 1) {          // ascending sort: smaller first
-        if (a_lt_b) a_first = true;
-        else if (b_lt_a) a_first = false;
-        else a_first = (a_idx < b_idx);
-    } else {                   // descending sort: larger first
-        if (b_lt_a) a_first = true;
-        else if (a_lt_b) a_first = false;
-        else a_first = (a_idx < b_idx);
+    if (ORDER == 1) {          // ascending: smaller first
+        if (a_lt_b) return true;
+        if (b_lt_a) return false;
+    } else {                   // descending: larger first
+        if (b_lt_a) return true;
+        if (a_lt_b) return false;
     }
-    // An ascending bitonic block wants the element that comes first in the output order at the lower position (swap if it is not);
-    // a descending block wants the later one there (swap iff `a` comes first).
+    return a_idx < b_idx;      // equal (or both NaN): lower index first
+}
+
+// Comparator for the bitonic ladder: whether `a` must be swapped with `b`. `ascending_block` is the bitonic block direction: it only
+// chooses which position receives the element that comes first in the output order. `STABLE` is kept for the callers' signature: with
+// the index tie-break every instantiation is stable and deterministic.
+template <typename T, int ORDER, int STABLE>
+__device__ inline bool cmp_swap_needed(
+    T a, T b, int32_t a_idx, int32_t b_idx, bool ascending_block)
+{
+    const bool a_first = total_order_precedes<T, ORDER>(a, b, a_idx, b_idx);
+    // An ascending block wants the earlier element at the lower position (swap if it is not); a descending block the later one.
     return ascending_block ? (!a_first) : a_first;
 }
 

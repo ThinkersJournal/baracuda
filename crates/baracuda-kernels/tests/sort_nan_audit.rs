@@ -210,11 +210,14 @@ fn random_rows(seed: u64, batch: usize, n: usize) -> Vec<Vec<f64>> {
     (0..batch)
         .map(|_| {
             (0..n)
-                .map(|_| match g.next() % 12 {
+                .map(|_| match g.next() % 14 {
                     0 => f64::NAN,
-                    1 => f64::INFINITY,
-                    2 => f64::NEG_INFINITY,
-                    k => (k as f64) - 6.0,
+                    // A NaN with the sign bit set: a radix sort that orders by bit pattern puts it below -inf.
+                    1 => f64::from_bits(0xFFF8_0000_0000_0000),
+                    2 => f64::INFINITY,
+                    3 => f64::NEG_INFINITY,
+                    4 => -0.0, // equal to +0.0 (which the 6..=13 range below also yields)
+                    k => (k as f64) - 8.0,
                 })
                 .collect()
         })
