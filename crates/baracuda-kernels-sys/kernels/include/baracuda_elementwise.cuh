@@ -3528,9 +3528,9 @@ __global__ void scan_cummax_min_backward_kernel(
             if (running_arg < 0) {
                 is_better = true;
             } else if (IsMax) {
-                is_better = (x_ii > running_winner);
+                is_better = (running_winner == running_winner) && (x_ii != x_ii || x_ii > running_winner);
             } else {
-                is_better = (x_ii < running_winner);
+                is_better = (running_winner == running_winner) && (x_ii != x_ii || x_ii < running_winner);
             }
             if (is_better) {
                 running_winner = x_ii;
@@ -3590,7 +3590,8 @@ __global__ void scan_cummax_min_backward_kernel<__half, float, true>(
         else              { i_start = 0;               i_end = scan_extent; i_step = 1;  }
         for (int32_t ii = i_start; ii != i_end; ii += i_step) {
             float x_ii = __half2float(x[off_x_base + (int64_t)ii * stride_x_axis]);
-            bool is_better = (running_arg < 0) || (x_ii > running_winner);
+            // NaN is sticky: the first NaN becomes the winner and keeps it (matches the forward scan).
+            bool is_better = (running_arg < 0) || ((running_winner == running_winner) && (x_ii != x_ii || x_ii > running_winner));
             if (is_better) { running_winner = x_ii; running_arg = ii; }
             if (running_arg == j) {
                 acc += __half2float(dy[off_dy_base + (int64_t)ii * stride_dy_axis]);
@@ -3644,7 +3645,8 @@ __global__ void scan_cummax_min_backward_kernel<__half, float, false>(
         else              { i_start = 0;               i_end = scan_extent; i_step = 1;  }
         for (int32_t ii = i_start; ii != i_end; ii += i_step) {
             float x_ii = __half2float(x[off_x_base + (int64_t)ii * stride_x_axis]);
-            bool is_better = (running_arg < 0) || (x_ii < running_winner);
+            // NaN is sticky: the first NaN becomes the winner and keeps it (matches the forward scan).
+            bool is_better = (running_arg < 0) || ((running_winner == running_winner) && (x_ii != x_ii || x_ii < running_winner));
             if (is_better) { running_winner = x_ii; running_arg = ii; }
             if (running_arg == j) {
                 acc += __half2float(dy[off_dy_base + (int64_t)ii * stride_dy_axis]);
@@ -3698,7 +3700,8 @@ __global__ void scan_cummax_min_backward_kernel<__nv_bfloat16, float, true>(
         else              { i_start = 0;               i_end = scan_extent; i_step = 1;  }
         for (int32_t ii = i_start; ii != i_end; ii += i_step) {
             float x_ii = __bfloat162float(x[off_x_base + (int64_t)ii * stride_x_axis]);
-            bool is_better = (running_arg < 0) || (x_ii > running_winner);
+            // NaN is sticky: the first NaN becomes the winner and keeps it (matches the forward scan).
+            bool is_better = (running_arg < 0) || ((running_winner == running_winner) && (x_ii != x_ii || x_ii > running_winner));
             if (is_better) { running_winner = x_ii; running_arg = ii; }
             if (running_arg == j) {
                 acc += __bfloat162float(dy[off_dy_base + (int64_t)ii * stride_dy_axis]);
@@ -3752,7 +3755,8 @@ __global__ void scan_cummax_min_backward_kernel<__nv_bfloat16, float, false>(
         else              { i_start = 0;               i_end = scan_extent; i_step = 1;  }
         for (int32_t ii = i_start; ii != i_end; ii += i_step) {
             float x_ii = __bfloat162float(x[off_x_base + (int64_t)ii * stride_x_axis]);
-            bool is_better = (running_arg < 0) || (x_ii < running_winner);
+            // NaN is sticky: the first NaN becomes the winner and keeps it (matches the forward scan).
+            bool is_better = (running_arg < 0) || ((running_winner == running_winner) && (x_ii != x_ii || x_ii < running_winner));
             if (is_better) { running_winner = x_ii; running_arg = ii; }
             if (running_arg == j) {
                 acc += __bfloat162float(dy[off_dy_base + (int64_t)ii * stride_dy_axis]);
