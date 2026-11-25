@@ -54,9 +54,7 @@ fn workaround_does_not_move_byte_offsets() {
 /// (sampling.cuh:303, 430, 509, 739, 787-789). Other lines of the file are out of scope here.
 #[test]
 fn vendored_flashinfer_sampling_has_no_error_on_its_smem_declarations() {
-    let src = include_str!(
-        "../vendor/flashinfer/include/flashinfer/sampling.cuh"
-    );
+    let src = include_str!("../vendor/flashinfer/include/flashinfer/sampling.cuh");
     let align_lines: Vec<usize> = src
         .lines()
         .enumerate()

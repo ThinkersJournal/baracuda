@@ -453,6 +453,12 @@ jobs:
       # both builds on every PR: with the feature (the gated tests still build) and without it
       # (the always-on tests build). RUN by .github/workflows/device-tests.yml on the self-hosted
       # device runner; see docs/DEVICE-TESTS.md.
+      # shared_align.rs parses the vendored FlashInfer sampling.cuh (moved here from baracuda-cuda-parse,
+      # whose packaged crate cannot carry a file outside it). Driver-free: DOCS_RS skips nvcc and the test
+      # references no kernel symbol.
+      - name: cargo test baracuda-kernels-sys --test shared_align
+        if: matrix.arch == 'sm80'
+        run: cargo test --locked -p baracuda-kernels-sys --test shared_align
       - name: cargo check baracuda-kernels --tests (device-tests off)
         run: cargo check --locked -p baracuda-kernels --tests --features ${{ matrix.arch }}
       - name: cargo check baracuda-kernels --tests (device-tests on)
