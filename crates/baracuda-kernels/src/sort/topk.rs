@@ -71,6 +71,12 @@ pub struct TopkArgs<'a, T: Element> {
 /// **Precision guarantee**: deterministic, bit-stable on identical
 /// hardware. Block-bitonic select is a fixed comparator network.
 ///
+/// **Order contract** (torch.topk and Fuel's CPU kernel): **NaN is the largest
+/// value** (first when `largest`, last otherwise) and **equal values come out in
+/// ascending index order**. In releases up to `0.1.0-alpha.186` (back to the first one
+/// with this plan) NaN made the selection wrong (a larger finite value could be
+/// dropped) and ties were unordered.
+///
 /// **Saved-indices contract**: FW emits both `values` and `indices`;
 /// BW reads saved indices verbatim. Retain `indices` for autograd.
 #[derive(Debug)]

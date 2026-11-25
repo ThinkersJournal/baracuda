@@ -12,8 +12,9 @@
 //     first k" pattern is the same asymptotic cost as a careful
 //     partial bitonic and a lot easier to get right.
 //
-// `descending == 1` is the default sort order for top-k FW (largest
-// values first); pass `descending == 0` for bottom-k / "smallest first".
+// `largest != 0` (the default) is largest-first; `largest == 0` is bottom-k / smallest-first.
+// Order contract: NaN is the LARGEST value (first for largest, last for smallest) and ties are
+// broken by ascending index, matching torch.topk and Fuel's CPU kernel. See `baracuda::sort::total_order_precedes`.
 //
 // kthvalue is computed by calling topk with k=`k` and returning the
 // (k-1)-th cell (descending: takes the k-th largest; ascending: takes
@@ -81,8 +82,11 @@ __global__ void topk_block_kernel(
                     } else {
                         T a = x_row[a_idx];
                         T b = x_row[b_idx];
-                        swap = baracuda::sort::cmp_swap_needed<T, ORDER, 0>(
-                            a, b, a_idx, b_idx, ascending_block);
+                        // The ONE shared order (`baracuda::sort::total_order_precedes`): NaN largest, ties lowest index.
+                        const bool a_first =
+                            baracuda::sort::total_order_precedes<T, ORDER>(a, b, a_idx, b_idx);
+                        // An ascending block puts the earlier element at the lower position; a descending block the later one.
+                        swap = ascending_block ? !a_first : a_first;
                     }
                     if (swap) {
                         s_idx[col] = b_idx;
