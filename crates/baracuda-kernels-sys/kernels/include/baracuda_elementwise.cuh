@@ -3933,6 +3933,9 @@ __global__ void log_cumsum_exp_kernel(
         // Online-LSE running-max algorithm.
         C running_max = DT::neg_infinity();
         C running_sum = C(0);
+        // A NaN is sticky, a +inf makes every later prefix +inf, a -inf adds nothing (exp(-inf) = 0): none of them may enter the
+        // shifted sum, where inf - inf = NaN would poison it (the torch.logcumsumexp convention).
+        bool saw_nan = false, saw_pinf = false;
         int32_t j_start, j_end, j_step;
         if (reverse != 0) {
             // Suffix `j ∈ [k, extent)` walked high-to-low; this matches
@@ -3948,6 +3951,9 @@ __global__ void log_cumsum_exp_kernel(
         }
         for (int32_t j = j_start; j != j_end; j += j_step) {
             C x_j = DT::load(x[off_x_base + (int64_t)j * scan_stride_x]);
+            if (x_j != x_j) { saw_nan = true; continue; }
+            if (x_j == INFINITY) { saw_pinf = true; continue; }
+            if (x_j == -INFINITY) { continue; }
             if (x_j > running_max) {
                 // First iteration: running_max == -inf so this branch
                 // also handles the init. `exp(-inf - x_j)` would be 0
@@ -3967,7 +3973,11 @@ __global__ void log_cumsum_exp_kernel(
         // (the term at j == k is `exp(x_k - running_max) = exp(0) = 1`
         // since x_k becomes running_max no later than its own step),
         // so the log is well-defined.
-        C out = DT::glog(running_sum) + running_max;
+        C out;
+        if (saw_nan) out = (C)NAN;
+        else if (saw_pinf) out = (C)INFINITY;
+        else if (running_max == DT::neg_infinity()) out = DT::neg_infinity();  // only -inf so far
+        else out = DT::glog(running_sum) + running_max;
         y[off_y] = DT::store_from(out);
     }
 }
