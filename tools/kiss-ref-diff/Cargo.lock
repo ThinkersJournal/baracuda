@@ -17,7 +17,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-cuda-emit"
-version = "0.56.12"
+version = "0.56.13"
 dependencies = [
  "unpopped",
  "unpopped-vocab",

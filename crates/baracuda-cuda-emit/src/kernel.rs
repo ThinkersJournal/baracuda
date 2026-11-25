@@ -63,8 +63,8 @@ use unpopped::backend::{GeneratedKernel, LowerError, Spelling};
 use unpopped::exec::{ExecId, Extent, MemorySpace, Scope};
 use unpopped::ir::{BinaryOp, ReduceOp, ScalarExpr};
 use unpopped::kernel::{
-    Block, BufferRole, CacheHint, CollectiveKind, KernelFn, ParamKind, Place, ShuffleMode, Stmt,
-    VoteKind, check_kernel,
+    BarrierKind, Block, BufferRole, CacheHint, CollectiveKind, KernelFn, ParamKind, Place,
+    ShuffleMode, Stmt, VoteKind, check_kernel,
 };
 use unpopped::kernel_interface::{KernelInterface, LaunchBounds, ParamsBlock, ParamsBlockField};
 use unpopped::types::{Ty, infer_ty_in};
@@ -446,6 +446,32 @@ impl Cx<'_> {
                 variant_name(&format!("{other:?}"))
             ))),
         }
+    }
+
+    /// `bar.sync id, count` (`Named`) and `bar.arrive id, count` (`NamedArrive`) on a `Block`: `count` threads, whole warps, arrive at
+    /// barrier `id` (0 to 15). Spelled exactly: the statement is never a `__syncthreads()`, which would wait for the wrong threads.
+    fn named_barrier(&mut self, scope: Scope, kind: &BarrierKind) -> Result<(), LowerError> {
+        let (op, id, count) = match kind {
+            BarrierKind::Named { id, count } => ("bar.sync", *id, *count),
+            BarrierKind::NamedArrive { id, count } => ("bar.arrive", *id, *count),
+            _ => unreachable!("the caller passes a named kind"),
+        };
+        let name = &self.k.name;
+        let threads = self.k.launch.map_or(0, |l| l.block.iter().product::<u32>());
+        if !matches!(scope, Scope::Block)
+            || id > 15
+            || count == 0
+            || count % 32 != 0
+            || count > threads
+        {
+            return Err(refuse(format!(
+                "kernel `{name}`: `Barrier` {kind:?} in {scope:?} scope: a named barrier is a `Block` one with id 0 to 15 and a count that is whole warps within the block's {threads} threads"
+            )));
+        }
+        self.line(&format!(
+            "asm volatile(\"{op} %0, %1;\" :: \"n\"({id}), \"n\"({count}) : \"memory\");"
+        ));
+        Ok(())
     }
 
     /// `cp.async` of `elems` consecutive elements, global to `Shared` (PTX `cp.async.ca`; sm_80 or newer). Exact, so every
@@ -878,8 +904,20 @@ impl Cx<'_> {
             Stmt::Break => self.line("break;"),
             Stmt::Continue => self.line("continue;"),
             Stmt::Return => self.line("return;"),
-            Stmt::Barrier { scope, .. } => {
-                if matches!(scope, Scope::Block) {
+            Stmt::Barrier { scope, kind } => {
+                // The kind decides the PTX. A named barrier waits for `count` threads, not the block, so it is never a
+                // `__syncthreads()`; a kind this crate does not lower is refused, never approximated.
+                if matches!(
+                    kind,
+                    BarrierKind::Named { .. } | BarrierKind::NamedArrive { .. }
+                ) {
+                    self.named_barrier(*scope, kind)?;
+                } else if !matches!(kind, BarrierKind::Full) {
+                    return Err(refuse(format!(
+                        "kernel `{}`: a `Barrier` of kind {kind:?} is not lowered",
+                        self.k.name
+                    )));
+                } else if matches!(scope, Scope::Block) {
                     self.line("__syncthreads();");
                 } else {
                     return Err(refuse(format!(
