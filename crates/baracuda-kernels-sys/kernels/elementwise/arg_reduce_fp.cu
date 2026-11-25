@@ -21,12 +21,14 @@ namespace baracuda { namespace elementwise {
 
 // Argmax policy: prefer new value if STRICTLY greater than current best.
 // Equal values keep the earlier (smaller) index — matches PyTorch.
+// NaN wins and the FIRST NaN stays (torch.argmax and Fuel's CPU kernel): once the best is NaN nothing replaces it, and a NaN replaces any
+// non-NaN best. Before ROADMAP E0g a NaN was never taken unless it sat at index 0 (`new > NaN` and `NaN > best` are both false).
 template <typename T>
 struct ArgmaxPolicy {
     __device__ __forceinline__ bool prefer(
         T new_v, int64_t /*new_i*/, T best_v, int64_t /*best_i*/) const
     {
-        return new_v > best_v;
+        return (best_v == best_v) && ((new_v != new_v) || (new_v > best_v));
     }
 };
 
@@ -36,7 +38,7 @@ struct ArgminPolicy {
     __device__ __forceinline__ bool prefer(
         T new_v, int64_t /*new_i*/, T best_v, int64_t /*best_i*/) const
     {
-        return new_v < best_v;
+        return (best_v == best_v) && ((new_v != new_v) || (new_v < best_v));
     }
 };
 
