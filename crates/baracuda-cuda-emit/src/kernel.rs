@@ -54,6 +54,15 @@
 //! aggregation), `docs/PATENT-SWEEP.md` hits 22 and 23; **not a clearance**. Targets other than NVIDIA decline these
 //! statements by name in their own emitters; this crate has only the NVIDIA one.
 //!
+//! # Stage 4 (ROADMAP S1, slice 1): the Hopper synchronisation statements
+//!
+//! `MbarInit`, `MbarArrive` (with or without `expect_tx`), `MbarCompleteTx`, `MbarWait` (a `try_wait.parity` loop) and
+//! `GridDepWait`/`GridDepLaunchDependents` lower to the PTX of the same names. They need **sm_90 or newer** (the source
+//! carries an `#error` guard and the interface lists the requirement). The barrier is a `Shared` allocation of 64-bit
+//! elements (`I64`: `U64` has no CUDA spelling in this crate's typed table). An out-of-range count, transaction byte count
+//! or a parity other than 0 or 1 traps. `Wgmma*`, `Tcgen05*`, `CopyBulk`, `MatrixLoad`/`MatrixStore`, named and `Cluster`
+//! barriers and the tensor-map statements are still declined by name (ROADMAP S1 continues).
+//!
 //! Everything else is declined by name: any other statement (named by its variant, so a new `Stmt` variant is
 //! named too), any other expression node, a `Subgroup`, `Cluster` or `Device` barrier, a cluster or multi-device
 //! launch, a dynamic or non-`Shared` allocation, a result local (a callee), a packed local, `ClusterPeer`,
@@ -261,6 +270,8 @@ struct Cx<'a> {
     async_used: bool,
     /// The kernel lowers a statement under a patent risk note (board 434 C).
     flagged: bool,
+    /// A statement spelled here needs `sm_90` (mbarrier `expect_tx`/`complete_tx`/`try_wait`, `griddepcontrol`).
+    sm90_used: bool,
 }
 
 impl Cx<'_> {
@@ -744,6 +755,88 @@ impl Cx<'_> {
         Ok(())
     }
 
+    /// The shared-window address of the `mbarrier` object at `bar` (a place of a `Shared` 64-bit allocation), as `_b`.
+    fn mbar_addr(&mut self, bar: &Place) -> Result<(), LowerError> {
+        let s = self.place(bar)?;
+        self.line(&format!(
+            "unsigned _b = (unsigned)__cvta_generic_to_shared(&{s});"
+        ));
+        Ok(())
+    }
+
+    /// `mbarrier.init` (PTX `mbarrier`; NVIDIA only, `sm_90` for the rest of the family). `count` below 1 traps, as the IR's does.
+    fn mbar_init(&mut self, bar: &Place, count: &ScalarExpr) -> Result<(), LowerError> {
+        self.sm90_used = true;
+        self.flagged = true;
+        let c = self.ex(count)?;
+        self.line("{");
+        self.depth += 1;
+        self.mbar_addr(bar)?;
+        self.line(&format!("long long _c = (long long)({c});"));
+        self.line("if (_c < 1 || _c > 1048575) __trap();");
+        self.line("asm volatile(\"mbarrier.init.shared::cta.b64 [%0], %1;\" :: \"r\"(_b), \"r\"((unsigned)_c) : \"memory\");");
+        self.depth -= 1;
+        self.line("}");
+        Ok(())
+    }
+
+    /// `mbarrier.arrive` (with `expect_tx` when `tx` is given); the returned state is not used, so the sink `_`.
+    fn mbar_arrive(&mut self, bar: &Place, tx: Option<&ScalarExpr>) -> Result<(), LowerError> {
+        self.sm90_used = true;
+        self.flagged = true;
+        let t = tx.map(|e| self.ex(e)).transpose()?;
+        self.line("{");
+        self.depth += 1;
+        self.mbar_addr(bar)?;
+        if let Some(t) = t {
+            self.line(&format!("long long _t = (long long)({t});"));
+            self.line("if (_t < 0 || _t > 1048575) __trap();");
+            self.line("asm volatile(\"mbarrier.arrive.expect_tx.shared::cta.b64 _, [%0], %1;\" :: \"r\"(_b), \"r\"((unsigned)_t) : \"memory\");");
+        } else {
+            self.line("asm volatile(\"mbarrier.arrive.shared::cta.b64 _, [%0];\" :: \"r\"(_b) : \"memory\");");
+        }
+        self.depth -= 1;
+        self.line("}");
+        Ok(())
+    }
+
+    /// `mbarrier.complete_tx`: the bytes an asynchronous copy delivered.
+    fn mbar_complete_tx(&mut self, bar: &Place, bytes: &ScalarExpr) -> Result<(), LowerError> {
+        self.sm90_used = true;
+        self.flagged = true;
+        let n = self.ex(bytes)?;
+        self.line("{");
+        self.depth += 1;
+        self.mbar_addr(bar)?;
+        self.line(&format!("long long _n = (long long)({n});"));
+        self.line("if (_n < 0 || _n > 1048575) __trap();");
+        self.line("asm volatile(\"mbarrier.complete_tx.shared::cta.b64 [%0], %1;\" :: \"r\"(_b), \"r\"((unsigned)_n) : \"memory\");");
+        self.depth -= 1;
+        self.line("}");
+        Ok(())
+    }
+
+    /// `mbarrier.try_wait.parity` in a loop until the phase of that parity has completed. The parity is 0 or 1 (anything else traps).
+    fn mbar_wait(&mut self, bar: &Place, parity: &ScalarExpr) -> Result<(), LowerError> {
+        self.sm90_used = true;
+        self.flagged = true;
+        let p = self.ex(parity)?;
+        self.line("{");
+        self.depth += 1;
+        self.mbar_addr(bar)?;
+        self.line(&format!("long long _p = (long long)({p});"));
+        self.line("if (_p != 0 && _p != 1) __trap();");
+        self.line("unsigned _w = 0u;");
+        self.line("while (_w == 0u) {");
+        self.depth += 1;
+        self.line("asm volatile(\"{ .reg .pred q; mbarrier.try_wait.parity.shared::cta.b64 q, [%1], %2; selp.u32 %0, 1, 0, q; }\" : \"=r\"(_w) : \"r\"(_b), \"r\"((unsigned)_p) : \"memory\");");
+        self.depth -= 1;
+        self.line("}");
+        self.depth -= 1;
+        self.line("}");
+        Ok(())
+    }
+
     fn block(&mut self, b: &Block) -> Result<(), LowerError> {
         for s in &b.0 {
             self.stmt(s)?;
@@ -875,6 +968,18 @@ impl Cx<'_> {
                 result,
                 scope,
             } => self.collective(kind, value, *result, *scope)?,
+            Stmt::GridDepWait => {
+                self.sm90_used = true;
+                self.line("asm volatile(\"griddepcontrol.wait;\" ::: \"memory\");");
+            }
+            Stmt::GridDepLaunchDependents => {
+                self.sm90_used = true;
+                self.line("asm volatile(\"griddepcontrol.launch_dependents;\" ::: \"memory\");");
+            }
+            Stmt::MbarInit { bar, count } => self.mbar_init(bar, count)?,
+            Stmt::MbarArrive { bar, tx } => self.mbar_arrive(bar, tx.as_ref())?,
+            Stmt::MbarCompleteTx { bar, bytes } => self.mbar_complete_tx(bar, bytes)?,
+            Stmt::MbarWait { bar, parity } => self.mbar_wait(bar, parity)?,
             Stmt::Break => self.line("break;"),
             Stmt::Continue => self.line("continue;"),
             Stmt::Return => self.line("return;"),
@@ -1039,6 +1144,7 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
         fresh: 0,
         async_used: false,
         flagged: false,
+        sm90_used: false,
     };
     for (i, p) in k.params.iter().enumerate() {
         if let ParamKind::Scalar { local, .. } = &p.kind {
@@ -1075,6 +1181,11 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     if cx.async_used {
         src.push_str("#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 800\n#error \"cp.async needs sm_80 or newer\"\n#endif\n");
     }
+    if cx.sm90_used {
+        src.push_str(
+            "#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 900\n#error \"mbarrier transaction counts, mbarrier.try_wait and griddepcontrol need sm_90 or newer\"\n#endif\n",
+        );
+    }
     if cx.flagged {
         src.push_str("// Lowers an asynchronous-copy or collective statement under a patent risk note (board 434 C, docs/PATENT-SWEEP.md hits 22 and 23). Not a clearance.\n");
     }
@@ -1100,8 +1211,16 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     if let Some(t) = bounds {
         iface = iface.with_launch_bounds(LaunchBounds::new(t, None));
     }
+    // One requirement string (a later `with_requires` would replace an earlier one): the newest arch wins the word `sm_90`.
+    let mut needs: Vec<&str> = Vec::new();
     if cx.async_used {
-        iface = iface.with_requires("cp.async (sm_80 or newer)");
+        needs.push("cp.async (sm_80 or newer)");
+    }
+    if cx.sm90_used {
+        needs.push("mbarrier / griddepcontrol (sm_90 or newer)");
+    }
+    if !needs.is_empty() {
+        iface = iface.with_requires(needs.join("; "));
     }
     Ok(GeneratedKernel::new(name, src).with_interface(iface))
 }
