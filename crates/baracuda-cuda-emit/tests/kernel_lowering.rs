@@ -578,19 +578,20 @@ fn a_cluster_launch_a_dynamic_allocation_and_an_ill_formed_kernel_are_declined()
 
 #[test]
 fn an_element_type_outside_the_cuda_table_is_declined_by_name() {
+    // `U64` (F16/Bf16 are storage-only spellings since ROADMAP S1 slice 3).
     let k = KernelFn::new(
         "h",
         I32,
         vec![Param::buffer(
             "x",
-            ElementKind::F16,
+            ElementKind::U64,
             BufferRole::Read,
             Some(1),
         )],
         vec![],
         Block(Vec::new()),
     );
-    check_kernel(&k).expect("the checker accepts an F16 buffer");
+    check_kernel(&k).expect("the checker accepts a U64 buffer");
     let d = detail(Cuda.lower_kernel(&k));
     assert!(
         d.contains("buffer `x`") && d.contains("no CUDA spelling"),
