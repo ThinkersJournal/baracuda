@@ -7,6 +7,7 @@
 //! - a NaN key or value that a row attends to (weight > 0) makes that row NaN;
 //! - a NaN or `+inf` entry in a row's additive mask makes that row NaN;
 //! - a row that is fully masked (all `-inf`, no NaN) stays all zeros with `lse = -inf` (the inference convention; unchanged).
+//!
 //! Before ROADMAP E0k a query row of NaN scored all NaN, the row max stayed `-inf`, and the kernel took its "fully masked" branch: zeros.
 #![cfg(feature = "device-tests")]
 
@@ -179,6 +180,7 @@ macro_rules! ffi_runner {
             let mut dl: DeviceBuffer<$T> = DeviceBuffer::zeros(ctx, Q).unwrap();
             let p = |b: &DeviceBuffer<$T>| b.as_slice().as_raw().0 as *const c_void;
             let mp = dm.as_slice().as_raw().0 as *const c_void;
+            let _ = mp; // unused by the no-mask entry (flash_sdpa)
             let status = unsafe {
                 ffi_call!(
                     $sym,
