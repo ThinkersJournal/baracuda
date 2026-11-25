@@ -60,8 +60,10 @@
 //! `GridDepWait`/`GridDepLaunchDependents` lower to the PTX of the same names. They need **sm_90 or newer** (the source
 //! carries an `#error` guard and the interface lists the requirement). The barrier is a `Shared` allocation of 64-bit
 //! elements (`I64`: `U64` has no CUDA spelling in this crate's typed table). An out-of-range count, transaction byte count
-//! or a parity other than 0 or 1 traps. `Wgmma*`, `Tcgen05*`, `CopyBulk`, `MatrixLoad`/`MatrixStore`, named and `Cluster`
-//! barriers and the tensor-map statements are still declined by name (ROADMAP S1 continues).
+//! or a parity other than 0 or 1 traps. `CopyBulk` (1-D `cp.async.bulk` global to `Shared`, completing on an `mbarrier`)
+//! lowers too, with the run, alignment and 16-byte multiple checked. `Wgmma*`, `Tcgen05*`, `MatrixLoad`/`MatrixStore`
+//! (they need `Private` allocations and 16-bit float element types, which this crate does not lower yet), named and
+//! `Cluster` barriers and the tensor-map statements are still declined by name (ROADMAP S1 continues).
 //!
 //! Everything else is declined by name: any other statement (named by its variant, so a new `Stmt` variant is
 //! named too), any other expression node, a `Subgroup`, `Cluster` or `Device` barrier, a cluster or multi-device
@@ -816,6 +818,66 @@ impl Cx<'_> {
         Ok(())
     }
 
+    /// `cp.async.bulk` (1-D, global to `Shared`, completing on an `mbarrier`; `sm_90`). `elems` x element size is a multiple of 16 bytes.
+    /// Every condition the hardware needs that the IR does not guarantee is checked and traps: the whole source run in bounds on a
+    /// unit innermost stride, the destination run inside the allocation, and 16-byte alignment of both addresses and the barrier's 8.
+    fn copy_bulk(
+        &mut self,
+        dst: &Place,
+        src: &Place,
+        elems: u32,
+        bar: &Place,
+    ) -> Result<(), LowerError> {
+        let (Place::Alloc { alloc, index }, Place::Logical { buffer, coords }) = (dst, src) else {
+            return Err(refuse(format!(
+                "kernel `{}`: `CopyBulk` between these places is not lowered (a `Shared` allocation from a global buffer is)",
+                self.k.name
+            )));
+        };
+        let elem = self.k.allocs[*alloc as usize].elem;
+        let esize = size_align(elem).unwrap_or(0);
+        let bytes = esize * elems;
+        if bytes == 0 || bytes % 16 != 0 {
+            return Err(refuse(format!(
+                "kernel `{}`: `CopyBulk` of {elems} x {elem:?} is {bytes} bytes (cp.async.bulk moves a multiple of 16)",
+                self.k.name
+            )));
+        }
+        let Extent::Static(n) = self.k.allocs[*alloc as usize].extent else {
+            return Err(refuse(format!(
+                "kernel `{}`: `CopyBulk` into a dynamic allocation is not lowered yet",
+                self.k.name
+            )));
+        };
+        self.sm90_used = true;
+        self.flagged = true;
+        let tn = type_name(elem).unwrap_or_default();
+        self.line("{");
+        self.depth += 1;
+        let g = self.place(src)?;
+        let s = self.place(dst)?;
+        let last = coords.len() - 1;
+        let c = self.ex(&coords[last])?;
+        self.line(&format!(
+            "if (a.b{buffer}_stride[{last}] != 1 || (long long)({c}) + {elems} > a.b{buffer}_shape[{last}]) __trap();"
+        ));
+        let i = self.ex(index)?;
+        self.line(&format!("if ((long long)({i}) + {elems} > {n}) __trap();"));
+        self.line(&format!(
+            "const {tn}* _g = &{g}; unsigned _s = (unsigned)__cvta_generic_to_shared(&{s});"
+        ));
+        self.line(&format!(
+            "if ((((unsigned long long)_g) | (unsigned long long)_s) & 15) __trap();"
+        ));
+        self.mbar_addr(bar)?;
+        self.line(&format!(
+            "asm volatile(\"cp.async.bulk.shared::cluster.global.mbarrier::complete_tx::bytes [%0], [%1], %2, [%3];\" :: \"r\"(_s), \"l\"(_g), \"n\"({bytes}), \"r\"(_b) : \"memory\");"
+        ));
+        self.depth -= 1;
+        self.line("}");
+        Ok(())
+    }
+
     /// `mbarrier.try_wait.parity` in a loop until the phase of that parity has completed. The parity is 0 or 1 (anything else traps).
     fn mbar_wait(&mut self, bar: &Place, parity: &ScalarExpr) -> Result<(), LowerError> {
         self.sm90_used = true;
@@ -976,6 +1038,12 @@ impl Cx<'_> {
                 self.sm90_used = true;
                 self.line("asm volatile(\"griddepcontrol.launch_dependents;\" ::: \"memory\");");
             }
+            Stmt::CopyBulk {
+                dst,
+                src,
+                elems,
+                bar,
+            } => self.copy_bulk(dst, src, *elems, bar)?,
             Stmt::MbarInit { bar, count } => self.mbar_init(bar, count)?,
             Stmt::MbarArrive { bar, tx } => self.mbar_arrive(bar, tx.as_ref())?,
             Stmt::MbarCompleteTx { bar, bytes } => self.mbar_complete_tx(bar, bytes)?,

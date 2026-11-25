@@ -114,6 +114,79 @@ fn mbarrier_family_is_spelled() {
     assert!(g.source.contains("if (_c < 1 || _c > 1048575) __trap();"));
 }
 
+/// A kernel with the barrier (alloc 0) and a 16-byte `Shared` tile (alloc 1) beside the global buffer `out` (param 0).
+fn bulk_kernel(body: Vec<Stmt>) -> KernelFn {
+    KernelFn::new(
+        "k",
+        I32,
+        vec![Param::buffer(
+            "out",
+            I32,
+            unpopped::kernel::BufferRole::ReadWrite,
+            Some(1),
+        )],
+        vec![LocalDecl::scalar(I32)],
+        Block(body),
+    )
+    .with_allocs(vec![
+        AllocDecl::new("bar", MemorySpace::Shared, B64, Extent::Static(1)),
+        AllocDecl::new("tile", MemorySpace::Shared, I32, Extent::Static(4)),
+    ])
+    .with_launch(LaunchShape::new([1, 1, 1], [32, 1, 1]))
+}
+
+fn copy_bulk(elems: u32) -> Stmt {
+    Stmt::CopyBulk {
+        dst: Place::Alloc {
+            alloc: 1,
+            index: c(0),
+        },
+        src: Place::Logical {
+            buffer: 0,
+            coords: vec![c(0)],
+        },
+        elems,
+        bar: bar(),
+    }
+}
+
+fn bulk_lowered(elems: u32) -> unpopped::backend::GeneratedKernel {
+    let k = bulk_kernel(vec![copy_bulk(elems)]);
+    check_kernel(&k).expect("the fixture is a well-formed kernel");
+    Cuda.lower_kernel(&k)
+        .unwrap_or_else(|e| panic!("expected a lowering, got {e:?}"))
+}
+
+#[test]
+fn copy_bulk_is_spelled() {
+    let g = bulk_lowered(4);
+    for want in [
+        "cp.async.bulk.shared::cluster.global.mbarrier::complete_tx::bytes [%0], [%1], %2, [%3];",
+        "__CUDA_ARCH__ < 900",
+    ] {
+        assert!(g.source.contains(want), "missing `{want}`:\n{}", g.source);
+    }
+    // 16 bytes, alignment and run bounds are checked: a wrong run traps, never reads past the buffer.
+    assert!(g.source.contains("\"n\"(16)"), "{}", g.source);
+    assert!(g.source.contains("& 15) __trap();"), "{}", g.source);
+    assert!(g.source.contains("_shape[0]) __trap();"), "{}", g.source);
+}
+
+/// A run that is not a multiple of 16 bytes is refused by name (the IR's own checker may refuse it first; either way it is never emitted).
+#[test]
+fn copy_bulk_of_12_bytes_is_not_emitted() {
+    let k = bulk_kernel(vec![copy_bulk(3)]);
+    match check_kernel(&k) {
+        Err(_) => {}
+        Ok(_) => match Cuda.lower_kernel(&k) {
+            Err(LowerError::UnsupportedKernel { detail }) => {
+                assert!(detail.contains("CopyBulk"), "{detail}")
+            }
+            other => panic!("a 12-byte bulk copy must be refused, got {other:?}"),
+        },
+    }
+}
+
 /// Control: a kernel with none of these statements prints none of their PTX and no sm_90 guard (the query can say "no").
 #[test]
 fn a_plain_kernel_carries_no_sm90_text() {
@@ -175,6 +248,9 @@ fn ptxas_accepts_sm90() {
         NvrtcCompiler::new(TargetId::parse("cuda:sm90a").expect("token")).expect("nvrtc target");
     nv.compile(&g.source, &g.name, 5000)
         .unwrap_or_else(|e| panic!("sm_90a rejected the source: {e}\n{}", g.source));
+    let gb = bulk_lowered(4);
+    nv.compile(&gb.source, &gb.name, 5000)
+        .unwrap_or_else(|e| panic!("sm_90a rejected CopyBulk: {e}\n{}", gb.source));
     // Control (the query can say "no"): the same source for `sm_80` is refused by the `#error` guard.
     let sm80 =
         NvrtcCompiler::new(TargetId::parse("cuda:sm80").expect("token")).expect("nvrtc target");
