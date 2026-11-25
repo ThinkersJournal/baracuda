@@ -48,7 +48,7 @@ fn rows(seed: u64) -> Vec<Vec<f64>> {
                     _ => match g.next() % 16 {
                         0 => f64::NAN,
                         1 => f64::INFINITY,
-                        2 | 3 | 4 => f64::NEG_INFINITY,
+                        2..=4 => f64::NEG_INFINITY,
                         k => (k as f64) - 9.0,
                     },
                 })
@@ -61,7 +61,7 @@ fn lse(vals: &[f64]) -> f64 {
     if vals.iter().any(|v| v.is_nan()) {
         return f64::NAN;
     }
-    if vals.iter().any(|v| *v == f64::INFINITY) {
+    if vals.contains(&f64::INFINITY) {
         return f64::INFINITY;
     }
     let fin: Vec<f64> = vals.iter().copied().filter(|v| v.is_finite()).collect();
@@ -92,7 +92,7 @@ macro_rules! lse_tests {
             let shape = [ROWS as i32, LEN as i32];
             let oshape = [ROWS as i32, 1];
             let dx = DeviceBuffer::from_slice(&ctx, &flat).unwrap();
-            let mut dy: DeviceBuffer<$T> = DeviceBuffer::from_slice(&ctx, &vec![$to(0.0); ROWS]).unwrap();
+            let mut dy: DeviceBuffer<$T> = DeviceBuffer::from_slice(&ctx, &[$to(0.0); ROWS]).unwrap();
             let desc = ReduceDescriptor::<2> {
                 kind: ReduceKind::LogSumExp,
                 input_shape: shape,
