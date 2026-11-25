@@ -72,9 +72,11 @@ impl<const N: usize> ReduceBackwardDescriptor<N> {
 /// Save requirements vary by op:
 /// - Sum, Mean: neither save needed; pass `x = None, y = None`.
 /// - Max, Min: BOTH saves required — `x` is the forward input (full
-///   shape), `y` is the forward output (keepdim shape). Gradient flows
-///   to every position where `x[c] == y[c_reduced]` (split-across-ties
-///   semantic; matches JAX, differs from PyTorch's first-index pick).
+///   shape), `y` is the forward output (keepdim shape). The gradient is
+///   split evenly across the positions where `x[c] == y[c_reduced]`
+///   (`dy / count`, count clamped to at least 1: a NaN row has no such
+///   position and gets zero). torch.amax / amin and JAX do the same; up
+///   to 0.1.0-alpha.194 each tied position got the full `dy`.
 /// - Prod, Norm2 (future): same dual-save requirement.
 #[derive(Debug)]
 pub struct ReduceBackwardArgs<'a, T: Element, const N: usize> {

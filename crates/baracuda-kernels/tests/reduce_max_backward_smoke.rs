@@ -4,8 +4,8 @@
 //!
 //! Forward: `y = max(x, dim=k)` (keepdim). Backward:
 //! `dx[c] = dy[c_reduced] if x[c] == y[c_reduced] else 0`. Tie
-//! semantic: every tied position gets the full upstream gradient
-//! (JAX convention; not PyTorch's first-index convention).
+//! semantic: the upstream gradient is split evenly across tied
+//! positions (`dy / count`, as torch.amax and JAX; see `reduce_max_min_backward_ties.rs`).
 //!
 //! Tests fill `x` with strictly-increasing row-major values, so within
 //! any reduced group every value is unique → no ties → bit-exact compare.
