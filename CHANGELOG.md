@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.191 - 2026-11-25
+
+`UniquePlan::run` (`baracuda-kernels`) only ran the sort into `sorted_scratch` and returned `Ok(())` without ever writing `values`, `counts` or `counter`, so every call looked successful and produced an empty result. This was so from 0.0.1-alpha.24 (the first tag containing `sort/unique.rs`, 1f0bf74a4, 2026-05-17) through 0.1.0-alpha.189; no known consumer (Fuel has no `UniquePlan` binding). `run` now returns `Error::Unsupported` before doing any work, and the rustdoc and `OP-MATRIX.md` say so. To get `unique`, sort with `SortPlan` and dedup the sorted row with `UniqueConsecutivePlan`. The real composition is ROADMAP E0b. `tests/unique_plan_declines.rs` asserts the error and that the counter is untouched.
+
 ## 0.1.0-alpha.190 - 2026-11-25
 
 `ScanPlan` with `ScanKind::Cummax` / `Cummin` started from `-inf` / `+inf` and replaced the running value only when `x > acc` / `x < acc`. A NaN is neither, so it was never taken: a leading NaN came out as the identity (`cummax [NaN, 1, 5]` returned `[-inf, 1, 5]`, `cummin` returned `[inf, 1, 1]`) and a NaN later in the row was skipped (`cummax [1, NaN, 0, 5]` returned `[1, 1, 1, 5]`). The torch convention is that NaN is sticky: the first NaN becomes the running value and stays. The four forward functors (f32, f64, f16, bf16, both ops) and the shared `scan_cummax_min_backward_kernel` (generic body and the four f16/bf16 specialisations) now follow it, and the backward walk puts the gradient on the first NaN from then on, matching the forward value. Rows without a NaN are unchanged. Affected: `baracuda-kernels` and `baracuda-kernels-sys` from 0.0.1-alpha.21 (the first tag containing `scan_cummax_fp.cu`, added 2026-05-17 by cd6845ad4) through 0.1.0-alpha.189. New `tests/scan_cummax_nan.rs` (8 device tests: f32 and f64, cummax and cummin, forward and backward, both scan directions, rows with NaN, +-inf, -0.0 and ties, against a CPU reference): 8 of 8 failed before (up to 1381 mismatches), 8 of 8 pass after.
