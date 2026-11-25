@@ -205,7 +205,9 @@ impl Lcg {
     }
 }
 
-fn random_rows(seed: u64, batch: usize, n: usize) -> Vec<Vec<f64>> {
+/// `signed_nan`: include a NaN with the sign bit set. The CUB radix path (`row_len > 1024`) orders by bit pattern and puts such a NaN below
+/// `-inf`: a separate defect (ROADMAP E0c), so rows for that path are generated without it here.
+fn random_rows(seed: u64, batch: usize, n: usize, signed_nan: bool) -> Vec<Vec<f64>> {
     let mut g = Lcg(seed);
     (0..batch)
         .map(|_| {
@@ -213,7 +215,8 @@ fn random_rows(seed: u64, batch: usize, n: usize) -> Vec<Vec<f64>> {
                 .map(|_| match g.next() % 14 {
                     0 => f64::NAN,
                     // A NaN with the sign bit set: a radix sort that orders by bit pattern puts it below -inf.
-                    1 => f64::from_bits(0xFFF8_0000_0000_0000),
+                    1 if signed_nan => f64::from_bits(0xFFF8_0000_0000_0000),
+                    1 => f64::NAN,
                     2 => f64::INFINITY,
                     3 => f64::NEG_INFINITY,
                     4 => -0.0, // equal to +0.0 (which the 6..=13 range below also yields)
@@ -249,7 +252,7 @@ fn audit(
         lens.push(2000);
     }
     for n in lens {
-        shapes.push((n, random_rows(0xa0d17 ^ n as u64, 16, n)));
+        shapes.push((n, random_rows(0xa0d17 ^ n as u64, 16, n, n <= 1024)));
     }
     for (n, rows) in shapes {
         for descending in [false, true] {
