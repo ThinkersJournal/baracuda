@@ -663,7 +663,7 @@ impl<T: Element, const N: usize> ReduceBackwardPlan<T, N> {
                 // Var BW: `dx[c] = dy[c_reduced] * 2 * (x[c] - mean) / m`
                 // Std BW: `dx[c] = dy[c_reduced] * (x[c] - mean) /
                 //                  (m * y[c_reduced])`
-                // where `m = max(n - correction, 1)`. Internal Welford
+                // where `m = max(n - correction, 0)`. Internal Welford
                 // accumulator runs at f32 for f32/f16/bf16 and f64 for
                 // f64 (see `WelfordAcc<T>` in the kernel header).
                 let x = args.x.as_ref().expect("Var/Std BW require saved x");

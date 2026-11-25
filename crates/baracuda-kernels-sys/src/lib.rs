@@ -30541,7 +30541,7 @@ unsafe extern "C" {
     // ---- Var / Std backward — Welford BW, f32-only ------------------
     // Var BW: `dx[c] = dy[c_reduced] * 2 * (x[c] - mean[c_reduced]) / m`
     // Std BW: `dx[c] = dy[c_reduced] * (x[c] - mean[c_reduced]) / (m * y[c_reduced])`
-    // where `m = max(n - correction, 1)` and `n = reduce_extent`. Mean
+    // where `m = max(n - correction, 0)` and `n = reduce_extent`. Mean
     // is recomputed inside the kernel (single-pass sum/n over the
     // reduce axis on `x`). Saved-x required; saved-y required for Std
     // BW and ignored by Var BW (pass null or any valid pointer).
