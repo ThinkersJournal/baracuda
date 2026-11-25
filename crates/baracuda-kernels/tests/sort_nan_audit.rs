@@ -205,8 +205,8 @@ impl Lcg {
     }
 }
 
-/// `signed_nan`: include a NaN with the sign bit set. The CUB radix path (`row_len > 1024`) orders by bit pattern and puts such a NaN below
-/// `-inf`: a separate defect (ROADMAP E0c), so rows for that path are generated without it here.
+/// `signed_nan`: include a NaN with the sign bit set. The CUB radix path (`row_len > 1024`) orders by bit pattern and used to put such a NaN
+/// below `-inf` (ROADMAP E0c, fixed by canonicalising the staged keys), so every length is generated with it.
 fn random_rows(seed: u64, batch: usize, n: usize, signed_nan: bool) -> Vec<Vec<f64>> {
     let mut g = Lcg(seed);
     (0..batch)
@@ -252,7 +252,7 @@ fn audit(
         lens.push(2000);
     }
     for n in lens {
-        shapes.push((n, random_rows(0xa0d17 ^ n as u64, 16, n, n <= 1024)));
+        shapes.push((n, random_rows(0xa0d17 ^ n as u64, 16, n, true)));
     }
     for (n, rows) in shapes {
         for descending in [false, true] {
@@ -339,4 +339,28 @@ fn argsort_is_sorted_with_nan_largest() {
         true,
     );
     report("argsort", v);
+}
+
+/// `-0.0` and `+0.0` are equal, so a row of nothing but zeros of both signs must come back in index order in both directions. Measured
+/// to hold on the CUB path already (`n = 2000`); kept so it stays true.
+#[test]
+fn argsort_big_zeros_of_both_signs_are_ties() {
+    let (ctx, stream) = setup();
+    let n = 2000usize;
+    let row: Vec<f64> = (0..n)
+        .map(|i| if i % 3 == 0 { -0.0 } else { 0.0 })
+        .collect();
+    let rows = vec![row.clone()];
+    for descending in [false, true] {
+        let rows32: Vec<Vec<f32>> = vec![row.iter().map(|v| *v as f32).collect()];
+        let g32 = argsort_f32(&ctx, &stream, &rows32, descending);
+        let g64 = argsort_f64(&ctx, &stream, &rows, descending);
+        for (tag, got) in [("f32", &g32[0]), ("f64", &g64[0])] {
+            let want: Vec<i32> = (0..n as i32).collect();
+            assert_eq!(
+                got.1, want,
+                "{tag} descending={descending}: equal zeros must keep index order"
+            );
+        }
+    }
 }
