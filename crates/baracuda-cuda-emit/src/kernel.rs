@@ -875,7 +875,7 @@ impl Cx<'_> {
         let elem = self.k.allocs[*alloc as usize].elem;
         let esize = alloc_size(elem).unwrap_or(0);
         let bytes = esize * elems;
-        if bytes == 0 || bytes % 16 != 0 {
+        if bytes == 0 || !bytes.is_multiple_of(16) {
             return Err(refuse(format!(
                 "kernel `{}`: `CopyBulk` of {elems} x {elem:?} is {bytes} bytes (cp.async.bulk moves a multiple of 16)",
                 self.k.name
@@ -904,9 +904,7 @@ impl Cx<'_> {
         self.line(&format!(
             "const {tn}* _g = &{g}; unsigned _s = (unsigned)__cvta_generic_to_shared(&{s});"
         ));
-        self.line(&format!(
-            "if ((((unsigned long long)_g) | (unsigned long long)_s) & 15) __trap();"
-        ));
+        self.line("if ((((unsigned long long)_g) | (unsigned long long)_s) & 15) __trap();");
         self.mbar_addr(bar)?;
         self.line(&format!(
             "asm volatile(\"cp.async.bulk.shared::cluster.global.mbarrier::complete_tx::bytes [%0], [%1], %2, [%3];\" :: \"r\"(_s), \"l\"(_g), \"n\"({bytes}), \"r\"(_b) : \"memory\");"

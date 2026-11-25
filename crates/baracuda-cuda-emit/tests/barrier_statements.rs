@@ -63,7 +63,7 @@ fn a_bad_named_barrier_is_never_emitted() {
         BarrierKind::Named { id: 1, count: 48 },
         BarrierKind::Named { id: 1, count: 256 },
     ] {
-        let k = kernel(plain(), vec![barrier(Scope::Block, kind.clone())]);
+        let k = kernel(plain(), vec![barrier(Scope::Block, kind)]);
         if check_kernel(&k).is_err() {
             continue; // the IR's own checker refuses it first
         }
