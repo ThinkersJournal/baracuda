@@ -63,7 +63,7 @@ fn the_checker_refuses_a_malformed_named_barrier() {
         BarrierKind::Named { id: 1, count: 48 },
         BarrierKind::Named { id: 1, count: 256 },
     ] {
-        let k = kernel(vec![barrier(Scope::Block, kind.clone())]);
+        let k = kernel(vec![barrier(Scope::Block, kind)]);
         assert!(
             check_kernel(&k).is_err(),
             "{kind:?} should be refused by the checker"
