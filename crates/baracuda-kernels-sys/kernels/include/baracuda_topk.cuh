@@ -14,7 +14,7 @@
 //
 // `largest != 0` (the default) is largest-first; `largest == 0` is bottom-k / smallest-first.
 // Order contract: NaN is the LARGEST value (first for largest, last for smallest) and ties are
-// broken by ascending index, matching torch.topk and Fuel's CPU kernel. See `topk_precedes`.
+// broken by ascending index, matching torch.topk and Fuel's CPU kernel. See `baracuda::sort::total_order_precedes`.
 //
 // kthvalue is computed by calling topk with k=`k` and returning the
 // (k-1)-th cell (descending: takes the k-th largest; ascending: takes
@@ -40,31 +40,6 @@ namespace baracuda { namespace topk {
 
 inline constexpr int MAX_ROW = baracuda::sort::MAX_ROW;
 inline constexpr int MAX_K   = 64;
-
-// The top-k order (the torch.topk / Fuel CPU convention): **NaN is the largest value**, and **equal values come out in ascending
-// index order**. `ORDER == 0` is largest-first (NaN first), `ORDER == 1` is smallest-first (NaN last). Returns true when element `a`
-// precedes element `b` in the output. This is a STRICT TOTAL order over (value, index) pairs with distinct indices, which a bitonic
-// network needs: the previous comparator (`cmp_swap_needed<.., 0>`) called a NaN "equal to everything" (neither `<` nor `>`), which is
-// not a strict weak order, so the network could drop a larger finite value ([1, NaN, 9, 2], k = 2 returned [2, NaN]) and ties had no
-// defined order. The tie-break is direction-independent on purpose: the bitonic ladder flips only which position gets the earlier
-// element, never the order itself.
-template <typename T, int ORDER>
-__device__ inline bool topk_precedes(T a, T b, int32_t a_idx, int32_t b_idx)
-{
-    const bool a_nan = (a != a);
-    const bool b_nan = (b != b);
-    // "a is strictly smaller than b" with NaN largest.
-    const bool a_lt_b = (!a_nan && b_nan) || (a < b);
-    const bool b_lt_a = (a_nan && !b_nan) || (b < a);
-    if (ORDER == 0) {          // largest first
-        if (b_lt_a) return true;
-        if (a_lt_b) return false;
-    } else {                   // smallest first
-        if (a_lt_b) return true;
-        if (b_lt_a) return false;
-    }
-    return a_idx < b_idx;      // equal (or both NaN): lower index first
-}
 
 template <typename T, int ORDER>
 __global__ void topk_block_kernel(
@@ -107,7 +82,9 @@ __global__ void topk_block_kernel(
                     } else {
                         T a = x_row[a_idx];
                         T b = x_row[b_idx];
-                        const bool a_first = topk_precedes<T, ORDER>(a, b, a_idx, b_idx);
+                        // The ONE shared order (`baracuda::sort::total_order_precedes`): NaN largest, ties lowest index.
+                        const bool a_first =
+                            baracuda::sort::total_order_precedes<T, ORDER>(a, b, a_idx, b_idx);
                         // An ascending block puts the earlier element at the lower position; a descending block the later one.
                         swap = ascending_block ? !a_first : a_first;
                     }
