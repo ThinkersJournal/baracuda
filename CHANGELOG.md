@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.186 - 2026-11-24
+
+`Cuda::lower_kernel` matched `Stmt::Barrier { scope, .. }`, ignoring the barrier kind, and printed `__syncthreads()` for every `Block`-scope barrier. A `BarrierKind::Named` or `NamedArrive` barrier waits for `count` threads, not the block, so the emitted kernel synchronised the wrong thread set (over-synchronisation or a deadlock). **Affected published versions: `baracuda-cuda-emit` 0.56.5 and 0.56.12** (the versions built against an Unpopped that defines the named kinds, 0.56.1 and later; 0.47.0 has the same match but its Unpopped has only `BarrierKind::Full`, so it cannot be reached). Fixed in 0.56.13: the lowering is kind-aware, a named barrier lowers to `bar.sync`/`bar.arrive` (id 0 to 15, whole warps, within the block), and any barrier kind the emitter does not lower is refused with a typed error, never printed as `__syncthreads()`. The CPU oracle `unpopped-cpu-c` already refuses named barriers, so only this emitter approximated them. Reach: the only producers of a named barrier in the published sources searched are hand-built IR and Unpopped's own tests; Unpopped's CUDA C frontend (`unpopped-convert` 0.56.12) emits `BarrierKind::Full` only.
+
 ## 0.1.0-alpha.185 - 2026-11-24
 
 The three emitter crates carry the Unpopped version they work with (one-version exception) and move to 0.56.12; their `unpopped`, `unpopped-vocab`, `unpopped-convert` and `unpopped-cpu-c` dependencies move to the published `~0.56.12` line. No source change. Supersedes the unpublished `baracuda-cuda-seam` 0.56.6.
