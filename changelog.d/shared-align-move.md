@@ -1,0 +1,3 @@
+kind: Fixed: `shared_align` test no longer reads a file outside its crate; portfolio check pinned to CodeRipper 0.48.1
+---
+`baracuda-cuda-parse/tests/shared_align.rs` read `../../baracuda-kernels-sys/vendor/flashinfer/.../sampling.cuh`, outside its crate (SUP-004: the packaged `.crate` would carry a test that cannot run). It now lives in `baracuda-kernels-sys/tests/` next to the vendored file, with a path-only dev-dependency on `baracuda-cuda-parse` (dropped from the published manifest), and CI runs it in the driver-free job (sm80 leg). The portfolio workflow pin moves to CodeRipper 0.48.1 (coderipper#375, 467fd259), which grades a documented `pub const` of a public type Info (the `ERROR_UNKNOWN` MOD-011 Medium).
