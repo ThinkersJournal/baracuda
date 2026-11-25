@@ -11,7 +11,7 @@
 // `histogram(x[N], num_bins, lo, hi)` — float x; bin index is
 //   `floor((x[i] - lo) / (hi - lo) * num_bins)` clipped to
 //   [0, num_bins). Inputs outside [lo, hi] are SKIPPED (matches PyTorch
-//   semantics for `weights=None`).
+//   semantics for `weights=None`). NaN is ignored too (torch.histc).
 //
 // `histogramdd` — N-D histogram; we ship 1-D only in trailblazer and
 //   leave the multi-axis version as a follow-up. The Rust plan layer
@@ -93,7 +93,8 @@ __global__ void histogram_kernel(
     T scale = (T)((double)num_bins / ((double)hi - (double)lo));
     for (int64_t i = tid; i < n; i += step) {
         T v = x[i];
-        if (v < lo || v > hi) continue;
+        // `!(v >= lo && v <= hi)` also rejects NaN (every comparison with NaN is false; `v < lo || v > hi` let it through into bin 0).
+        if (!(v >= lo && v <= hi)) continue;
         // Bin index = floor((v - lo) * scale). Cells exactly == hi go in
         // the last bin.
         int32_t b = (int32_t)((double)(v - lo) * (double)scale);
