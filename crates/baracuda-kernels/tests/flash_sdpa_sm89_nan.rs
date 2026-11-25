@@ -4,6 +4,7 @@
 //! Same contract and vectors as `attention_nan_rows.rs`, through the FFI symbols `baracuda_kernels_flash_sdpa_sm89_{f16,bf16}_run` and `..._strided_run` (contiguous strides).
 //! These kernels have no additive mask, so the mask vectors do not apply; a fully masked row cannot be expressed (causal never masks a whole row).
 //! A NaN value at a masked-out position is UNSPECIFIED and not asserted.
+#![cfg(feature = "sm89")]
 #![cfg(feature = "device-tests")]
 
 use core::ffi::c_void;
@@ -173,6 +174,7 @@ macro_rules! sm89_runner {
                 [(K * D) as i64, (K * D) as i64, D as i64],
                 [(Q * D) as i64, (Q * D) as i64, D as i64],
             );
+            let _ = (&sq, &sk, &sy); // used only by the strided entry
             let status = unsafe {
                 sm89_call!(
                     $sym,
