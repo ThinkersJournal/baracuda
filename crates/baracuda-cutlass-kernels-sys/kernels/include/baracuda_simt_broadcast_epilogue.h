@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD-3-Clause
-// Origin: derived from NVIDIA CUTLASS v4.2.0 include/cutlass/gemm/kernel/default_gemm_with_broadcast.h (BSD-3-Clause, notice reproduced below); modified by baracuda.
+// Origin: derived from NVIDIA CUTLASS v4.2.0 include/cutlass/gemm/kernel/default_gemm_with_broadcast.h (BSD-3-Clause, notice reproduced below); modified by baracuda. See ../../NOTICE.
 // Credit: NVIDIA CORPORATION & AFFILIATES, CUTLASS (https://github.com/NVIDIA/cutlass).
 // Vendored partial specialization of `cutlass::gemm::kernel::DefaultGemmWithBroadcast`
 // for `OperatorClass = cutlass::arch::OpClassSimt`.
