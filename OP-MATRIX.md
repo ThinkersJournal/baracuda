@@ -3,7 +3,7 @@
 Baseline generated for **baracuda-kernels** on **RTX 4070 (sm_89)**; the body
 has since been re-annotated with the **baracuda-kernelgen op-matrix audit**
 (rounds through **2026-07-03**). The workspace was at **0.1.0-alpha.28**
-(2026-10-25; the workspace is now at 0.1.0-alpha.190). The body reflects the alpha.77 line, with these items re-checked
+(2026-10-25; the workspace is now at 0.1.0-alpha.192). The body reflects the alpha.77 line, with these items re-checked
 against the code at `origin/main` on 2026-10-25 (ROADMAP SA-37): the
 `RepeatPlan` / `InterpolatePlan` dtypes, the `ArgsortPlan` row length, adaptive
 pool, and strided siblings. The other rows have **not** been re-audited for
@@ -390,7 +390,7 @@ Block-bitonic sort + topk: one block per row. `row_len ≤ SORT_MAX_ROW = 1024`,
 | `MsortPlan<T>` | Bespoke | `{f32, f64}` | `row_len ≤ 1024` | ✓ | ✓ via `MsortBackwardPlan` | Multi-segment sort. |
 | `TopkPlan<T>` | Bespoke | `{f32, f64}` | `k ≤ 64`, `row_len ≤ 1024` | ✓ | ✓ via `TopkBackwardPlan` | Order contract: **NaN is the largest value**, ties break to the **lowest index** (torch.topk / Fuel CPU convention). Up to alpha.186 a NaN in a row could drop a larger finite value and ties were unordered (device test `tests/topk_nan_ties.rs`). Declines: `f16`/`bf16`, `k > 64`, `row_len > 1024`. |
 | `KthvaluePlan<T>` | Bespoke | `{f32, f64}` | `k+1 ≤ 64`, `row_len ≤ 1024` | ✓ | ✓ via `KthvalueBackwardPlan` | |
-| `UniquePlan<T>` | Bespoke | `{f32, f64, i32}` | per-row | ✓ | N/A | Set-valued op. |
+| `UniquePlan<T>` | Bespoke | `{f32, f64, i32}` | per-row | ✓ | N/A | **`run` declines with `Error::Unsupported`** (0.1.0-alpha.190): up to alpha.189 it sorted and returned `Ok` without writing `values`/`counts`/`counter` (ROADMAP E0b). Compose `SortPlan` + `UniqueConsecutivePlan`. |
 | `UniqueConsecutivePlan<T>` | Bespoke | `{f32, f64, i32}` | per-row | ✓ | N/A | Run-length unique. |
 | `SearchsortedPlan<T>` | Bespoke | `{f32, f64, i32, i64}` | per-query binary search | ✓ | N/A | |
 | `HistogramPlan<T>` | Bespoke | `{f32, f64}` | atomic-bin | ✓ | N/A | |
