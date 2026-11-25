@@ -10,6 +10,11 @@
 
 namespace baracuda { namespace elementwise {
 
+// NaN-propagating min: a NaN in either operand wins (torch.min/amax semantics, the Fuel CPU Maximum/Minimum fold). Otherwise the later
+// operand replaces the accumulator only when strictly less, so -0.0 / +0.0 keep the first-seen zero. (`fmax`/`fmin` skip NaN.)
+__device__ __forceinline__ float nanprop_min(float a, float b) { return (a != a) ? a : ((b != b) ? b : ((b < a) ? b : a)); }
+__device__ __forceinline__ double nanprop_min(double a, double b) { return (a != a) ? a : ((b != b) ? b : ((b < a) ? b : a)); }
+
 template <typename T>
 struct MinReduce {
     static __device__ __forceinline__ T init();
@@ -24,10 +29,10 @@ struct MinReduce<float> {
         return acc;
     }
     __device__ __forceinline__ float operator()(float acc, float x) const {
-        return fminf(acc, x);
+        return nanprop_min(acc, x);
     }
     static __device__ __forceinline__ float merge(float a, float b) {
-        return fminf(a, b);
+        return nanprop_min(a, b);
     }
 };
 
@@ -40,10 +45,10 @@ struct MinReduce<double> {
         return acc;
     }
     __device__ __forceinline__ double operator()(double acc, double x) const {
-        return fmin(acc, x);
+        return nanprop_min(acc, x);
     }
     static __device__ __forceinline__ double merge(double a, double b) {
-        return fmin(a, b);
+        return nanprop_min(a, b);
     }
 };
 
@@ -54,10 +59,10 @@ struct MinReduce<__half> {
         return acc;
     }
     __device__ __forceinline__ __half operator()(__half acc, __half x) const {
-        return __float2half(fminf(__half2float(acc), __half2float(x)));
+        return __float2half(nanprop_min(__half2float(acc), __half2float(x)));
     }
     static __device__ __forceinline__ __half merge(__half a, __half b) {
-        return __float2half(fminf(__half2float(a), __half2float(b)));
+        return __float2half(nanprop_min(__half2float(a), __half2float(b)));
     }
 };
 
@@ -74,12 +79,12 @@ struct MinReduce<__nv_bfloat16> {
     __device__ __forceinline__ __nv_bfloat16 operator()(
         __nv_bfloat16 acc, __nv_bfloat16 x) const
     {
-        return __float2bfloat16(fminf(__bfloat162float(acc), __bfloat162float(x)));
+        return __float2bfloat16(nanprop_min(__bfloat162float(acc), __bfloat162float(x)));
     }
     static __device__ __forceinline__ __nv_bfloat16 merge(
         __nv_bfloat16 a, __nv_bfloat16 b)
     {
-        return __float2bfloat16(fminf(__bfloat162float(a), __bfloat162float(b)));
+        return __float2bfloat16(nanprop_min(__bfloat162float(a), __bfloat162float(b)));
     }
 };
 
