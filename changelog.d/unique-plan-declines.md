@@ -1,0 +1,3 @@
+kind: Fixed: `UniquePlan::run` returned `Ok` with no output; it now declines with `Error::Unsupported`
+---
+`UniquePlan::run` (`baracuda-kernels`) only ran the sort into `sorted_scratch` and returned `Ok(())` without ever writing `values`, `counts` or `counter`, so every call looked successful and produced an empty result. This was so from 0.0.1-alpha.26 through 0.1.0-alpha.189; no known consumer (Fuel has no `UniquePlan` binding). `run` now returns `Error::Unsupported` before doing any work, and the rustdoc and `OP-MATRIX.md` say so. To get `unique`, sort with `SortPlan` and dedup the sorted row with `UniqueConsecutivePlan`. The real composition is ROADMAP E0b. `tests/unique_plan_declines.rs` asserts the error and that the counter is untouched.

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! `unique` plan — sort + consecutive-dedup composition.
+//! `unique` plan — sort + consecutive-dedup composition (**not wired: `run` returns `Error::Unsupported`**).
 //!
-//! Composes [`crate::sort::SortPlan`] (in-place into a caller-supplied
-//! scratch buffer) followed by [`crate::sort::UniqueConsecutivePlan`].
-//! PyTorch `torch.unique(x, sorted=True)`.
+//! Meant to compose [`crate::sort::SortPlan`] (into a caller-supplied scratch buffer) followed by
+//! [`crate::sort::UniqueConsecutivePlan`], PyTorch `torch.unique(x, sorted=True)`. Up to 0.1.0-alpha.189 `run` only sorted and returned
+//! `Ok` without writing any output; it now declines. Compose the two plans yourself until ROADMAP E0b lands.
 //!
 //! Trailblazer dtype coverage: `f32, f64, i32`. Set-valued — no BW.
 //!
@@ -21,10 +21,7 @@ use baracuda_kernels_types::{
     TensorRef, Workspace,
 };
 
-use super::sort::{SortArgs, SortDescriptor, SortPlan};
-use super::unique_consecutive::{
-    UniqueConsecutiveDescriptor, UniqueConsecutivePlan, build_unique_sku,
-};
+use super::unique_consecutive::build_unique_sku;
 
 /// Descriptor for a `unique` op.
 #[derive(Copy, Clone, Debug)]
@@ -171,68 +168,16 @@ impl<T: Element> UniquePlan<T> {
     /// Launch — sort, then dedup.
     pub fn run(
         &self,
-        stream: &Stream,
+        _stream: &Stream,
         _workspace: Workspace<'_>,
         args: UniqueArgs<'_, T>,
     ) -> Result<()> {
         self.can_implement(&args)?;
-        if self.desc.batch == 0 {
-            return Ok(());
-        }
-
-        let sort_desc = SortDescriptor {
-            batch: self.desc.batch,
-            row_len: self.desc.row_len,
-            descending: false,
-            element: T::KIND,
-        };
-        let sort_plan = SortPlan::<T>::select(stream, &sort_desc, PlanPreference::default())?;
-        sort_plan.run(
-            stream,
-            Workspace::None,
-            SortArgs::<T> {
-                input: args.input,
-                values: args.sorted_scratch,
-                indices: args.sorted_idx_scratch,
-            },
-        )?;
-
-        // Stage 2 — borrow the now-populated sorted_scratch as the
-        // input for the dedup. We rebuild the views from the same
-        // underlying buffer; since this is sequential, the lifetime
-        // is fine.
-        let uc_desc = UniqueConsecutiveDescriptor {
-            batch: self.desc.batch,
-            row_len: self.desc.row_len,
-            max_unique: self.desc.max_unique,
-            return_counts: true,
-            element: T::KIND,
-        };
-        let uc_plan =
-            UniqueConsecutivePlan::<T>::select(stream, &uc_desc, PlanPreference::default())?;
-        // SAFETY: the sorted_scratch we re-borrow as TensorRef has
-        // already been written by the sort; we don't borrow it
-        // mutably again in this scope.
-        // We can't reuse args.sorted_scratch directly (it was moved
-        // into the sort_plan.run). Plan API requires the caller to
-        // pass a separate `sorted_input` view — but we modeled this
-        // as a single Args struct. The pragmatic fix: callers
-        // construct `sorted_scratch` then pass `&` it back to us via
-        // a re-derived TensorRef — that's what UniqueArgs is in
-        // practice. To avoid the borrow contortion, we don't actually
-        // run the dedup here; instead, we leave the unique-dedup as
-        // a separately-staged second call the user makes by chaining
-        // UniqueConsecutivePlan themselves. The UniquePlan currently
-        // serves as a documented "sort-then-dedup" intent stub with
-        // the sort step landed.
-        //
-        // Trailblazer scope: ship the sort path; callers needing a
-        // single-call unique can wrap this + UniqueConsecutivePlan
-        // themselves.
-        let _ = uc_plan;
-        let _ = args.values;
-        let _ = args.counts;
-        let _ = args.counter;
-        Ok(())
+        // Until the dedup stage is wired this plan declines rather than "succeed" with an empty result: up to 0.1.0-alpha.189 `run` only
+        // sorted into `sorted_scratch` and never wrote `values`, `counts` or `counter` (ROADMAP E0b). To get `unique` today, sort with
+        // `SortPlan` and dedup the sorted row with `UniqueConsecutivePlan` (the pair this plan is meant to compose).
+        Err(Error::Unsupported(
+            "baracuda-kernels::UniquePlan::run: the sort-then-dedup composition is not wired; compose SortPlan and UniqueConsecutivePlan",
+        ))
     }
 }
