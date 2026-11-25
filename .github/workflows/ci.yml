@@ -582,4 +582,4 @@ jobs:
     name: Portfolio checks (advisory)
     permissions:
       contents: read
-    uses: ciresnave/coderipper/.github/workflows/portfolio.yml@dc45e3632ab9f471292458e5ccba5f375084a70a # coderipper main on 2026-11-23 (carries the MOD-011 extern-symbol regrade, coderipper#362); moved from c72a6e03 (0.47.5) at the PM disposition
+    uses: ciresnave/coderipper/.github/workflows/portfolio.yml@467fd259d6d062cba4c5683d310f1a6f2b66e763 # coderipper#375 merge, CODERIPPER_VERSION 0.48.1 (MOD-011 pub-const regrade); supersedes dc45e363
