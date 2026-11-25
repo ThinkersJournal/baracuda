@@ -557,9 +557,19 @@ fn subgroup_collectives_lower_to_warp_intrinsics_and_the_rest_declines_by_name()
 
 #[test]
 fn a_cluster_launch_a_dynamic_allocation_and_an_ill_formed_kernel_are_declined() {
+    // A cluster launch lowers since ROADMAP S1 slice 5 (`__cluster_dims__`, sm_90); a multi-device one is still declined.
     let cluster =
         empty().with_launch(LaunchShape::new([4, 1, 1], [2, 1, 1]).with_cluster([2, 1, 1]));
-    assert!(detail(Cuda.lower_kernel(&cluster)).contains("cluster"));
+    let g = Cuda
+        .lower_kernel(&cluster)
+        .expect("a cluster launch lowers");
+    assert!(
+        g.source.contains("__cluster_dims__(2, 1, 1)"),
+        "{}",
+        g.source
+    );
+    let devices = empty().with_launch(LaunchShape::new([4, 1, 1], [2, 1, 1]).with_devices(2));
+    assert!(detail(Cuda.lower_kernel(&devices)).contains("multi-device"));
 
     // A scalar parameter bound to a local that was never declared is refused by the checker.
     let bad = KernelFn::new(

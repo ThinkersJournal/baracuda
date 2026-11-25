@@ -66,7 +66,9 @@
 //! a `Load`/`Store` of one is refused by name) lower as the prerequisite of the matrix statements. `MatrixLoad`
 //! (`ldmatrix`, sm_75) and `MatrixStore` (`stmatrix`, sm_90) lower in a launch whose subgroup is exactly 32 (any other
 //! subgroup range is still declined); the 8-element run is bounds-checked and 16-byte aligned or the kernel traps.
-//! `Wgmma*`, `Tcgen05*`, named and `Cluster` barriers and the tensor-map statements are still declined by name (ROADMAP S1 continues).
+//! Named barriers (`bar.sync`/`bar.arrive`, id 0 to 15, whole warps; previously any `Block` barrier printed `__syncthreads()`),
+//! the `Cluster` barrier (`barrier.cluster`) and a cluster launch (`__cluster_dims__`) lower for sm_90.
+//! `Wgmma*`, `Tcgen05*` and the tensor-map statements are still declined by name (ROADMAP S1 continues).
 //!
 //! Everything else is declined by name: any other statement (named by its variant, so a new `Stmt` variant is
 //! named too), any other expression node, a `Subgroup`, `Cluster` or `Device` barrier, a cluster or multi-device
@@ -77,8 +79,8 @@ use unpopped::backend::{GeneratedKernel, LowerError, Spelling};
 use unpopped::exec::{ExecId, Extent, MemorySpace, Scope};
 use unpopped::ir::{BinaryOp, ReduceOp, ScalarExpr};
 use unpopped::kernel::{
-    Block, BufferRole, CacheHint, CollectiveKind, KernelFn, ParamKind, Place, ShuffleMode, Stmt,
-    VoteKind, check_kernel,
+    BarrierKind, Block, BufferRole, CacheHint, CollectiveKind, KernelFn, ParamKind, Place,
+    ShuffleMode, Stmt, VoteKind, check_kernel,
 };
 use unpopped::kernel_interface::{KernelInterface, LaunchBounds, ParamsBlock, ParamsBlockField};
 use unpopped::types::{Ty, infer_ty_in};
@@ -1032,6 +1034,32 @@ impl Cx<'_> {
         Ok(())
     }
 
+    /// `bar.sync id, count` (`Named`) and `bar.arrive id, count` (`NamedArrive`) on a `Block`: `count` threads, whole warps, arrive at
+    /// barrier `id` (0 to 15). Spelled exactly: the statement is never a `__syncthreads()`, which would wait for the wrong threads.
+    fn named_barrier(&mut self, scope: Scope, kind: &BarrierKind) -> Result<(), LowerError> {
+        let (op, id, count) = match kind {
+            BarrierKind::Named { id, count } => ("bar.sync", *id, *count),
+            BarrierKind::NamedArrive { id, count } => ("bar.arrive", *id, *count),
+            _ => unreachable!("the caller passes a named kind"),
+        };
+        let name = &self.k.name;
+        let threads = self.k.launch.map_or(0, |l| l.block.iter().product::<u32>());
+        if !matches!(scope, Scope::Block)
+            || id > 15
+            || count == 0
+            || count % 32 != 0
+            || count > threads
+        {
+            return Err(refuse(format!(
+                "kernel `{name}`: `Barrier` {kind:?} in {scope:?} scope: a named barrier is a `Block` one with id 0 to 15 and a count that is whole warps within the block's {threads} threads"
+            )));
+        }
+        self.line(&format!(
+            "asm volatile(\"{op} %0, %1;\" :: \"n\"({id}), \"n\"({count}) : \"memory\");"
+        ));
+        Ok(())
+    }
+
     /// `mbarrier.try_wait.parity` in a loop until the phase of that parity has completed. The parity is 0 or 1 (anything else traps).
     fn mbar_wait(&mut self, bar: &Place, parity: &ScalarExpr) -> Result<(), LowerError> {
         self.sm90_used = true;
@@ -1224,9 +1252,33 @@ impl Cx<'_> {
             Stmt::Break => self.line("break;"),
             Stmt::Continue => self.line("continue;"),
             Stmt::Return => self.line("return;"),
-            Stmt::Barrier { scope, .. } => {
-                if matches!(scope, Scope::Block) {
+            Stmt::Barrier { scope, kind } => {
+                if matches!(
+                    kind,
+                    BarrierKind::Named { .. } | BarrierKind::NamedArrive { .. }
+                ) {
+                    self.named_barrier(*scope, kind)?;
+                } else if !matches!(kind, BarrierKind::Full) {
+                    return Err(refuse(format!(
+                        "kernel `{}`: a `Barrier` of kind {kind:?} is not lowered",
+                        self.k.name
+                    )));
+                } else if matches!(scope, Scope::Block) {
                     self.line("__syncthreads();");
+                } else if matches!(scope, Scope::Cluster) {
+                    if self.k.launch.is_none_or(|l| l.cluster.is_none()) {
+                        return Err(refuse(format!(
+                            "kernel `{}`: a `Cluster` `Barrier` in a launch that names no cluster",
+                            self.k.name
+                        )));
+                    }
+                    self.sm90_used = true;
+                    self.line(
+                        "asm volatile(\"barrier.cluster.arrive.release.aligned;\" ::: \"memory\");",
+                    );
+                    self.line(
+                        "asm volatile(\"barrier.cluster.wait.acquire.aligned;\" ::: \"memory\");",
+                    );
                 } else {
                     return Err(refuse(format!(
                         "kernel `{}`: a {scope:?}-scope `Barrier` is not lowered yet (stage 2 lowers the block barrier)",
@@ -1310,12 +1362,9 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     let mut bounds = None;
     if let Some(l) = &k.launch {
         // A subgroup of exactly 32 is a warp, what every NVIDIA target is (the matrix statements require it); any other range is declined.
-        if l.subgroup.is_some_and(|g| (g.min, g.max) != (32, 32))
-            || l.cluster.is_some()
-            || l.devices != 1
-        {
+        if l.subgroup.is_some_and(|g| (g.min, g.max) != (32, 32)) || l.devices != 1 {
             return Err(refuse(format!(
-                "kernel `{}`: a subgroup, cluster or multi-device launch is not lowered yet (stage 2 lowers a block and a grid)",
+                "kernel `{}`: a subgroup range other than exactly 32 or a multi-device launch is not lowered yet (a block, a grid and a cluster are)",
                 k.name
             )));
         }
@@ -1389,7 +1438,8 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
         fresh: 0,
         async_used: false,
         flagged: false,
-        sm90_used: false,
+        // A cluster launch (`__cluster_dims__`) needs sm_90.
+        sm90_used: k.launch.is_some_and(|l| l.cluster.is_some()),
         ldmatrix_used: false,
     };
     for (i, p) in k.params.iter().enumerate() {
@@ -1443,7 +1493,10 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     if cx.flagged {
         src.push_str("// Lowers an asynchronous-copy or collective statement under a patent risk note (board 434 C, docs/PATENT-SWEEP.md hits 22 and 23). Not a clearance.\n");
     }
-    let bounds_attr = bounds.map_or(String::new(), |t| format!("__launch_bounds__({t}) "));
+    let mut bounds_attr = bounds.map_or(String::new(), |t| format!("__launch_bounds__({t}) "));
+    if let Some([x, y, z]) = k.launch.and_then(|l| l.cluster) {
+        bounds_attr = format!("__cluster_dims__({x}, {y}, {z}) {bounds_attr}");
+    }
     let mut params = ptrs;
     params.push(format!("{sname} a"));
     src.push_str(&format!(
