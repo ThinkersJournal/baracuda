@@ -2,3 +2,4 @@
 crates/baracuda-cuda-emit/Cargo.toml
 crates/baracuda-cuda-parse/Cargo.toml
 crates/baracuda-cuda-seam/Cargo.toml
+crates/baracuda-hip-emit/Cargo.toml

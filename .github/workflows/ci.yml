@@ -185,9 +185,9 @@ jobs:
       # it genuinely needs a GPU. Added here, not there, specifically so this
       # crate's tests EXECUTE on a GPU-less runner instead of only type-checking.
       - name: cargo build (driver-free surface)
-        run: cargo build --locked -p baracuda-cuda-emit -p baracuda-cuda-vocab -p baracuda-cuda-parse -p baracuda-bench-stats
+        run: cargo build --locked -p baracuda-cuda-emit -p baracuda-cuda-vocab -p baracuda-cuda-parse -p baracuda-bench-stats -p baracuda-hip-emit
       - name: cargo clippy (driver-free surface)
-        run: cargo clippy --locked -p baracuda-cuda-emit -p baracuda-cuda-vocab -p baracuda-cuda-parse -p baracuda-bench-stats -- -D warnings
+        run: cargo clippy --locked -p baracuda-cuda-emit -p baracuda-cuda-vocab -p baracuda-cuda-parse -p baracuda-bench-stats -p baracuda-hip-emit -- -D warnings
       # Also lint in TEST mode. The step above compiles the lib with cfg(test)
       # FALSE, so a lint in an inline `#[cfg(test)]` module or in an integration
       # test file (tests/*.rs) is never compiled and never seen — the same "CI
@@ -195,9 +195,9 @@ jobs:
       # in a lib inline test rode in unnoticed until a `--tests` run found it).
       # `--tests` compiles the lib-test target plus every tests/*.rs.
       - name: cargo clippy (driver-free surface, tests)
-        run: cargo clippy --locked -p baracuda-cuda-emit -p baracuda-cuda-vocab -p baracuda-cuda-parse -p baracuda-bench-stats --tests -- -D warnings
+        run: cargo clippy --locked -p baracuda-cuda-emit -p baracuda-cuda-vocab -p baracuda-cuda-parse -p baracuda-bench-stats -p baracuda-hip-emit --tests -- -D warnings
       - name: cargo test (driver-free surface, no GPU)
-        run: cargo test --locked -p baracuda-cuda-emit -p baracuda-cuda-vocab -p baracuda-cuda-parse -p baracuda-bench-stats
+        run: cargo test --locked -p baracuda-cuda-emit -p baracuda-cuda-vocab -p baracuda-cuda-parse -p baracuda-bench-stats -p baracuda-hip-emit
       # `cargo doc` is also the ENFORCEMENT point for `[workspace.lints.rustdoc]`
       # (broken_intra_doc_links + private_intra_doc_links = deny). A broken
       # `[`Type`]` link is invisible to build/clippy/test — it renders as a live
@@ -218,7 +218,7 @@ jobs:
           [ -n "$WSVER" ] || { echo "cannot derive the workspace version"; exit 1; }
           cargo doc --locked --no-deps \
           -p baracuda-cuda-emit \
-          -p baracuda-cuda-seam \
+          -p baracuda-hip-emit \n          -p baracuda-cuda-seam \
           -p baracuda-cuda-vocab \
           -p baracuda-cuda-parse \
           -p baracuda-types@$WSVER \
@@ -392,7 +392,7 @@ jobs:
         # configuration, not only on code. (metadata, not a glob, is what caught
         # xtask slipping into the 1.88 set in the first place.)
         run: |
-          expected="baracuda-build baracuda-core baracuda-cuda-emit baracuda-cuda-vocab baracuda-types baracuda-types-derive"
+          expected="baracuda-build baracuda-core baracuda-cuda-emit baracuda-cuda-vocab baracuda-hip-emit baracuda-types baracuda-types-derive"
           exp=$(printf '%s\n' $expected | sort | tr '\n' ' '); exp="${exp% }"
           meta=$(cargo +1.88.0 metadata --locked --no-deps --format-version 1)
           names=$(printf '%s' "$meta" \

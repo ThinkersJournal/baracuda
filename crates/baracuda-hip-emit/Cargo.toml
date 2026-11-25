@@ -1,0 +1,29 @@
+[package]
+name = "baracuda-hip-emit"
+# One-version exception (CireSnave): an emitter crate keeps the version of the Unpopped it works with. 0.56.12 is the
+# Unpopped line today; the PM allocates any later patch number.
+version = "0.56.12"
+description = "HIP (AMD) backend for the neutral `unpopped` kernel generator: the `Hip` `Backend` (IR -> HIP C++ emitter), kernel-layer lowering stage 1. Sibling of `baracuda-cuda-emit`; declines NVIDIA-only statements by name."
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+readme = "README.md"
+keywords = ["hip", "amd", "gpu", "codegen", "rocm"]
+categories = ["compilers", "hardware-support"]
+homepage.workspace = true
+# Not published until the PM allocates the first release (ROADMAP H1).
+publish = false
+
+[features]
+# Compile the emitted text with NVRTC as a C++/`__global__` SYNTAX cross-check (no HIP compiler is available here; NOT a HIP build).
+nvrtc-syntax-check = ["dep:baracuda-cuda-emit", "baracuda-cuda-emit/nvrtc"]
+
+[dependencies]
+unpopped = { workspace = true }
+unpopped-vocab = { workspace = true }
+baracuda-cuda-emit = { workspace = true, optional = true }
+
+[lints]
+workspace = true

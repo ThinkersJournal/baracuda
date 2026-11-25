@@ -61,6 +61,8 @@ baracuda-cuda-seam = { version = "0.56.12", path = "crates/baracuda-cuda-seam" }
 # versions are immutable and a baracuda-only fix still needs a new number.
 # Moving to unpopped 0.12 means moving both to 0.12.0 in the same change.
 baracuda-cuda-emit = { version = "0.56.13", path = "crates/baracuda-cuda-emit" }
+# HIP (AMD) sibling of the CUDA emitter; keeps the Unpopped version it works with (same one-version exception). Not published yet.
+baracuda-hip-emit = { version = "0.56.12", path = "crates/baracuda-hip-emit" }
 # Version 0.11.0 allocated by the PM 2026-09-25, verifying the rule above
 # (not overriding it). Cleared for crates.io publication per CireSnave's
 # ruling on board item 63(c) (2026-09-26).

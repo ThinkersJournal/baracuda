@@ -494,6 +494,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "baracuda-hip-emit"
+version = "0.56.12"
+dependencies = [
+ "baracuda-cuda-emit",
+ "unpopped",
+ "unpopped-vocab",
+]
+
+[[package]]
 name = "baracuda-kernels"
 version = "0.1.0-alpha.186"
 dependencies = [
