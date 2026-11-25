@@ -98,32 +98,32 @@ template <typename T> struct AccMax {
     static __device__ __forceinline__ AccT identity();
     static __device__ __forceinline__ AccT load(const T* p) { return *p; }
     static __device__ __forceinline__ void store(T* p, AccT v) { *p = v; }
-    static __device__ __forceinline__ AccT combine(AccT a, AccT b) { return (a > b) ? a : b; }
+    static __device__ __forceinline__ AccT combine(AccT a, AccT b) { return (a != a) ? a : ((b != b) ? b : ((b > a) ? b : a)); }
 };
 
-template <> __device__ __forceinline__ float AccMax<float>::identity() { return -FLT_MAX; }
-template <> __device__ __forceinline__ double AccMax<double>::identity() { return -DBL_MAX; }
+template <> __device__ __forceinline__ float AccMax<float>::identity() { return -INFINITY; }
+template <> __device__ __forceinline__ double AccMax<double>::identity() { return -INFINITY; }
 
 template <> struct AccMax<__half> {
     using AccT = float;
-    static __device__ __forceinline__ AccT identity() { return -FLT_MAX; }
+    static __device__ __forceinline__ AccT identity() { return -INFINITY; }
     static __device__ __forceinline__ AccT load(const __half* p) { return __half2float(*p); }
     static __device__ __forceinline__ void store(__half* p, AccT v) { *p = __float2half(v); }
-    static __device__ __forceinline__ AccT combine(AccT a, AccT b) { return (a > b) ? a : b; }
+    static __device__ __forceinline__ AccT combine(AccT a, AccT b) { return (a != a) ? a : ((b != b) ? b : ((b > a) ? b : a)); }
 };
 
 template <> struct AccMax<__nv_bfloat16> {
     using AccT = float;
-    static __device__ __forceinline__ AccT identity() { return -FLT_MAX; }
+    static __device__ __forceinline__ AccT identity() { return -INFINITY; }
     static __device__ __forceinline__ AccT load(const __nv_bfloat16* p) { return __bfloat162float(*p); }
     static __device__ __forceinline__ void store(__nv_bfloat16* p, AccT v) { *p = __float2bfloat16(v); }
-    static __device__ __forceinline__ AccT combine(AccT a, AccT b) { return (a > b) ? a : b; }
+    static __device__ __forceinline__ AccT combine(AccT a, AccT b) { return (a != a) ? a : ((b != b) ? b : ((b > a) ? b : a)); }
 };
 
 // ----------------------------------------------------------------------------
 // Phase 37 — `reduce_min_to` and `reduce_prod_to` policies. Mirror the
 // AccSum / AccMax pattern: half / bf16 widen to f32, narrow on store.
-// `AccMin::identity()` = `+FLT_MAX` (matches the per-axis `MinReduce`
+// `AccMin::identity()` = `+INFINITY` (matches the per-axis `MinReduce`
 // fanout's `+INFINITY` semantics with the highest finite value as the
 // numerical identity for half-precision-widened accumulators).
 // `AccProd::identity()` = `1`.
@@ -134,26 +134,26 @@ template <typename T> struct AccMin {
     static __device__ __forceinline__ AccT identity();
     static __device__ __forceinline__ AccT load(const T* p) { return *p; }
     static __device__ __forceinline__ void store(T* p, AccT v) { *p = v; }
-    static __device__ __forceinline__ AccT combine(AccT a, AccT b) { return (a < b) ? a : b; }
+    static __device__ __forceinline__ AccT combine(AccT a, AccT b) { return (a != a) ? a : ((b != b) ? b : ((b < a) ? b : a)); }
 };
 
-template <> __device__ __forceinline__ float  AccMin<float>::identity()  { return FLT_MAX; }
-template <> __device__ __forceinline__ double AccMin<double>::identity() { return DBL_MAX; }
+template <> __device__ __forceinline__ float  AccMin<float>::identity()  { return INFINITY; }
+template <> __device__ __forceinline__ double AccMin<double>::identity() { return INFINITY; }
 
 template <> struct AccMin<__half> {
     using AccT = float;
-    static __device__ __forceinline__ AccT identity() { return FLT_MAX; }
+    static __device__ __forceinline__ AccT identity() { return INFINITY; }
     static __device__ __forceinline__ AccT load(const __half* p) { return __half2float(*p); }
     static __device__ __forceinline__ void store(__half* p, AccT v) { *p = __float2half(v); }
-    static __device__ __forceinline__ AccT combine(AccT a, AccT b) { return (a < b) ? a : b; }
+    static __device__ __forceinline__ AccT combine(AccT a, AccT b) { return (a != a) ? a : ((b != b) ? b : ((b < a) ? b : a)); }
 };
 
 template <> struct AccMin<__nv_bfloat16> {
     using AccT = float;
-    static __device__ __forceinline__ AccT identity() { return FLT_MAX; }
+    static __device__ __forceinline__ AccT identity() { return INFINITY; }
     static __device__ __forceinline__ AccT load(const __nv_bfloat16* p) { return __bfloat162float(*p); }
     static __device__ __forceinline__ void store(__nv_bfloat16* p, AccT v) { *p = __float2bfloat16(v); }
-    static __device__ __forceinline__ AccT combine(AccT a, AccT b) { return (a < b) ? a : b; }
+    static __device__ __forceinline__ AccT combine(AccT a, AccT b) { return (a != a) ? a : ((b != b) ? b : ((b < a) ? b : a)); }
 };
 
 template <typename T> struct AccProd {
