@@ -125,13 +125,16 @@ __global__ void reduce_logsumexp_axis_kernel(
             C v = DT::load(x[off_x_base + (int64_t)k * reduce_stride_x]);
             m = DT::gmax(m, v);
         }
-        // Pass 2: sum(exp(x - m)).
+        // Pass 2: sum(exp(x - ms)). `m` is infinite when the row holds a +inf (m = +inf) or only -inf and NaN (m = -inf, `fmax`
+        // ignores NaN): shifting by an infinite `m` gives inf - inf = NaN, so such a row is shifted by 0 instead. That makes an
+        // all -inf row -inf and a row with a +inf come out +inf (torch.logsumexp); a NaN in the row still reaches the sum and the result.
+        C ms = (m - m == C(0)) ? m : C(0);
         C s = C(0);
         for (int32_t k = 0; k < reduce_extent; ++k) {
             C v = DT::load(x[off_x_base + (int64_t)k * reduce_stride_x]);
-            s = s + DT::gexp(v - m);
+            s = s + DT::gexp(v - ms);
         }
-        C out = DT::glog(s) + m;
+        C out = DT::glog(s) + ms;
         y[off_y] = DT::store_from(out);
     }
 }
