@@ -6,7 +6,7 @@
 //! Backward:
 //!   `dx[c] = dy[c_reduced] * (x[c] - mean[c_reduced]) /
 //!            (m * y[c_reduced])`
-//!   where `m = max(n - correction, 1)`.
+//!   where `m = max(n - correction, 0)`.
 //!
 //! Needs saved `x` (full shape) AND saved `y` (keepdim shape; the
 //! forward std). Caller must ensure `y != 0` per reduce group.

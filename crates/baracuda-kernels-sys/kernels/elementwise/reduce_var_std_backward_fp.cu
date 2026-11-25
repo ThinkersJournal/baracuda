@@ -2,7 +2,7 @@
 // (Welford BW).
 //
 // Forward: `y = var(x, axis=k, correction=c)` or `y = std = sqrt(var)`.
-// Backward (with denom `m = max(n - correction, 1)`):
+// Backward (with denom `m = max(n - correction, 0)`):
 //   Var BW: `dx[c] = dy[c_reduced] * 2 * (x[c] - mean[c_reduced]) / m`
 //   Std BW: `dx[c] = dy[c_reduced] * (x[c] - mean[c_reduced]) / (m * y[c_reduced])`
 //

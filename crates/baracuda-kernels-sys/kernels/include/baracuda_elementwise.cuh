@@ -1111,7 +1111,7 @@ __host__ inline int32_t launch_reduce_logsumexp_backward(
 //
 // Forward:
 //   mean = sum(x) / n
-//   var  = sum((x - mean)^2) / m,  where m = max(n - correction, 1)
+//   var  = sum((x - mean)^2) / m,  where m = max(n - correction, 0)  (torch: m == 0 gives NaN for M2 == 0, inf otherwise)
 //   std  = sqrt(var)
 //
 // Backward (DoSqrt = false → Var):
@@ -1193,8 +1193,8 @@ __global__ void reduce_welford_backward_kernel(
     using Acc = typename WelfordAcc<T>::type;
     int64_t tid  = (int64_t)blockIdx.x * (int64_t)blockDim.x + (int64_t)threadIdx.x;
     int64_t step = (int64_t)gridDim.x  * (int64_t)blockDim.x;
-    Acc denom = static_cast<Acc>(reduce_extent - correction);
-    if (!(denom > (Acc)0)) denom = (Acc)1;
+    // torch divisor max(0, n - correction): zero is kept (0/0 = NaN, x/0 = inf), never clamped to 1.
+    Acc denom = static_cast<Acc>(reduce_extent > correction ? (reduce_extent - correction) : 0);
     Acc inv_n = (reduce_extent > 0) ? ((Acc)1 / static_cast<Acc>(reduce_extent)) : (Acc)0;
     for (int64_t i = tid; i < numel; i += step) {
         int64_t linear = i;
@@ -1361,7 +1361,7 @@ __host__ inline int32_t launch_repeat(
 //       mean  += delta / (k + 1);
 //       delta2 = x[k] - mean;
 //       M2    += delta * delta2;
-//   variance = M2 / (n - correction);   // correction=1 for sample, 0 for population
+//   variance = M2 / max(0, n - correction);   // correction=1 for sample, 0 for population; divisor 0 -> NaN / inf like torch
 //
 // `T` is the value dtype. Internal Welford state runs in `WelfordAcc<T>`
 // — `float` for f32/f16/bf16, `double` for f64. The result is cast
@@ -1409,8 +1409,9 @@ __global__ void reduce_welford_axis_kernel(
             Acc delta2 = v - mean;
             m2 += delta * delta2;
         }
-        Acc denom = static_cast<Acc>(reduce_extent - correction);
-        Acc variance = (denom > (Acc)0) ? (m2 / denom) : (Acc)0;
+        // torch divisor max(0, n - correction): extent == correction gives NaN (0/0), extent < correction gives inf (NaN if M2 == 0); it was 0.
+        Acc denom = static_cast<Acc>(reduce_extent > correction ? (reduce_extent - correction) : 0);
+        Acc variance = m2 / denom;
         Acc result = DoSqrt ? welford_sqrt<Acc>(variance) : variance;
         y[off_y] = welford_store_from_acc<T>(result);
     }

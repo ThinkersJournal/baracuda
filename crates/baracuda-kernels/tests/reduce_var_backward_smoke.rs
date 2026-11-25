@@ -4,7 +4,7 @@
 //!
 //! Forward (Welford):
 //!   `mean = sum(x) / n`
-//!   `var  = sum((x - mean)^2) / m,  m = max(n - correction, 1)`
+//!   `var  = sum((x - mean)^2) / m,  m = max(n - correction, 0)`
 //! Backward:
 //!   `dx[c] = dy[c_reduced] * 2 * (x[c] - mean[c_reduced]) / m`
 //!
