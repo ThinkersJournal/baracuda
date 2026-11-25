@@ -259,3 +259,52 @@ fn ptxas_accepts_sm90() {
         "sm_80 must refuse a source that needs sm_90"
     );
 }
+
+/// `Wgmma` needs shared-memory matrix descriptors the IR does not model (ROADMAP S3): it is refused by name and the decline says why,
+/// never approximated with a guessed descriptor.
+#[test]
+fn wgmma_is_refused_by_name_with_the_descriptor_reason() {
+    let h = ElementKind::F16;
+    let k = KernelFn::new(
+        "w",
+        I32,
+        vec![],
+        vec![LocalDecl::scalar(I32)],
+        Block(vec![Stmt::Wgmma {
+            n: 8,
+            ab: h,
+            acc: ElementKind::F32,
+            a: Place::Alloc {
+                alloc: 0,
+                index: c(0),
+            },
+            b: Place::Alloc {
+                alloc: 1,
+                index: c(0),
+            },
+            d: 2,
+            scale_d: c(0),
+        }]),
+    )
+    .with_allocs(vec![
+        AllocDecl::new("a", MemorySpace::Shared, h, Extent::Static(64 * 16)),
+        AllocDecl::new("b", MemorySpace::Shared, h, Extent::Static(8 * 16)),
+        AllocDecl::new(
+            "d",
+            MemorySpace::Private,
+            ElementKind::F32,
+            Extent::Static(4),
+        ),
+    ])
+    .with_launch(LaunchShape::new([128, 1, 1], [1, 1, 1]).with_subgroup(32, 32));
+    check_kernel(&k).unwrap_or_else(|e| panic!("the Wgmma fixture is not well-formed: {e:?}"));
+    match Cuda.lower_kernel(&k) {
+        Err(LowerError::UnsupportedKernel { detail }) => {
+            assert!(
+                detail.contains("`Wgmma`") && detail.contains("descriptor"),
+                "{detail}"
+            )
+        }
+        other => panic!("`Wgmma` must be refused, got {other:?}"),
+    }
+}

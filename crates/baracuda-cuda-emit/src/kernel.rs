@@ -1286,6 +1286,12 @@ impl Cx<'_> {
                     )));
                 }
             }
+            Stmt::Wgmma { .. } => {
+                return Err(refuse(format!(
+                    "kernel `{}`: `Wgmma` is not lowered: its operands are read through shared-memory matrix descriptors (start address, leading and stride byte offsets, swizzle mode) that the IR does not model (Unpopped's `Wgmma` is option A: no swizzle, no descriptor bits), so the emitter has nothing to derive them from (ROADMAP S3)",
+                    self.k.name
+                )));
+            }
             other => {
                 return Err(refuse(format!(
                     "kernel `{}`: statement `{}` is not lowered by the CUDA backend yet",
