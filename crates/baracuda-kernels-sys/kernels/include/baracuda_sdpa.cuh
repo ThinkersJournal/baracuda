@@ -318,7 +318,7 @@ __global__ void sdpa_out_kernel(
         for (int32_t kk = 0; kk < k_len; ++kk) {
             float av = load_as_f32<T>(attn[a_base + kk]);
             float vv = load_as_f32<T>(v[v_base + (int64_t)kk * d_v]);
-            if (av != 0.0f) acc += av * vv;   // a zero weight must not let a NaN value through (0 * NaN)
+            if (av != 0.0f) acc += av * vv;   // zero weight skips the product (a NaN value at a masked-out position is unspecified, not guaranteed)
         }
         y[lin] = store_from_f32<T>(acc);
     }
@@ -349,7 +349,7 @@ __global__ void sdpa_out_kernel<double>(
         int64_t v_base = ((int64_t)b * heads + h) * k_len * d_v + dv;
         double acc = 0.0;
         for (int32_t kk = 0; kk < k_len; ++kk) {
-            { double a_w = attn[a_base + kk]; if (a_w != 0.0) acc += a_w * v[v_base + (int64_t)kk * d_v]; }   // zero weight: masked-out NaN value ignored
+            { double a_w = attn[a_base + kk]; if (a_w != 0.0) acc += a_w * v[v_base + (int64_t)kk * d_v]; }   // zero weight skips the product (masked-out NaN value: unspecified)
         }
         y[lin] = acc;
     }
@@ -971,7 +971,7 @@ __global__ void sdpa_out_strided_kernel(
             float av = load_as_f32<T>(attn[a_base + kk]);
             int64_t v_off = (int64_t)b * svb + (int64_t)h * svh + (int64_t)kk * svs + (int64_t)dv;
             float vv = load_as_f32<T>(v[v_off]);
-            if (av != 0.0f) acc += av * vv;   // a zero weight must not let a NaN value through (0 * NaN)
+            if (av != 0.0f) acc += av * vv;   // zero weight skips the product (a NaN value at a masked-out position is unspecified, not guaranteed)
         }
         y[y_outer + (int64_t)dv] = store_from_f32<T>(acc);
     }

@@ -289,7 +289,8 @@ __global__ void attn_arbmask_fw_kernel(
                 for (int c = 0; c < bc_eff; ++c) {
                     CT p = sS[r * kBc + c];
                     CT vv = load_ct<T>(sV[c * d_v + dv]);
-                    // A zero weight (masked key) must not let a NaN or inf value through (0 * NaN): masked-out V rows stay ignored.
+                    // A zero weight (masked key) skips the product, so a NaN or inf value at a masked-out position is not read. That is
+                    // unspecified behaviour, not a guarantee (a dense decomposition would propagate 0 * NaN): no test pins it either way.
                     if (p != (CT)0) acc += p * vv;
                 }
                 CT alpha = sAlpha[r];

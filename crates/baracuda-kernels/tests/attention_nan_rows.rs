@@ -6,6 +6,7 @@
 //! - a NaN in a query row makes that row's output NaN and no other row's;
 //! - a NaN key or value that a row attends to (weight > 0) makes that row NaN;
 //! - a NaN or `+inf` entry in a row's additive mask makes that row NaN;
+//! - a NaN value at a position with weight 0 (masked out for that row) is UNSPECIFIED and not asserted here;
 //! - a row that is fully masked (all `-inf`, no NaN) stays all zeros with `lse = -inf` (the inference convention; unchanged).
 //!
 //! Before ROADMAP E0k a query row of NaN scored all NaN, the row max stayed `-inf`, and the kernel took its "fully masked" branch: zeros.
@@ -109,14 +110,11 @@ fn check(run: &Runner, name: &str) {
         "{name}: a NaN value every row attends to must reach every row"
     );
 
-    // Causal: a NaN value at key 2 is masked out for rows 0 and 1 (weight 0) and attended by row 2 only.
+    // Causal: key 2 is attended only by row 2. A NaN value there must reach row 2. Whether rows 0 and 1 (key 2 masked out, weight 0) stay
+    // NaN-free is UNSPECIFIED (tile-skipping kernels ignore it, dense decompositions propagate it): nothing is asserted about them.
     let mut c = ok.clone();
     c.v[2 * D] = f64::NAN;
     let (y, _) = run(&ctx, &stream, &c, true);
-    assert!(
-        row_finite(&y, 0) && row_finite(&y, 1),
-        "{name}: a NaN value masked out for a row must stay ignored (rows 0 and 1, causal)"
-    );
     assert!(
         y[2 * D].is_nan(),
         "{name}: row 2 attends to key 2, so it must be NaN"
