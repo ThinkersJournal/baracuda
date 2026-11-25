@@ -61,9 +61,10 @@
 //! carries an `#error` guard and the interface lists the requirement). The barrier is a `Shared` allocation of 64-bit
 //! elements (`I64`: `U64` has no CUDA spelling in this crate's typed table). An out-of-range count, transaction byte count
 //! or a parity other than 0 or 1 traps. `CopyBulk` (1-D `cp.async.bulk` global to `Shared`, completing on an `mbarrier`)
-//! lowers too, with the run, alignment and 16-byte multiple checked. `Wgmma*`, `Tcgen05*`, `MatrixLoad`/`MatrixStore`
-//! (they need `Private` allocations and 16-bit float element types, which this crate does not lower yet), named and
-//! `Cluster` barriers and the tensor-map statements are still declined by name (ROADMAP S1 continues).
+//! lowers too, with the run, alignment and 16-byte multiple checked. Static `Private` arrays (zeroed, per thread) and
+//! `F16`/`Bf16` allocation and buffer elements (**storage only**: carried as `unsigned short`, copied, never computed on;
+//! a `Load`/`Store` of one is refused by name) lower as the prerequisite of the matrix statements. `Wgmma*`, `Tcgen05*`,
+//! `MatrixLoad`/`MatrixStore`, named and `Cluster` barriers and the tensor-map statements are still declined by name (ROADMAP S1 continues).
 //!
 //! Everything else is declined by name: any other statement (named by its variant, so a new `Stmt` variant is
 //! named too), any other expression node, a `Subgroup`, `Cluster` or `Device` barrier, a cluster or multi-device
@@ -156,6 +157,24 @@ fn size_align(t: ElementKind) -> Option<u32> {
         ElementKind::I16 | ElementKind::U16 => 2,
         _ => return None,
     })
+}
+
+/// The C type that stores an allocation element: the typed table's, or for a 16-bit float (`F16`, `Bf16`) the 16-bit
+/// integer that carries its bits. **Storage only**: no arithmetic is lowered on those bits (a `Load`/`Store` of one is
+/// refused by name), so a half is moved, never computed on, and needs no header.
+fn alloc_ctype(t: ElementKind) -> Option<String> {
+    match t {
+        ElementKind::F16 | ElementKind::Bf16 => Some("unsigned short".to_string()),
+        _ => type_name(t),
+    }
+}
+
+/// Size in bytes of an allocation element (see [`alloc_ctype`]).
+fn alloc_size(t: ElementKind) -> Option<u32> {
+    match t {
+        ElementKind::F16 | ElementKind::Bf16 => Some(2),
+        _ => size_align(t),
+    }
 }
 
 /// One member of the argument block, in declaration order.
@@ -413,6 +432,19 @@ impl Cx<'_> {
         })
     }
 
+    /// Whether `place` is an element of an `F16`/`Bf16` allocation or buffer.
+    fn half_alloc(&self, place: &Place) -> bool {
+        let half = |t: ElementKind| matches!(t, ElementKind::F16 | ElementKind::Bf16);
+        match place {
+            Place::Alloc { alloc, .. } => half(self.k.allocs[*alloc as usize].elem),
+            Place::Logical { buffer, .. } => matches!(
+                &self.k.params[*buffer as usize].kind,
+                ParamKind::Buffer { elem, .. } if half(*elem)
+            ),
+            _ => false,
+        }
+    }
+
     /// The C lvalue of `place`, after emitting its address math and bounds checks (a `{ ... }` scope is the caller's).
     fn place(&mut self, place: &Place) -> Result<String, LowerError> {
         match place {
@@ -484,7 +516,7 @@ impl Cx<'_> {
             )));
         };
         let elem = self.k.allocs[*alloc as usize].elem;
-        let esize = size_align(elem).unwrap_or(0);
+        let esize = alloc_size(elem).unwrap_or(0);
         let bytes = esize * elems;
         if !matches!(bytes, 4 | 8 | 16) {
             return Err(refuse(format!(
@@ -526,7 +558,7 @@ impl Cx<'_> {
         };
         self.async_used = true;
         self.flagged = true;
-        let tn = type_name(elem).unwrap_or_default();
+        let tn = alloc_ctype(elem).unwrap_or_default();
         self.line("{");
         self.depth += 1;
         if let Some(v) = valid {
@@ -835,7 +867,7 @@ impl Cx<'_> {
             )));
         };
         let elem = self.k.allocs[*alloc as usize].elem;
-        let esize = size_align(elem).unwrap_or(0);
+        let esize = alloc_size(elem).unwrap_or(0);
         let bytes = esize * elems;
         if bytes == 0 || bytes % 16 != 0 {
             return Err(refuse(format!(
@@ -851,7 +883,7 @@ impl Cx<'_> {
         };
         self.sm90_used = true;
         self.flagged = true;
-        let tn = type_name(elem).unwrap_or_default();
+        let tn = alloc_ctype(elem).unwrap_or_default();
         self.line("{");
         self.depth += 1;
         let g = self.place(src)?;
@@ -930,6 +962,13 @@ impl Cx<'_> {
                 let t = self.local_ctype(*local)?;
                 let v = self.ex(value)?;
                 self.line(&format!("l{local} = ({t})({v});"));
+            }
+            Stmt::Load { place, .. } | Stmt::Store { place, .. } if self.half_alloc(place) => {
+                return Err(refuse(format!(
+                    "kernel `{}`: `{}` of a 16-bit float allocation or buffer is not lowered (16-bit floats are storage only here: copies, not arithmetic)",
+                    self.k.name,
+                    stmt_name(s)
+                )));
             }
             Stmt::Load { local, place } => {
                 let t = self.local_ctype(*local)?;
@@ -1153,8 +1192,8 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     }
     for a in &k.allocs {
         match (a.space, a.extent) {
-            (MemorySpace::Shared, Extent::Static(_)) => {
-                if type_name(a.elem).is_none() {
+            (MemorySpace::Shared | MemorySpace::Private, Extent::Static(_)) => {
+                if alloc_ctype(a.elem).is_none() {
                     return Err(refuse(format!(
                         "kernel `{}`: allocation `{}` of element type {:?} has no CUDA spelling",
                         k.name, a.name, a.elem
@@ -1163,7 +1202,7 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
             }
             (space, extent) => {
                 return Err(refuse(format!(
-                    "kernel `{}`: allocation `{}` ({space:?}, {extent:?}) is not lowered yet (stage 2 lowers static `Shared` arrays)",
+                    "kernel `{}`: allocation `{}` ({space:?}, {extent:?}) is not lowered yet (static `Shared` and `Private` arrays are lowered)",
                     k.name, a.name
                 )));
             }
@@ -1188,7 +1227,7 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     let mut ptrs = Vec::new();
     for (i, p) in k.params.iter().enumerate() {
         if let ParamKind::Buffer { elem, role, .. } = &p.kind {
-            let t = type_name(*elem).ok_or_else(|| {
+            let t = alloc_ctype(*elem).ok_or_else(|| {
                 refuse(format!(
                     "kernel `{}`: buffer `{}` of element type {elem:?} has no CUDA spelling",
                     k.name, p.name
@@ -1221,8 +1260,13 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     }
     for (i, a) in k.allocs.iter().enumerate() {
         if let Extent::Static(n) = a.extent {
-            let t = type_name(a.elem).unwrap_or_default();
-            cx.line(&format!("__shared__ {t} sh{i}[{n}];"));
+            let t = alloc_ctype(a.elem).unwrap_or_default();
+            if matches!(a.space, MemorySpace::Private) {
+                // A thread's own array; zeroed so an unwritten element is a defined 0, never stack garbage.
+                cx.line(&format!("{t} sh{i}[{n}] = {{}};"));
+            } else {
+                cx.line(&format!("__shared__ {t} sh{i}[{n}];"));
+            }
         }
     }
     if k.launch.is_none() {
