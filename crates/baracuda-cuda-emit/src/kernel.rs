@@ -63,8 +63,10 @@
 //! or a parity other than 0 or 1 traps. `CopyBulk` (1-D `cp.async.bulk` global to `Shared`, completing on an `mbarrier`)
 //! lowers too, with the run, alignment and 16-byte multiple checked. Static `Private` arrays (zeroed, per thread) and
 //! `F16`/`Bf16` allocation and buffer elements (**storage only**: carried as `unsigned short`, copied, never computed on;
-//! a `Load`/`Store` of one is refused by name) lower as the prerequisite of the matrix statements. `Wgmma*`, `Tcgen05*`,
-//! `MatrixLoad`/`MatrixStore`, named and `Cluster` barriers and the tensor-map statements are still declined by name (ROADMAP S1 continues).
+//! a `Load`/`Store` of one is refused by name) lower as the prerequisite of the matrix statements. `MatrixLoad`
+//! (`ldmatrix`, sm_75) and `MatrixStore` (`stmatrix`, sm_90) lower in a launch whose subgroup is exactly 32 (any other
+//! subgroup range is still declined); the 8-element run is bounds-checked and 16-byte aligned or the kernel traps.
+//! `Wgmma*`, `Tcgen05*`, named and `Cluster` barriers and the tensor-map statements are still declined by name (ROADMAP S1 continues).
 //!
 //! Everything else is declined by name: any other statement (named by its variant, so a new `Stmt` variant is
 //! named too), any other expression node, a `Subgroup`, `Cluster` or `Device` barrier, a cluster or multi-device
@@ -293,6 +295,8 @@ struct Cx<'a> {
     flagged: bool,
     /// A statement spelled here needs `sm_90` (mbarrier `expect_tx`/`complete_tx`/`try_wait`, `griddepcontrol`).
     sm90_used: bool,
+    /// The kernel uses `ldmatrix` (needs sm_75 or newer).
+    ldmatrix_used: bool,
 }
 
 impl Cx<'_> {
@@ -910,6 +914,124 @@ impl Cx<'_> {
         Ok(())
     }
 
+    /// `ldmatrix` (`load`; `sm_75`) or `stmatrix` (`sm_90`): `count` 8 x 8 tiles of 16-bit elements between a `Shared` allocation and the
+    /// `2 * count` 16-bit elements each lane holds in the `Private` allocation `reg`. Lane `8 * t + r` supplies, in `mem`, the first of the 8
+    /// contiguous elements of row `r` of tile `t` (the other lanes' place is not evaluated); the whole warp must reach it, so the block is
+    /// a multiple of 32 threads. The 8-element run is bounds-checked and its address must be 16-byte aligned, else the kernel traps.
+    fn matrix_move(
+        &mut self,
+        load: bool,
+        count: u32,
+        trans: bool,
+        mem: &Place,
+        reg: u32,
+    ) -> Result<(), LowerError> {
+        let what = if load { "MatrixLoad" } else { "MatrixStore" };
+        let name = &self.k.name;
+        if !matches!(count, 1 | 2 | 4) {
+            return Err(refuse(format!(
+                "kernel `{name}`: `{what}` of {count} tiles (ldmatrix/stmatrix move 1, 2 or 4)"
+            )));
+        }
+        let threads = self.k.launch.map_or(0, |l| l.block.iter().product::<u32>());
+        if threads == 0 || !threads.is_multiple_of(32) {
+            return Err(refuse(format!(
+                "kernel `{name}`: `{what}` is a warp rendezvous and needs a block of a multiple of 32 threads, got {threads}"
+            )));
+        }
+        let Place::Alloc { alloc, index } = mem else {
+            return Err(refuse(format!(
+                "kernel `{name}`: `{what}` through a place that is not a `Shared` allocation element is not lowered"
+            )));
+        };
+        let (m, r) = (
+            &self.k.allocs[*alloc as usize],
+            &self.k.allocs[reg as usize],
+        );
+        let sixteen = |t: ElementKind| alloc_size(t) == Some(2);
+        if !matches!(m.space, MemorySpace::Shared)
+            || !matches!(r.space, MemorySpace::Private)
+            || !sixteen(m.elem)
+            || m.elem != r.elem
+            || !matches!(r.extent, Extent::Static(n) if n == 2 * count)
+            || !matches!(m.extent, Extent::Static(_))
+        {
+            return Err(refuse(format!(
+                "kernel `{name}`: `{what}` needs a `Shared` allocation and a `Private` one of {} elements, both of one 16-bit element type",
+                2 * count
+            )));
+        }
+        let Extent::Static(n) = m.extent else {
+            unreachable!("checked above")
+        };
+        if load {
+            self.ldmatrix_used = true;
+        } else {
+            self.sm90_used = true;
+        }
+        let tt = if trans { ".trans" } else { "" };
+        let regs: Vec<String> = (0..count).map(|t| format!("_r{t}")).collect();
+        let lane = "((threadIdx.x + threadIdx.y * blockDim.x + threadIdx.z * blockDim.x * blockDim.y) & 31u)";
+        self.line("{");
+        self.depth += 1;
+        for t in 0..count {
+            if load {
+                self.line(&format!("unsigned _r{t};"));
+            } else {
+                self.line(&format!(
+                    "unsigned _r{t} = (unsigned)sh{reg}[{}] | ((unsigned)sh{reg}[{}] << 16);",
+                    2 * t,
+                    2 * t + 1
+                ));
+            }
+        }
+        self.line("unsigned _a = 0u;");
+        self.line(&format!("if ({lane} < {}u) {{", 8 * count));
+        self.depth += 1;
+        let lv = self.place(mem)?;
+        let i = self.ex(index)?;
+        self.line(&format!("if ((long long)({i}) + 8 > {n}) __trap();"));
+        self.line(&format!("_a = (unsigned)__cvta_generic_to_shared(&{lv});"));
+        self.line("if (_a & 15u) __trap();");
+        self.depth -= 1;
+        self.line("}");
+        let list = regs
+            .iter()
+            .enumerate()
+            .map(|(k, _)| format!("%{}", if load { k } else { k + 1 }))
+            .collect::<Vec<_>>()
+            .join(", ");
+        if load {
+            let outs = regs
+                .iter()
+                .map(|r| format!("\"=r\"({r})"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            self.line(&format!(
+                "asm volatile(\"ldmatrix.sync.aligned.m8n8.x{count}{tt}.shared.b16 {{{list}}}, [%{count}];\" : {outs} : \"r\"(_a) : \"memory\");"
+            ));
+            for t in 0..count {
+                self.line(&format!(
+                    "sh{reg}[{}] = (unsigned short)(_r{t} & 0xffffu); sh{reg}[{}] = (unsigned short)(_r{t} >> 16);",
+                    2 * t,
+                    2 * t + 1
+                ));
+            }
+        } else {
+            let ins = regs
+                .iter()
+                .map(|r| format!("\"r\"({r})"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            self.line(&format!(
+                "asm volatile(\"stmatrix.sync.aligned.m8n8.x{count}{tt}.shared.b16 [%0], {{{list}}};\" :: \"r\"(_a), {ins} : \"memory\");"
+            ));
+        }
+        self.depth -= 1;
+        self.line("}");
+        Ok(())
+    }
+
     /// `mbarrier.try_wait.parity` in a loop until the phase of that parity has completed. The parity is 0 or 1 (anything else traps).
     fn mbar_wait(&mut self, bar: &Place, parity: &ScalarExpr) -> Result<(), LowerError> {
         self.sm90_used = true;
@@ -1083,6 +1205,18 @@ impl Cx<'_> {
                 elems,
                 bar,
             } => self.copy_bulk(dst, src, *elems, bar)?,
+            Stmt::MatrixLoad {
+                count,
+                trans,
+                src,
+                dst,
+            } => self.matrix_move(true, *count, *trans, src, *dst)?,
+            Stmt::MatrixStore {
+                count,
+                trans,
+                dst,
+                src,
+            } => self.matrix_move(false, *count, *trans, dst, *src)?,
             Stmt::MbarInit { bar, count } => self.mbar_init(bar, count)?,
             Stmt::MbarArrive { bar, tx } => self.mbar_arrive(bar, tx.as_ref())?,
             Stmt::MbarCompleteTx { bar, bytes } => self.mbar_complete_tx(bar, bytes)?,
@@ -1175,7 +1309,11 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     }
     let mut bounds = None;
     if let Some(l) = &k.launch {
-        if l.subgroup.is_some() || l.cluster.is_some() || l.devices != 1 {
+        // A subgroup of exactly 32 is a warp, what every NVIDIA target is (the matrix statements require it); any other range is declined.
+        if l.subgroup.is_some_and(|g| (g.min, g.max) != (32, 32))
+            || l.cluster.is_some()
+            || l.devices != 1
+        {
             return Err(refuse(format!(
                 "kernel `{}`: a subgroup, cluster or multi-device launch is not lowered yet (stage 2 lowers a block and a grid)",
                 k.name
@@ -1252,6 +1390,7 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
         async_used: false,
         flagged: false,
         sm90_used: false,
+        ldmatrix_used: false,
     };
     for (i, p) in k.params.iter().enumerate() {
         if let ParamKind::Scalar { local, .. } = &p.kind {
@@ -1293,9 +1432,12 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     if cx.async_used {
         src.push_str("#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 800\n#error \"cp.async needs sm_80 or newer\"\n#endif\n");
     }
+    if cx.ldmatrix_used {
+        src.push_str("#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 750\n#error \"ldmatrix needs sm_75 or newer\"\n#endif\n");
+    }
     if cx.sm90_used {
         src.push_str(
-            "#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 900\n#error \"mbarrier transaction counts, mbarrier.try_wait and griddepcontrol need sm_90 or newer\"\n#endif\n",
+            "#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 900\n#error \"mbarrier transaction counts, mbarrier.try_wait, griddepcontrol and stmatrix need sm_90 or newer\"\n#endif\n",
         );
     }
     if cx.flagged {
@@ -1328,8 +1470,11 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     if cx.async_used {
         needs.push("cp.async (sm_80 or newer)");
     }
+    if cx.ldmatrix_used {
+        needs.push("ldmatrix (sm_75 or newer)");
+    }
     if cx.sm90_used {
-        needs.push("mbarrier / griddepcontrol (sm_90 or newer)");
+        needs.push("mbarrier / griddepcontrol / stmatrix (sm_90 or newer)");
     }
     if !needs.is_empty() {
         iface = iface.with_requires(needs.join("; "));
