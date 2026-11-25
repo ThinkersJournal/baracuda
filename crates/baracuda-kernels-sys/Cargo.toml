@@ -185,6 +185,11 @@ baracuda-cutlass-kernels-sys = { workspace = true }
 # version-pin and a no-op at compile time.
 baracuda-cutlass-sys = { workspace = true }
 
+[dev-dependencies]
+# `shared_align.rs` parses the vendored sampling.cuh with parse_cuda. Path only (no version): a
+# dev-dependency without a version is dropped from the published manifest.
+baracuda-cuda-parse = { path = "../baracuda-cuda-parse" }
+
 [build-dependencies]
 baracuda-forge = { workspace = true }
 

@@ -544,6 +544,7 @@ dependencies = [
 name = "baracuda-kernels-sys"
 version = "0.1.0-alpha.185"
 dependencies = [
+ "baracuda-cuda-parse",
  "baracuda-cutlass-kernels-sys",
  "baracuda-cutlass-sys",
  "baracuda-forge",
