@@ -402,8 +402,12 @@ __global__ void flash_sdpa_fw_kernel(
             // Row max over bc_eff valid cells (the padding cells were
             // -INF by construction so they naturally drop out of the max).
             CT mloc = -(CT)INFINITY;
+            // A NaN or +inf score poisons the row (torch: softmax of a row with a NaN is NaN, with a +inf it is NaN too). It must not
+            // be read as "fully masked" (-inf), which writes zeros: that swallowed a NaN query row into an all-zero output.
+            bool poison = false;
             for (int c = 0; c < bc_eff; ++c) {
                 CT v = sS[r * kBc + c];
+                if (v != v || v == (CT)INFINITY) { poison = true; continue; }
                 if (v > mloc) mloc = v;
             }
             CT mold = sM[r];
@@ -413,7 +417,15 @@ __global__ void flash_sdpa_fw_kernel(
             // this tile (alpha = 1, no P contribution).
             CT alpha;
             CT l_local = (CT)0;
-            if (!isfinite((float)mnew)) {
+            if (poison) {
+                // Sticky: l stays NaN through every later tile (alpha * NaN + x = NaN) and the finalize step writes NaN.
+                sL[r] = (CT)NAN;
+                alpha = (CT)1;
+                for (int c = 0; c < bc_eff; ++c) {
+                    sS[r * kBc + c] = (CT)0;
+                }
+                sAlpha[r] = alpha;
+            } else if (!isfinite((float)mnew)) {
                 // Both sides -inf → leave m_i, l_i, O_i unchanged.
                 alpha = (CT)1;
                 // Force all P cells to 0 for downstream O update.
@@ -468,7 +480,8 @@ __global__ void flash_sdpa_fw_kernel(
                 for (int c = 0; c < bc_eff; ++c) {
                     CT p = sS[r * kBc + c];
                     CT vv = load_ct<T>(sV[c * d_v + dv]);
-                    acc += p * vv;
+                    // A zero weight (masked key) must not let a NaN or inf value through (0 * NaN): masked-out V rows stay ignored.
+                    if (p != (CT)0) acc += p * vv;
                 }
                 CT alpha = sAlpha[r];
                 sO[r * d_v + dv] = alpha * sO[r * d_v + dv] + acc;
@@ -486,7 +499,9 @@ __global__ void flash_sdpa_fw_kernel(
             int dv = idx - r * d_v;
             CT l = sL[r];
             CT yv;
-            if (l > (CT)0 && isfinite((float)l)) {
+            if (l != l) {
+                yv = (CT)NAN;                 // poisoned row (NaN or +inf score)
+            } else if (l > (CT)0 && isfinite((float)l)) {
                 yv = sO[r * d_v + dv] / l;
             } else {
                 yv = (CT)0;
@@ -498,7 +513,9 @@ __global__ void flash_sdpa_fw_kernel(
         int r = tid;
         CT l = sL[r];
         CT lse_v;
-        if (l > (CT)0 && isfinite((float)l)) {
+        if (l != l) {
+            lse_v = (CT)NAN;
+        } else if (l > (CT)0 && isfinite((float)l)) {
             lse_v = sM[r] + (CT)log((double)l);
         } else {
             lse_v = -(CT)INFINITY;
