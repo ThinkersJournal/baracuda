@@ -766,13 +766,74 @@ __host__ inline int32_t launch_reduce_mean_backward(
 // forward output (max or min) — whichever forward kind ran, the BW
 // kernel just compares.
 //
-// Tie semantic: every tied position gets the FULL gradient (split-
-// across-ties / "share" convention, matching JAX). PyTorch routes
-// gradient to the first tied index only — that requires a saved
-// argmax/argmin tensor, deferred.
+// Tie semantic: the gradient is SPLIT evenly across the tied positions of a reduced group: `dx[c] = dy / count` where `count` is the
+// number of positions in the group with `x == y` (torch.amax / amin `scale_grad_by_count`, JAX `_reduce_chooser_jvp_rule`, Fuel's CPU
+// `reduce_max_to_backward`). A group with no `x == y` (a NaN row: `NaN == NaN` is false) has count 0, clamped to 1, and every `dx` is 0.
+// Up to 0.1.0-alpha.194 every tied position got the FULL `dy` (an earlier header called that JAX's convention; it is not).
 //
 // dy and y are read with `stride[reduce_axis] = 0` (broadcast); x and
 // dx walk the full input shape.
+
+// `dy / count` for the split-by-count rule; half types divide in f32.
+__device__ __forceinline__ float  rmm_div(float dy, int c)  { return dy / (float)c; }
+__device__ __forceinline__ double rmm_div(double dy, int c) { return dy / (double)c; }
+__device__ __forceinline__ __half rmm_div(__half dy, int c) {
+    return __float2half(__half2float(dy) / (float)c);
+}
+__device__ __forceinline__ __nv_bfloat16 rmm_div(__nv_bfloat16 dy, int c) {
+    return __float2bfloat16(__bfloat162float(dy) / (float)c);
+}
+
+// One block per reduced group (a cell of the keepdim output): the block counts the positions equal to `y` along the reduced axis, then
+// writes `dy / max(count, 1)` to each of them and 0 to the rest. O(numel) in total.
+template <typename T>
+__global__ void reduce_max_min_backward_split_kernel(
+    const T* __restrict__ dy,
+    const T* __restrict__ x,
+    const T* __restrict__ y,
+    T* __restrict__ dx,
+    int64_t cells,
+    int32_t rank,
+    DimsI32 shape,
+    DimsI64 stride_dy,
+    DimsI64 stride_x,
+    DimsI64 stride_y,
+    DimsI64 stride_dx,
+    int32_t axis,
+    int32_t extent)
+{
+    __shared__ int total;
+    for (int64_t cell = blockIdx.x; cell < cells; cell += gridDim.x) {
+        int64_t linear = cell;
+        int64_t off_dy = 0, off_x = 0, off_y = 0, off_dx = 0;
+        for (int d = rank - 1; d >= 0; --d) {
+            if (d == axis) continue;
+            int32_t s = shape.v[d];
+            int64_t coord = (s == 0) ? 0 : (linear % (int64_t)s);
+            if (s != 0) linear /= (int64_t)s;
+            off_dy += coord * stride_dy.v[d];
+            off_x  += coord * stride_x.v[d];
+            off_y  += coord * stride_y.v[d];
+            off_dx += coord * stride_dx.v[d];
+        }
+        const T yv = y[off_y];
+        int mine = 0;
+        for (int32_t k = threadIdx.x; k < extent; k += blockDim.x) {
+            if (x[off_x + (int64_t)k * stride_x.v[axis]] == yv) ++mine;
+        }
+        if (threadIdx.x == 0) total = 0;
+        __syncthreads();
+        atomicAdd(&total, mine);
+        __syncthreads();
+        const int count = total > 0 ? total : 1;
+        const T scaled = rmm_div(dy[off_dy], count);
+        for (int32_t k = threadIdx.x; k < extent; k += blockDim.x) {
+            dx[off_dx + (int64_t)k * stride_dx.v[axis]] =
+                (x[off_x + (int64_t)k * stride_x.v[axis]] == yv) ? scaled : T(0);
+        }
+        __syncthreads();
+    }
+}
 
 template <typename T>
 __global__ void reduce_max_min_backward_kernel(
@@ -834,8 +895,27 @@ __host__ inline int32_t launch_reduce_max_min_backward(
         s_y.v[i]   = stride_y_host[i];
         s_dx.v[i]  = stride_dx_host[i];
     }
+    // The reduced axis is the one the plan broadcast (stride 0 on dy and y) with extent > 1. With none, every group has one element, so
+    // count is 1 where `x == y` and `dx = dy` there: the per-cell kernel below is exact. More than one is not a single-axis reduction.
+    int axis = -1;
+    for (int i = 0; i < rank; ++i) {
+        if (shape.v[i] > 1 && s_y.v[i] == 0 && s_dy.v[i] == 0) {
+            if (axis >= 0) return 2;
+            axis = i;
+        }
+    }
     constexpr int kBlock = 256;
     constexpr int64_t kMaxBlocks = 65535;
+    if (axis >= 0) {
+        const int32_t extent = shape.v[axis];
+        const int64_t cells = numel / (int64_t)extent;
+        int blocks = static_cast<int>(cells > kMaxBlocks ? kMaxBlocks : cells);
+        if (blocks <= 0) blocks = 1;
+        reduce_max_min_backward_split_kernel<T><<<blocks, kBlock, 0, stream>>>(
+            dy, x, y, dx, cells, rank, shape, s_dy, s_x, s_y, s_dx, axis, extent);
+        cudaError_t err = cudaGetLastError();
+        return (err == cudaSuccess) ? 0 : 5;
+    }
     int64_t blocks_i64 = (numel + kBlock - 1) / kBlock;
     int blocks = static_cast<int>(blocks_i64 > kMaxBlocks ? kMaxBlocks : blocks_i64);
     if (blocks <= 0) blocks = 1;
