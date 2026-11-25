@@ -399,15 +399,24 @@ __global__ void flash_sdpa_sm89_fw_kernel(
         if (tid < br_eff) {
             int r = tid;
             float mloc = -INFINITY;
+            // A NaN or +inf score poisons the row (torch.softmax gives NaN); it must not be read as "fully masked", which writes zeros.
+            bool poison = false;
             for (int c = 0; c < bc_eff; ++c) {
                 float v_s = sS[r * kBc + c];
+                if (v_s != v_s || v_s == INFINITY) { poison = true; continue; }
                 if (v_s > mloc) mloc = v_s;
             }
             float mold = sM[r];
             float mnew = (mold > mloc) ? mold : mloc;
             float alpha;
             float l_local = 0.f;
-            if (!isfinite(mnew)) {
+            if (poison) {
+                // Sticky: l stays NaN through every later tile and the finalize step writes NaN.
+                sL[r] = NAN;
+                alpha = 1.f;
+                for (int c = 0; c < bc_eff; ++c) sS[r * kBc + c] = 0.f;
+                sAlpha[r] = alpha;
+            } else if (!isfinite(mnew)) {
                 alpha = 1.f;
                 for (int c = 0; c < bc_eff; ++c) sS[r * kBc + c] = 0.f;
                 sAlpha[r] = alpha;
@@ -452,7 +461,8 @@ __global__ void flash_sdpa_sm89_fw_kernel(
                 for (int c = 0; c < bc_eff; ++c) {
                     float p = sS[r * kBc + c];
                     float vv = load_f32<T>(sVstage[c * d_v + dv]);
-                    acc += p * vv;
+                    // A zero weight skips the product: a NaN value at a masked-out position is unspecified (not guaranteed either way).
+                    if (p != 0.f) acc += p * vv;
                 }
                 float a = sAlpha[r];
                 sO[r * d_v + dv] = a * sO[r * d_v + dv] + acc;
@@ -475,7 +485,9 @@ __global__ void flash_sdpa_sm89_fw_kernel(
             int dv = idx - r * d_v;
             float l = sL[r];
             float yv;
-            if (l > 0.f && isfinite(l)) {
+            if (l != l) {
+                yv = NAN;                 // poisoned row (NaN or +inf score)
+            } else if (l > 0.f && isfinite(l)) {
                 yv = sO[r * d_v + dv] / l;
             } else {
                 yv = 0.f;
@@ -487,7 +499,9 @@ __global__ void flash_sdpa_sm89_fw_kernel(
         int r = tid;
         float l = sL[r];
         float lse_v;
-        if (l > 0.f && isfinite(l)) {
+        if (l != l) {
+            lse_v = NAN;
+        } else if (l > 0.f && isfinite(l)) {
             lse_v = sM[r] + logf(l);
         } else {
             lse_v = -INFINITY;
@@ -750,15 +764,24 @@ __global__ void flash_sdpa_sm89_fw_kernel_strided(
         if (tid < br_eff) {
             int r = tid;
             float mloc = -INFINITY;
+            // A NaN or +inf score poisons the row (torch.softmax gives NaN); it must not be read as "fully masked", which writes zeros.
+            bool poison = false;
             for (int c = 0; c < bc_eff; ++c) {
                 float v_s = sS[r * kBc + c];
+                if (v_s != v_s || v_s == INFINITY) { poison = true; continue; }
                 if (v_s > mloc) mloc = v_s;
             }
             float mold = sM[r];
             float mnew = (mold > mloc) ? mold : mloc;
             float alpha;
             float l_local = 0.f;
-            if (!isfinite(mnew)) {
+            if (poison) {
+                // Sticky: l stays NaN through every later tile and the finalize step writes NaN.
+                sL[r] = NAN;
+                alpha = 1.f;
+                for (int c = 0; c < bc_eff; ++c) sS[r * kBc + c] = 0.f;
+                sAlpha[r] = alpha;
+            } else if (!isfinite(mnew)) {
                 alpha = 1.f;
                 for (int c = 0; c < bc_eff; ++c) sS[r * kBc + c] = 0.f;
                 sAlpha[r] = alpha;
@@ -801,7 +824,8 @@ __global__ void flash_sdpa_sm89_fw_kernel_strided(
                 for (int c = 0; c < bc_eff; ++c) {
                     float p = sS[r * kBc + c];
                     float vv = load_f32<T>(sVstage[c * d_v + dv]);
-                    acc += p * vv;
+                    // A zero weight skips the product: a NaN value at a masked-out position is unspecified (not guaranteed either way).
+                    if (p != 0.f) acc += p * vv;
                 }
                 float a = sAlpha[r];
                 sO[r * d_v + dv] = a * sO[r * d_v + dv] + acc;
@@ -820,7 +844,9 @@ __global__ void flash_sdpa_sm89_fw_kernel_strided(
             int dv = idx - r * d_v;
             float l = sL[r];
             float yv;
-            if (l > 0.f && isfinite(l)) {
+            if (l != l) {
+                yv = NAN;                 // poisoned row (NaN or +inf score)
+            } else if (l > 0.f && isfinite(l)) {
                 yv = sO[r * d_v + dv] / l;
             } else {
                 yv = 0.f;
@@ -833,7 +859,9 @@ __global__ void flash_sdpa_sm89_fw_kernel_strided(
         int r = tid;
         float l = sL[r];
         float lse_v;
-        if (l > 0.f && isfinite(l)) {
+        if (l != l) {
+            lse_v = NAN;
+        } else if (l > 0.f && isfinite(l)) {
             lse_v = sM[r] + logf(l);
         } else {
             lse_v = -INFINITY;
