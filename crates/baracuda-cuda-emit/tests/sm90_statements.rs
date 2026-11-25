@@ -128,7 +128,10 @@ fn declined_naming(body: Vec<Stmt>, name: &str) {
     check_kernel(&k).unwrap_or_else(|e| panic!("`{name}` fixture is not well-formed: {e:?}"));
     match Cuda.lower_kernel(&k) {
         Err(LowerError::UnsupportedKernel { detail }) => {
-            assert!(detail.contains(name), "decline must name `{name}`: {detail}")
+            assert!(
+                detail.contains(name),
+                "decline must name `{name}`: {detail}"
+            )
         }
         other => panic!("`{name}` must be refused by name, got {other:?}"),
     }
@@ -168,7 +171,8 @@ fn ptxas_accepts_sm90() {
         Stmt::GridDepWait,
         Stmt::GridDepLaunchDependents,
     ]);
-    let nv = NvrtcCompiler::new(TargetId::parse("cuda:sm90a").expect("token")).expect("nvrtc target");
+    let nv =
+        NvrtcCompiler::new(TargetId::parse("cuda:sm90a").expect("token")).expect("nvrtc target");
     nv.compile(&g.source, &g.name, 5000)
         .unwrap_or_else(|e| panic!("sm_90a rejected the source: {e}\n{}", g.source));
     // Control (the query can say "no"): the same source for `sm_80` is refused by the `#error` guard.
