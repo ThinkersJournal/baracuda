@@ -19,7 +19,8 @@ struct CummaxScan<float> {
     static __device__ __forceinline__ float init() { return -CUDART_INF_F; }
     static __device__ __forceinline__ float finalize(float acc, int32_t /*ext*/) { return acc; }
     __device__ __forceinline__ float operator()(float acc, float x) const {
-        return (x > acc) ? x : acc;
+        // NaN is sticky: once the running max is NaN it stays NaN, and a NaN input becomes it (torch.cummax).
+        return (acc != acc) ? acc : ((x != x || x > acc) ? x : acc);
     }
 };
 
@@ -28,7 +29,8 @@ struct CummaxScan<double> {
     static __device__ __forceinline__ double init() { return -CUDART_INF; }
     static __device__ __forceinline__ double finalize(double acc, int32_t /*ext*/) { return acc; }
     __device__ __forceinline__ double operator()(double acc, double x) const {
-        return (x > acc) ? x : acc;
+        // NaN is sticky: once the running max is NaN it stays NaN, and a NaN input becomes it (torch.cummax).
+        return (acc != acc) ? acc : ((x != x || x > acc) ? x : acc);
     }
 };
 
@@ -41,7 +43,7 @@ struct CummaxScan<__half> {
     __device__ __forceinline__ __half operator()(__half acc, __half x) const {
         float a = __half2float(acc);
         float b = __half2float(x);
-        return __float2half((b > a) ? b : a);
+        return __float2half((a != a) ? a : ((b != b || b > a) ? b : a));
     }
 };
 
@@ -56,7 +58,7 @@ struct CummaxScan<__nv_bfloat16> {
         __nv_bfloat16 acc, __nv_bfloat16 x) const {
         float a = __bfloat162float(acc);
         float b = __bfloat162float(x);
-        return __float2bfloat16((b > a) ? b : a);
+        return __float2bfloat16((a != a) ? a : ((b != b || b > a) ? b : a));
     }
 };
 
