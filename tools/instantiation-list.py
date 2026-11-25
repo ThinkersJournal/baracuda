@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT OR Apache-2.0
 """PROTOTYPE: (symbol, launcher, template-args, source file, site line) from PREPROCESSED .cu.
 
     python tools/instantiation-list.py [kernels/elementwise] [--nvcc nvcc] [--arch sm_89] [--only SUBSTR]
