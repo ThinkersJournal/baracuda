@@ -91,6 +91,33 @@ static __global__ void init_offsets_indices_kernel(
     }
 }
 
+// Stage the caller's keys into the sort buffer in the radix sort's order.
+//
+// CUB orders a float by its bit pattern, which is not the order every other argsort path uses (NaN largest, ties by lowest index, direction
+// independent: `baracuda_sort.cuh` `total_order_precedes`). A NaN with the sign bit set sorts below `-inf`. Only the indices are returned,
+// so the staged keys are canonicalised: every NaN becomes the positive quiet NaN (largest). `-0.0` needs no change (measured on the
+// device: zeros of both signs come back in index order). An integer key is copied unchanged (`v != v` is false for it).
+__device__ inline float  positive_nan(float)  { return __uint_as_float(0x7FC00000u); }
+__device__ inline double positive_nan(double) { return __longlong_as_double(0x7FF8000000000000ll); }
+// An integer key is never NaN; this overload only has to exist.
+__device__ inline int32_t positive_nan(int32_t v) { return v; }
+__device__ inline int64_t positive_nan(int64_t v) { return v; }
+
+template <typename T>
+static __global__ void stage_keys_kernel(
+    const T* __restrict__ x,
+    T* __restrict__ keys_in,
+    int64_t total)
+{
+    int64_t tid  = (int64_t)blockIdx.x * (int64_t)blockDim.x + (int64_t)threadIdx.x;
+    int64_t step = (int64_t)gridDim.x  * (int64_t)blockDim.x;
+    for (int64_t i = tid; i < total; i += step) {
+        T v = x[i];
+        if (v != v) v = positive_nan(v);
+        keys_in[i] = v;
+    }
+}
+
 // Compute the bytes needed for the caller-supplied workspace blob given
 // (batch, row_len) and the key dtype `T`. Returns 0 on degenerate
 // inputs (caller still passes a non-null pointer; CUB tolerates a
@@ -169,18 +196,19 @@ __host__ inline int32_t launch_argsort_big(
     // (1) Stage the input into keys_in. CUB's SortPairs does NOT
     // tolerate aliasing between `d_keys_in` and the caller's `x`
     // pointer (it writes into the buffer via double-buffer ping-pong),
-    // so we copy explicitly. `cudaMemcpyAsync` on the same stream
-    // serializes correctly with the subsequent kernel + CUB launches.
-    cudaError_t err = cudaMemcpyAsync(
-        keys_in, x, (size_t)total * sizeof(T), cudaMemcpyDeviceToDevice, stream);
-    if (err != cudaSuccess) return 5;
-
-    // (2) Populate offsets + identity payload.
+    // so we copy explicitly, canonicalising NaN and -0.0 on the way
+    // (see `stage_keys_kernel`). Same stream, so it serializes with
+    // the subsequent kernel + CUB launches.
     constexpr int kBlock = 256;
     int64_t blocks_i64 = (total + kBlock - 1) / kBlock;
     if (blocks_i64 < 1) blocks_i64 = 1;
     if (blocks_i64 > 65535) blocks_i64 = 65535;
     int blocks = (int)blocks_i64;
+    stage_keys_kernel<T><<<blocks, kBlock, 0, stream>>>(x, keys_in, total);
+    cudaError_t err = cudaGetLastError();
+    if (err != cudaSuccess) return 5;
+
+    // (2) Populate offsets + identity payload.
     init_offsets_indices_kernel<<<blocks, kBlock, 0, stream>>>(
         offsets, idx_in, batch, row_len);
     err = cudaGetLastError();
