@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: BSD-3-Clause
 // Vendored partial specialization of `cutlass::gemm::kernel::DefaultGemmWithBroadcast`
 // for `OperatorClass = cutlass::arch::OpClassSimt`.
 //
