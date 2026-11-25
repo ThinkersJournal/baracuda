@@ -23,7 +23,8 @@ use unpopped::exec::{AllocDecl, ExecId, Extent, LaunchShape, MemorySpace, Scope}
 use unpopped::ir::{BinaryOp, ScalarExpr};
 use unpopped::jit::Compiler;
 use unpopped::kernel::{
-    BarrierKind, Block, BufferRole, KernelFn, LocalDecl, Param, Place, Stmt, check_kernel,
+    BarrierKind, Block, BufferRole, CacheHint, KernelFn, LocalDecl, Param, Place, Stmt,
+    check_kernel,
 };
 use unpopped::oracle::TypedBuffer;
 use unpopped::oracle::kernel_eval::KernelArg;
@@ -273,6 +274,171 @@ fn named_barrier_groups() -> Case {
     }
 }
 
+fn ci(n: i64) -> ScalarExpr {
+    ScalarExpr::ConstInt(n, ElementKind::I32)
+}
+
+/// Thread `t` copies `x[4t..4t+4]` into `Shared` with one 16-byte `cp.async` (`valid` elements when given, the rest zero-filled by the
+/// hardware), commits, waits and barriers; then `out[2t] = sh[4t + 1]` and `out[2t + 1] = sh[4t + 3]`. Only the default cache form (`Auto`,
+/// shipped) is used: the `.ca`/`.cg` cache forms are held (board 502).
+fn copy_async(tag: &'static str, valid: Option<i64>) -> Case {
+    let t4 = || ScalarExpr::Mul(b(tid()), b(cu(4)));
+    let k = KernelFn::new(
+        tag,
+        F32,
+        vec![
+            Param::buffer("x", F32, BufferRole::Read, Some(1)),
+            Param::buffer("out", F32, BufferRole::Write, Some(1)),
+        ],
+        vec![LocalDecl::scalar(F32), LocalDecl::scalar(F32)],
+        Block(vec![
+            Stmt::CopyAsync {
+                dst: alloc_at(0, t4()),
+                src: at(0, t4()),
+                elems: 4,
+                valid: valid.map(ci),
+                cache: CacheHint::Auto,
+                l2_prefetch: None,
+            },
+            Stmt::AsyncCommit,
+            Stmt::AsyncWait { pending: 0 },
+            Stmt::Barrier {
+                scope: Scope::Block,
+                kind: BarrierKind::Full,
+            },
+            Stmt::Load {
+                local: 0,
+                place: alloc_at(0, ScalarExpr::Add(b(t4()), b(cu(1)))),
+            },
+            Stmt::Load {
+                local: 1,
+                place: alloc_at(0, ScalarExpr::Add(b(t4()), b(cu(3)))),
+            },
+            Stmt::Store {
+                place: at(1, ScalarExpr::Mul(b(tid()), b(cu(2)))),
+                value: ScalarExpr::Local(0),
+            },
+            Stmt::Store {
+                place: at(
+                    1,
+                    ScalarExpr::Add(b(ScalarExpr::Mul(b(tid()), b(cu(2)))), b(cu(1))),
+                ),
+                value: ScalarExpr::Local(1),
+            },
+        ]),
+    )
+    .with_allocs(vec![AllocDecl::new(
+        "sh",
+        MemorySpace::Shared,
+        F32,
+        Extent::Static(128),
+    )])
+    .with_launch(LaunchShape::new([32, 1, 1], [1, 1, 1]));
+    let xs: Vec<f32> = (0..128).map(|i| i as f32 + 1.0).collect();
+    Case {
+        tag,
+        k,
+        args: vec![
+            Arg::Buf(F32, f32_bytes(&xs)),
+            Arg::Buf(F32, vec![0; 64 * 4]),
+        ],
+        must_spell: Some("cp.async"),
+    }
+}
+
+/// `ldmatrix` of `count` 8 x 8 tiles of 16-bit elements (`trans` or not): lane `l < 8 * count` copies row `l` (8 elements, 16 bytes) of the
+/// tile stack from global into `Shared` with `cp.async`, then `MatrixLoad` fills a per-thread `U16` fragment, and each thread writes its
+/// `2 * count` elements widened to `u32` (a 16-bit integer is storage only: load, store, widen by a `Cast`). A fragment is therefore
+/// observable, which a half-float one is not.
+fn ldmatrix(tag: &'static str, count: u32, trans: bool) -> Case {
+    let u16t = ElementKind::U16;
+    let frag = (2 * count) as usize;
+    let mut body = vec![Stmt::If {
+        cond: ScalarExpr::Binary(BinaryOp::CmpLt, b(tid()), b(cu(i64::from(8 * count)))),
+        then: Block(vec![Stmt::CopyAsync {
+            dst: alloc_at(0, ScalarExpr::Mul(b(tid()), b(cu(8)))),
+            src: at(0, ScalarExpr::Mul(b(tid()), b(cu(8)))),
+            elems: 8,
+            valid: None,
+            cache: CacheHint::Auto,
+            l2_prefetch: None,
+        }]),
+        els: Block(Vec::new()),
+    }];
+    body.extend([
+        Stmt::AsyncCommit,
+        Stmt::AsyncWait { pending: 0 },
+        Stmt::Barrier {
+            scope: Scope::Block,
+            kind: BarrierKind::Full,
+        },
+        Stmt::MatrixLoad {
+            count,
+            trans,
+            src: alloc_at(0, ScalarExpr::Mul(b(tid()), b(cu(8)))),
+            dst: 1,
+        },
+    ]);
+    for j in 0..frag {
+        body.push(Stmt::Load {
+            local: j as u32,
+            place: alloc_at(1, cu(j as i64)),
+        });
+        body.push(Stmt::Store {
+            place: at(
+                1,
+                ScalarExpr::Add(
+                    b(ScalarExpr::Mul(b(tid()), b(cu(frag as i64)))),
+                    b(cu(j as i64)),
+                ),
+            ),
+            value: ScalarExpr::Cast(
+                b(ScalarExpr::Local(j as u32)),
+                unpopped::ir::CastSpec {
+                    to: U32,
+                    round: unpopped::ir::RoundMode::NearestEven,
+                    sat: unpopped::ir::Saturation::Wrap,
+                },
+            ),
+        });
+    }
+    let k = KernelFn::new(
+        tag,
+        U32,
+        vec![
+            Param::buffer("x", u16t, BufferRole::Read, Some(1)),
+            Param::buffer("out", U32, BufferRole::Write, Some(1)),
+        ],
+        // `Load` declares its local, so each fragment element gets its own.
+        (0..frag).map(|_| LocalDecl::scalar(u16t)).collect(),
+        Block(body),
+    )
+    .with_allocs(vec![
+        AllocDecl::new(
+            "tile",
+            MemorySpace::Shared,
+            u16t,
+            Extent::Static(64 * count),
+        ),
+        AllocDecl::new(
+            "frag",
+            MemorySpace::Private,
+            u16t,
+            Extent::Static(2 * count),
+        ),
+    ])
+    .with_launch(LaunchShape::new([32, 1, 1], [1, 1, 1]).with_subgroup(32, 32));
+    let xs: Vec<u8> = (0..64 * count as usize)
+        .flat_map(|i| ((i * 7 + 3) as u16).to_le_bytes())
+        .collect();
+    Case {
+        tag,
+        k,
+        args: vec![Arg::Buf(u16t, xs), Arg::Buf(U32, vec![0; 32 * frag * 4])],
+        must_spell: Some("ldmatrix"),
+    }
+}
+
 fn cases() -> Vec<Case> {
     vec![
         scale(),
@@ -281,6 +447,14 @@ fn cases() -> Vec<Case> {
         reverse_through_shared("named_barrier", 64, BarrierKind::Named { id: 1, count: 64 }),
         named_barrier_groups(),
         private_array(),
+        copy_async("copy_async", None),
+        copy_async("copy_async_valid2", Some(2)),
+        ldmatrix("ldmatrix_x1", 1, false),
+        ldmatrix("ldmatrix_x2", 2, false),
+        ldmatrix("ldmatrix_x4", 4, false),
+        ldmatrix("ldmatrix_x1_trans", 1, true),
+        ldmatrix("ldmatrix_x2_trans", 2, true),
+        ldmatrix("ldmatrix_x4_trans", 4, true),
     ]
 }
 
@@ -310,6 +484,7 @@ fn oracle_outputs(c: &Case) -> Result<Vec<Vec<u8>>, String> {
 fn elem_bytes(t: ElementKind) -> usize {
     match t {
         ElementKind::F32 | ElementKind::U32 | ElementKind::I32 => 4,
+        ElementKind::U16 => 2,
         other => panic!("conformance_device: unsupported {other:?}"),
     }
 }
@@ -372,7 +547,7 @@ fn run_on_device(
                 c.tag, g.source
             ));
         }
-        if g.source.contains("__syncthreads") {
+        if t == "bar.sync" && g.source.contains("__syncthreads") {
             return Err(format!(
                 "{}: a named-barrier kernel printed __syncthreads():
 {}",

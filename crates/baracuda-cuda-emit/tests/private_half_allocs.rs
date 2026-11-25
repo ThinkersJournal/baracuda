@@ -198,3 +198,68 @@ fn ptxas_accepts() {
             .unwrap_or_else(|e| panic!("sm_80 rejected a {elem:?} copy: {e}\n{}", g.source));
     }
 }
+
+/// A 16-bit integer is storage only: a `Load` into a `U16` local and a widening `Cast` lower, arithmetic on it is refused by name
+/// (C would promote it to `int`, which is not the IR's wrap at 16 bits). This is what makes a `ldmatrix` fragment observable.
+#[test]
+fn a_16_bit_integer_local_is_storage_only() {
+    use unpopped::ir::{CastSpec, RoundMode, Saturation};
+    let u16t = ElementKind::U16;
+    let widen = |e: ScalarExpr| {
+        ScalarExpr::Cast(
+            Box::new(e),
+            CastSpec {
+                to: ElementKind::U32,
+                round: RoundMode::NearestEven,
+                sat: Saturation::Wrap,
+            },
+        )
+    };
+    let build = |value: ScalarExpr| {
+        KernelFn::new(
+            "s16",
+            ElementKind::U32,
+            vec![Param::buffer(
+                "out",
+                ElementKind::U32,
+                BufferRole::ReadWrite,
+                Some(1),
+            )],
+            vec![LocalDecl::scalar(u16t)],
+            Block(vec![
+                Stmt::Load {
+                    local: 0,
+                    place: alloc(0),
+                },
+                Stmt::Store {
+                    place: Place::Logical {
+                        buffer: 0,
+                        coords: vec![c(0)],
+                    },
+                    value,
+                },
+            ]),
+        )
+        .with_allocs(vec![AllocDecl::new(
+            "t",
+            MemorySpace::Shared,
+            u16t,
+            Extent::Static(4),
+        )])
+        .with_launch(LaunchShape::new([32, 1, 1], [1, 1, 1]))
+    };
+    let ok = build(widen(ScalarExpr::Local(0)));
+    check_kernel(&ok).expect("well-formed");
+    assert!(Cuda.lower_kernel(&ok).is_ok(), "load + widen must lower");
+    let bad = build(widen(ScalarExpr::Add(
+        Box::new(ScalarExpr::Local(0)),
+        Box::new(ScalarExpr::Local(0)),
+    )));
+    check_kernel(&bad).expect("well-formed");
+    match Cuda.lower_kernel(&bad) {
+        Err(LowerError::UnsupportedKernel { detail }) => {
+            assert!(detail.contains("16-bit integer"), "{detail}")
+        }
+        other => panic!("arithmetic on a U16 must be refused, got {other:?}"),
+    }
+}

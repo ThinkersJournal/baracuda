@@ -136,6 +136,12 @@ fn computed(t: ElementKind) -> bool {
     )
 }
 
+/// A 16-bit integer that is **storage only** here: a local of it can be loaded, stored, assigned and widened by a `Cast`, but no
+/// arithmetic is lowered on it (C would promote it to `int`, which is not the IR's wrap-at-16-bits).
+fn storage16(t: ElementKind) -> bool {
+    matches!(t, ElementKind::U16 | ElementKind::I16)
+}
+
 fn is_float(t: ElementKind) -> bool {
     matches!(t, ElementKind::F32 | ElementKind::F64)
 }
@@ -323,7 +329,7 @@ impl Cx<'_> {
             ))
         })?;
         match ty {
-            Ty::Scalar(t) if computed(t) => Ok(t),
+            Ty::Scalar(t) if computed(t) || storage16(t) => Ok(t),
             Ty::Scalar(t) => Err(refuse(format!(
                 "kernel `{}`: a value of type {t:?} is not lowered yet (stage 2 computes in f32, f64, i32, u32 and i64)",
                 self.k.name
@@ -344,7 +350,7 @@ impl Cx<'_> {
 
     fn local_ctype(&self, i: u32) -> Result<String, LowerError> {
         let d = self.k.locals[i as usize];
-        if d.lanes != 1 || !computed(d.elem) {
+        if d.lanes != 1 || !(computed(d.elem) || storage16(d.elem)) {
             return Err(refuse(format!(
                 "kernel `{}`: local {i} ({:?}, {} lane(s)) is not lowered yet (stage 2 computes in f32, f64, i32, u32 and i64)",
                 self.k.name, d.elem, d.lanes
@@ -361,6 +367,12 @@ impl Cx<'_> {
     /// Spell `e` exactly, or decline it by node name.
     fn ex(&self, e: &ScalarExpr) -> Result<String, LowerError> {
         let t = self.scalar_ty(e)?;
+        if storage16(t) && !matches!(e, ScalarExpr::Local(_) | ScalarExpr::Cast(..)) {
+            return Err(refuse(format!(
+                "kernel `{}`: arithmetic on a 16-bit integer ({t:?}) is not lowered (it is storage only: load, store, widen by a `Cast`)",
+                self.k.name
+            )));
+        }
         let spelled = |s: Result<Spelling, LowerError>| -> Result<String, LowerError> {
             s?.spelled().map_err(LowerError::from)
         };
