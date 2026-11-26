@@ -1000,8 +1000,7 @@ __host__ inline int32_t launch_reduce_prod_backward(
 
 // Reduce-norm2 backward kernel — `dx[c] = dy[c_reduced] * x[c] /
 // y[c_reduced]` where y = sqrt(sum(x²)). Saved-x AND saved-y, same
-// ABI shape. Caller must ensure no `y[c_reduced] == 0` (only happens
-// when all x in the reduced group are zero).
+// ABI shape. An all-zero group (`y == 0`) gives 0, as in torch.
 
 template <typename T>
 __global__ void reduce_norm2_backward_kernel(
@@ -1031,7 +1030,10 @@ __global__ void reduce_norm2_backward_kernel(
             off_y  += coord * stride_y.v[d];
             off_dx += coord * stride_dx.v[d];
         }
-        dx[off_dx] = dy[off_dy] * x[off_x] / y[off_y];
+        // A zero norm (every x in the group is zero) has subgradient 0, as in torch (`norm_backward` masks it), not 0/0 = NaN.
+        // A NaN norm still gives NaN.
+        const T norm = y[off_y];
+        dx[off_dx] = (norm == T(0)) ? T(0) : dy[off_dy] * x[off_x] / norm;
     }
 }
 
