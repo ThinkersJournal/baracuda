@@ -6,14 +6,14 @@
 //! with a patent risk note; `cp.async` says it needs sm_80 in the interface, and the collectives are subgroup-scope only.
 
 use baracuda_cuda_emit::Cuda;
-use unpopped::backend::{Backend, LowerError};
+use unpopped::backend::{Backend, DtypeSupport, LowerError};
 use unpopped::exec::{AllocDecl, ExecId, Extent, LaunchShape, MemorySpace};
 use unpopped::ir::{BinaryOp, ScalarExpr};
 use unpopped::kernel::{
     Block, BufferRole, CacheHint, CollectiveKind, KernelError, KernelFn, LocalDecl, Param, Place,
     ShuffleMode, Stmt, VoteKind, check_kernel,
 };
-use unpopped_vocab::ElementKind;
+use unpopped_vocab::{ElementKind, TargetId};
 
 const I32: ElementKind = ElementKind::I32;
 const U32: ElementKind = ElementKind::U32;
@@ -598,10 +598,12 @@ fn an_element_type_outside_the_cuda_table_is_declined_by_name() {
     );
 }
 
-/// KISS 0.24.0 element rows (unpopped 0.60): the checker itself refuses a kernel that declares one of these as a buffer
-/// (`KernelError::DtypeNotComputed { dtype }`: the row exists in the vocabulary but nothing computes it yet), and the lowering
-/// reports that refusal as an ill-formed kernel naming the dtype, so each is declined BY NAME before the CUDA table is consulted.
-/// `F16` in the test above is the control for the other path (checker-valid, then "no CUDA spelling" from the emitter's own table).
+/// KISS 0.24.0 element rows (unpopped 0.60). TWO gates, asserted separately:
+/// 1. the CHECKER refusal (Unpopped): `check_kernel` gives `KernelError::DtypeNotComputed { dtype }` for a kernel declaring one of
+///    these as a buffer, and `lower_kernel` reports it as an ill-formed kernel naming the dtype. The emitter's own by-name decline
+///    ("no CUDA spelling") is unreachable through `lower_kernel` for these kinds until a checker admits them;
+/// 2. the EMITTER's own answer, asserted directly: `Cuda.supports_dtype` says `Unsupported` and `scalar_ctype` is `None` for each,
+///    so the day a checker admits a row the emitter still declines. `F32` is the positive control for both.
 /// Rows to lower later are recorded in ROADMAP S14.
 #[test]
 fn the_seven_new_element_rows_are_each_declined_by_name() {
@@ -631,7 +633,28 @@ fn the_seven_new_element_rows_are_each_declined_by_name() {
             d.contains("ill-formed") && d.contains("DtypeNotComputed") && d.contains(name),
             "{name}: {d}"
         );
+        // Gate 2: the emitter's own table, independent of the checker.
+        let sm89 = TargetId::parse("cuda:sm89").expect("token");
+        assert!(
+            matches!(Cuda.supports_dtype(kind, sm89), DtypeSupport::Unsupported),
+            "{name}: the emitter's own dtype gate must decline"
+        );
+        assert_eq!(
+            baracuda_cuda_emit::cfamily_shadow::scalar_ctype(kind),
+            None,
+            "{name}: the emitter's own ctype table has no spelling"
+        );
     }
+    // Positive control: the same two calls answer yes for F32, so the assertions above can fail.
+    let sm89 = TargetId::parse("cuda:sm89").expect("token");
+    assert!(matches!(
+        Cuda.supports_dtype(ElementKind::F32, sm89),
+        DtypeSupport::Supported
+    ));
+    assert_eq!(
+        baracuda_cuda_emit::cfamily_shadow::scalar_ctype(ElementKind::F32),
+        Some("float")
+    );
 }
 
 /// The emitted source must be real CUDA: compile it with NVRTC (PTX only, nothing runs). `sm_89` always; `sm_61` when the
