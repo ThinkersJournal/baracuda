@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.207 - 2026-11-26
+
+The Std reduction backward computed `dy * (x - mean) / (m * y)`; for a constant group the standard deviation `y` is 0 and the result was 0/0 = NaN. torch's `std_backward` masks `result == 0` to a zero gradient, and so does the kernel now. A NaN standard deviation (a NaN in the group, or no divisor) still gives NaN. One kernel template serves f32, f16, bf16 and f64; the device test runs f32 and f64. Device test `reduce_std_backward_zero`: red on the old kernel, green on the fix; the existing Std backward smoke tests still pass.
+
 ## 0.1.0-alpha.206 - 2026-11-26
 
 `log_cumsum_exp_backward` computes `dx[k] = sum_i dy[i] * exp(x[k] - y[i])`. When a prefix of the input is all `-inf` (leading masked entries), `x[k]` and `y[i]` are both `-inf` and the weight was `exp(-inf - -inf) = NaN`, so `dx` was NaN although the forward result is a clean `-inf`. Torch's weight there is 0 (zero mass); the kernel now skips exactly the `-inf`/`-inf` pair. `+inf` / `+inf` stays NaN and a NaN in `x`, `y` or `dy` still poisons the sum. f32, f16, bf16, f64, forward and reverse. Device test `scan_log_cumsum_exp_backward_neginf`: red on the old kernel (8 of 8), green on the fix; the existing smoke test still passes. KISS `spec/ops.md` has no logcumsumexp clause (a grep for it finds nothing; the same grep for `cumsum` finds `spec/ops.md`), so the torch convention applies (pm-kernels ruling).
