@@ -2,6 +2,8 @@
 //! Issue #420: `tree-sitter-cuda` 0.21 rejects `extern __shared__ __align__(alignof(T)) uint8_t smem[];`
 //! (FlashInfer's dynamic-shared-memory idiom, `sampling.cuh`, 10 kernels). `parse_cuda` must accept it
 //! with no ERROR node and without moving any byte offset of the source.
+//! Lives here, next to the vendored `sampling.cuh` it reads (it was in `baracuda-cuda-parse/tests`, whose
+//! packaged `.crate` cannot carry a file outside the crate), so it ships with the file it reads.
 
 use baracuda_cuda_parse::parse_cuda;
 
@@ -52,9 +54,7 @@ fn workaround_does_not_move_byte_offsets() {
 /// (sampling.cuh:303, 430, 509, 739, 787-789). Other lines of the file are out of scope here.
 #[test]
 fn vendored_flashinfer_sampling_has_no_error_on_its_smem_declarations() {
-    let src = include_str!(
-        "../../baracuda-kernels-sys/vendor/flashinfer/include/flashinfer/sampling.cuh"
-    );
+    let src = include_str!("../vendor/flashinfer/include/flashinfer/sampling.cuh");
     let align_lines: Vec<usize> = src
         .lines()
         .enumerate()

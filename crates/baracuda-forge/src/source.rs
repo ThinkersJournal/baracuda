@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
 // Origin: guoqingbao/cudaforge@aa77db3 src/source.rs (MIT OR Apache-2.0 per its Cargo.toml; no LICENSE file upstream);
 // vs upstream after comment/whitespace stripping: code-identical. See ../NOTICE.
 // Credit: original work by Guoqing Bao (cudaforge, https://github.com/guoqingbao/cudaforge), declared `MIT OR Apache-2.0`
