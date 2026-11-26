@@ -1,0 +1,3 @@
+kind: Fixed: cumprod backward is exact when the input holds zeros (it gave inf/NaN)
+---
+The cumprod backward kernel computed `dy * y / x[j]`, so every zero in the input produced inf or NaN (torch gives the exact gradient). It now multiplies the other elements instead of dividing: `dx[j] = (prod of x before j) * sum_{i >= j} dy[i] * (prod of x between j and i)`, mirrored for a reverse scan. A zero at `x[j]` gets its true gradient, and a NaN `x[j]` still gives NaN (torch divides by it). f32, f16, bf16 and f64. Device test `scan_cumprod_backward_zeros` (zeros at 0, 1 and 2 positions and a NaN row, forward and reverse): red on the old kernel (NaN at the zero slot), green on the fix.
