@@ -23,6 +23,11 @@
 //! skipped (no write); negative indices are treated as out-of-bounds
 //! (no PyTorch-style wrap).
 //!
+//! DIVERGES FROM TORCH: torch raises on an out-of-range index; a kernel cannot, so such an index is
+//! skipped and the output cell is left untouched (it may hold stale data, for `index_select` /
+//! `gather` the buffer's previous contents). This holds for every element type, f32 and half alike
+//! (ROADMAP E4 tracks a device error flag that turns it into a typed error).
+//!
 //! `ScatterAdd` has no separate BW plan — the backward of `scatter_add`
 //! is `gather`, which callers route through [`GatherPlan`].
 
