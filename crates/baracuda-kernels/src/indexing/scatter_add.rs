@@ -67,7 +67,7 @@ pub struct ScatterAddArgs<'a, T: Element, const N: usize, I: IndexElement = i32>
 /// `ScatterAddBackwardPlan` because `scatter_add`'s BW is exactly
 /// `gather`.
 ///
-/// **Dtypes**: `{f32, f64, f16, bf16}` (half adds by compare-and-swap; with duplicate target indices the order of the additions into a cell is not defined, so a half result is only as reproducible as the rounding of its partial sums). Integer scatter-add is hardware-supported
+/// **Dtypes**: `{f32, f64, f16, bf16}` (half adds by compare-and-swap; with duplicate target indices the order of the additions into a cell is not defined, so a half result is only as reproducible as the rounding of its partial sums. torch's CUDA `scatter_add_` / `index_add_` atomics are order-nondeterministic in the same way). Integer scatter-add is hardware-supported
 /// but kept out-of-scope for the trailblazer.
 ///
 /// **Shape limits**: rank in `[1, 8]`; `scatter_dim ∈ [0, N)`;
