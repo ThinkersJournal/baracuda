@@ -2619,6 +2619,8 @@ fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_backward_f64_can_implement	
 fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_backward_f64_run	f56c64c8b6d54157	-
 fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_backward_i32_can_implement	d18a3a353e5bce63	-
 fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_backward_i32_run	f56c64c8b6d54157	-
+fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_backward_u16_can_implement	d18a3a353e5bce63	-
+fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_backward_u16_run	f56c64c8b6d54157	-
 fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_bool_can_implement	291916f2c8a72b67	-
 fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_bool_run	8c9187df284145d2	-
 fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_f32_can_implement	291916f2c8a72b67	-
@@ -2627,6 +2629,8 @@ fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_f64_can_implement	291916f2c
 fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_f64_run	8c9187df284145d2	-
 fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_i32_can_implement	291916f2c8a72b67	-
 fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_i32_run	8c9187df284145d2	-
+fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_u16_can_implement	291916f2c8a72b67	-
+fn	baracuda-kernels-sys	baracuda_kernels_masked_fill_u16_run	8c9187df284145d2	-
 fn	baracuda-kernels-sys	baracuda_kernels_mhc_layer_static_bf16_backward	46b225c95b05566f	-
 fn	baracuda-kernels-sys	baracuda_kernels_mhc_layer_static_bf16_can_implement	0ddb1574ffc70e2d	-
 fn	baracuda-kernels-sys	baracuda_kernels_mhc_layer_static_bf16_create	96f7ff90cd636304	-
@@ -5392,6 +5396,7 @@ fn	baracuda-kernels-sys	baracuda_kernels_unique_consecutive_f64_can_implement	d9
 fn	baracuda-kernels-sys	baracuda_kernels_unique_consecutive_f64_run	223cc046c50799a1	-
 fn	baracuda-kernels-sys	baracuda_kernels_unique_consecutive_i32_can_implement	d9a1697af857d2a7	-
 fn	baracuda-kernels-sys	baracuda_kernels_unique_consecutive_i32_run	223cc046c50799a1	-
+fn	baracuda-kernels-sys	baracuda_kernels_unique_consecutive_i64_run	223cc046c50799a1	-
 fn	baracuda-kernels-sys	baracuda_kernels_unsorted_segment_max_backward_f32_can_implement	7e653e475f9bb194	-
 fn	baracuda-kernels-sys	baracuda_kernels_unsorted_segment_max_backward_f32_run	2437cba0d727162e	-
 fn	baracuda-kernels-sys	baracuda_kernels_unsorted_segment_max_backward_f64_can_implement	7e653e475f9bb194	-
