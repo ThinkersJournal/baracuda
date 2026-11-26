@@ -1305,9 +1305,10 @@ __global__ void reduce_welford_backward_kernel(
         Acc diff = xc - mean;
         Acc out;
         if (DoSqrt) {
-            // Std BW: dy * (x - mean) / (m * y). Caller must ensure y != 0.
+            // Std BW: dy * (x - mean) / (m * y). A zero std (a constant group) has gradient 0, as in torch (`std_backward` masks
+            // `result == 0`), not 0/0 = NaN (ROADMAP E0). A NaN std (a NaN in the group, or no divisor) still gives NaN.
             Acc yc = welford_load_as_acc<T>(y[off_y]);
-            out = dyc * diff / (denom * yc);
+            out = (yc == (Acc)0) ? (Acc)0 : dyc * diff / (denom * yc);
         } else {
             // Var BW: dy * 2 * (x - mean) / m.
             out = dyc * (Acc)2 * diff / denom;
