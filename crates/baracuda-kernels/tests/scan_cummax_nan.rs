@@ -13,6 +13,29 @@ use baracuda_kernels::{
     contiguous_stride,
 };
 
+use half::{bf16, f16};
+
+trait Conv: Copy {
+    fn from64(v: f64) -> Self;
+    fn to64(self) -> f64;
+}
+macro_rules! conv {
+    ($t:ty, $from:expr, $to:expr) => {
+        impl Conv for $t {
+            fn from64(v: f64) -> Self {
+                $from(v)
+            }
+            fn to64(self) -> f64 {
+                $to(self)
+            }
+        }
+    };
+}
+conv!(f32, |v| v as f32, |s: f32| s as f64);
+conv!(f64, |v| v, |s: f64| s);
+conv!(f16, f16::from_f64, f16::to_f64);
+conv!(bf16, bf16::from_f64, bf16::to_f64);
+
 fn setup() -> (Context, Stream) {
     init().expect("driver init");
     let ctx = Context::new(&Device::get(0).expect("device 0")).expect("context");
@@ -92,7 +115,7 @@ macro_rules! cum_tests {
             let mut bad = Vec::new();
             for reverse in [false, true] {
                 let data = rows(0xc0ffee ^ reverse as u64);
-                let flat: Vec<$T> = data.iter().flatten().map(|v| *v as $T).collect();
+                let flat: Vec<$T> = data.iter().flatten().map(|v| <$T as Conv>::from64(*v)).collect();
                 let shape = [ROWS as i32, LEN as i32];
                 let dx = DeviceBuffer::from_slice(&ctx, &flat).unwrap();
                 let mut dy: DeviceBuffer<$T> = DeviceBuffer::zeros(&ctx, flat.len()).unwrap();
@@ -116,12 +139,12 @@ macro_rules! cum_tests {
                 )
                 .unwrap();
                 stream.synchronize().unwrap();
-                let mut got = vec![0 as $T; flat.len()];
+                let mut got = vec![<$T as Conv>::from64(0.0); flat.len()];
                 dy.copy_to_host(&mut got).unwrap();
                 for (r, row) in data.iter().enumerate() {
                     let want = walk(row, $is_max, reverse);
                     for i in 0..LEN {
-                        let g = got[r * LEN + i] as f64;
+                        let g = <$T as Conv>::to64(got[r * LEN + i]);
                         if !same(g, want[i].0) {
                             bad.push(format!(
                                 "reverse={reverse} row {r} pos {i}: got {g}, want {} (row {row:?})",
@@ -145,9 +168,9 @@ macro_rules! cum_tests {
             let mut bad = Vec::new();
             for reverse in [false, true] {
                 let data = rows(0xbadc0de ^ reverse as u64);
-                let flat: Vec<$T> = data.iter().flatten().map(|v| *v as $T).collect();
+                let flat: Vec<$T> = data.iter().flatten().map(|v| <$T as Conv>::from64(*v)).collect();
                 let mut g = Lcg(7);
-                let dyv: Vec<$T> = (0..flat.len()).map(|_| (g.next() % 9) as $T - 4.0).collect();
+                let dyv: Vec<$T> = (0..flat.len()).map(|_| <$T as Conv>::from64((g.next() % 9) as f64 - 4.0)).collect();
                 let shape = [ROWS as i32, LEN as i32];
                 let dev_x = DeviceBuffer::from_slice(&ctx, &flat).unwrap();
                 let dev_dy = DeviceBuffer::from_slice(&ctx, &dyv).unwrap();
@@ -179,16 +202,16 @@ macro_rules! cum_tests {
                 )
                 .unwrap();
                 stream.synchronize().unwrap();
-                let mut got = vec![0 as $T; flat.len()];
+                let mut got = vec![<$T as Conv>::from64(0.0); flat.len()];
                 dev_dx.copy_to_host(&mut got).unwrap();
                 for (r, row) in data.iter().enumerate() {
                     let w = walk(row, $is_max, reverse);
                     let mut want = vec![0f64; LEN];
                     for i in 0..LEN {
-                        want[w[i].1] += dyv[r * LEN + i] as f64;
+                        want[w[i].1] += <$T as Conv>::to64(dyv[r * LEN + i]);
                     }
                     for i in 0..LEN {
-                        if got[r * LEN + i] as f64 != want[i] {
+                        if <$T as Conv>::to64(got[r * LEN + i]) != want[i] {
                             bad.push(format!(
                                 "reverse={reverse} row {r} pos {i}: dx got {}, want {} (row {row:?})",
                                 got[r * LEN + i], want[i]
@@ -237,5 +260,37 @@ cum_tests!(
     f64,
     ScanKind::Cummin,
     ElementKind::F64,
+    false
+);
+cum_tests!(
+    cummax_f16_matches_reference,
+    cummax_backward_f16_matches_reference,
+    f16,
+    ScanKind::Cummax,
+    ElementKind::F16,
+    true
+);
+cum_tests!(
+    cummin_f16_matches_reference,
+    cummin_backward_f16_matches_reference,
+    f16,
+    ScanKind::Cummin,
+    ElementKind::F16,
+    false
+);
+cum_tests!(
+    cummax_bf16_matches_reference,
+    cummax_backward_bf16_matches_reference,
+    bf16,
+    ScanKind::Cummax,
+    ElementKind::Bf16,
+    true
+);
+cum_tests!(
+    cummin_bf16_matches_reference,
+    cummin_backward_bf16_matches_reference,
+    bf16,
+    ScanKind::Cummin,
+    ElementKind::Bf16,
     false
 );
