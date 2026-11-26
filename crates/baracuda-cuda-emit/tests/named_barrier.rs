@@ -70,3 +70,26 @@ fn the_checker_refuses_a_malformed_named_barrier() {
         );
     }
 }
+
+/// `lower_kernel` runs the IR checker first, so a malformed named barrier is refused there (`ill-formed`, naming the barrier rule) and the
+/// emitter's own `named_barrier` checks are a defensive second line no public call reaches. Nothing is asserted about their text (it
+/// would be vacuous: the checker's text would satisfy it); what is asserted is that none of these kernels ever lowers.
+#[test]
+fn a_malformed_named_barrier_never_lowers() {
+    for kind in [
+        BarrierKind::Named { id: 16, count: 64 },
+        BarrierKind::Named { id: 1, count: 48 },
+        BarrierKind::Named { id: 1, count: 256 },
+        BarrierKind::NamedArrive { id: 1, count: 0 },
+    ] {
+        let k = kernel(vec![barrier(Scope::Block, kind)]);
+        let e = Cuda
+            .lower_kernel(&k)
+            .expect_err("a malformed named barrier must not lower");
+        let d = format!("{e:?}");
+        assert!(
+            d.contains("ill-formed") && d.contains("NamedBarrierUnsupported"),
+            "{kind:?}: refused by the checker, got: {d}"
+        );
+    }
+}
