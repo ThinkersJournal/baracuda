@@ -760,7 +760,7 @@ __global__ void flash_sdpa_bw_dQ_kernel(
                     p = (CT)0;
                 } else {
                     CT le = sLse[r];
-                    if (!isfinite((float)le)) p = (CT)0;
+                    if (le == (CT)(-INFINITY)) p = (CT)0; // fully masked row only: a NaN or +inf lse (NaN row) must give NaN, not 0
                     else p = (CT)exp((double)(s - le));
                 }
                 sS[idx] = p;
@@ -978,7 +978,7 @@ __global__ void flash_sdpa_bw_dKdV_kernel(
                     p = (CT)0;
                 } else {
                     CT le = sLse[r];
-                    if (!isfinite((float)le)) p = (CT)0;
+                    if (le == (CT)(-INFINITY)) p = (CT)0; // fully masked row only: a NaN or +inf lse (NaN row) must give NaN, not 0
                     else p = (CT)exp((double)(s - le));
                 }
                 sS[idx] = p;
