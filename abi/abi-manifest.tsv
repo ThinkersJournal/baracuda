@@ -5392,6 +5392,7 @@ fn	baracuda-kernels-sys	baracuda_kernels_unique_consecutive_f64_can_implement	d9
 fn	baracuda-kernels-sys	baracuda_kernels_unique_consecutive_f64_run	223cc046c50799a1	-
 fn	baracuda-kernels-sys	baracuda_kernels_unique_consecutive_i32_can_implement	d9a1697af857d2a7	-
 fn	baracuda-kernels-sys	baracuda_kernels_unique_consecutive_i32_run	223cc046c50799a1	-
+fn	baracuda-kernels-sys	baracuda_kernels_unique_consecutive_i64_run	223cc046c50799a1	-
 fn	baracuda-kernels-sys	baracuda_kernels_unsorted_segment_max_backward_f32_can_implement	7e653e475f9bb194	-
 fn	baracuda-kernels-sys	baracuda_kernels_unsorted_segment_max_backward_f32_run	2437cba0d727162e	-
 fn	baracuda-kernels-sys	baracuda_kernels_unsorted_segment_max_backward_f64_can_implement	7e653e475f9bb194	-
