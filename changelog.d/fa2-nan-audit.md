@@ -1,0 +1,3 @@
+kind: Added: device audit of the vendored FlashAttention-2 launcher against the attention NaN table (`fa2_nan_audit`)
+---
+Test-only. `crates/baracuda-kernels/tests/fa2_nan_audit.rs` forces the FA2 backend (f16, bf16; D=64, Q=K=128) and checks the E0k table on a real device: a NaN query row gives that row NaN only, a NaN attended key or value poisons every row, a `+inf` score gives a NaN row, and a fully masked row (causal, Q > K) is exactly zero. Measured on an RTX 4070 (sm89): 12 of 12 pass, no divergence from the bespoke kernels. UNMEASURED: sliding window, softcap, ALiBi, GQA, other head dims, shapes with Q*K >= 1M, and the FA2 backward.
