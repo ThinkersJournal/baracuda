@@ -72941,9 +72941,21 @@ unsafe extern "C" {
 
     // ---------- unique_consecutive FW (no BW — set-valued) ----------
 
-    /// Unique-consecutive, f32. Emits one cell per run-start; output
-    /// slot order is atomic-counter race order. `counter[row]` holds
-    /// the actual unique count post-launch.
+    /// Unique-consecutive, i64: as `unique_consecutive_f32` (ordered runs, run-length counts).
+    pub fn baracuda_kernels_unique_consecutive_i64_run(
+        batch: i32,
+        row_len: i32,
+        max_unique: i32,
+        x: *const c_void,
+        y_vals: *mut c_void,
+        y_counts: *mut c_void,
+        counter: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// Unique-consecutive, f32. Emits one cell per run in row order, `counts` = run
+    /// length. `counter[row]` holds the actual run count post-launch.
     pub fn baracuda_kernels_unique_consecutive_f32_run(
         batch: i32,
         row_len: i32,
