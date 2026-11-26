@@ -1107,8 +1107,7 @@ __host__ inline int32_t launch_reduce_prod_backward(
 
 // Reduce-norm2 backward kernel — `dx[c] = dy[c_reduced] * x[c] /
 // y[c_reduced]` where y = sqrt(sum(x²)). Saved-x AND saved-y, same
-// ABI shape. Caller must ensure no `y[c_reduced] == 0` (only happens
-// when all x in the reduced group are zero).
+// ABI shape. An all-zero group (`y == 0`) gives 0, as in torch.
 
 template <typename T>
 __global__ void reduce_norm2_backward_kernel(
@@ -1138,7 +1137,10 @@ __global__ void reduce_norm2_backward_kernel(
             off_y  += coord * stride_y.v[d];
             off_dx += coord * stride_dx.v[d];
         }
-        dx[off_dx] = dy[off_dy] * x[off_x] / y[off_y];
+        // A zero norm (every x in the group is zero) has subgradient 0, as in torch (`norm_backward` masks it), not 0/0 = NaN.
+        // A NaN norm still gives NaN.
+        const T norm = y[off_y];
+        dx[off_dx] = (norm == T(0)) ? T(0) : dy[off_dy] * x[off_x] / norm;
     }
 }
 
@@ -3429,7 +3431,7 @@ __host__ inline int32_t launch_scan_axis(
 //
 // Cumprod BW: `dx[j] = Σ_{i in suffix} dy[i] * y[i] / x[j]` where the
 // "suffix" is `{i ≥ j}` for forward FW and `{i ≤ j}` for reverse FW.
-// Caller must ensure `x[j] != 0`.
+// Division-free (exact with zeros in `x`; ROADMAP E0).
 //
 // Cummax / Cummin BW: walk the full forward scan (from 0 to extent-1
 // for forward, extent-1 to 0 for reverse) maintaining a running
@@ -3478,24 +3480,26 @@ __global__ void scan_cumprod_backward_kernel(
         int64_t stride_dy_axis = stride_dy.v[scan_axis];
         int64_t stride_x_axis  = stride_x.v[scan_axis];
         int64_t stride_y_axis  = stride_y.v[scan_axis];
-        // Read x[j] for the per-thread divisor.
-        T x_j = x[off_x_base + (int64_t)j * stride_x_axis];
-        Acc inv_x_j = Acc(1) / static_cast<Acc>(x_j);
+        // Division-free (torch convention: exact when `x` holds zeros, ROADMAP E0). With `jm` the position of `j` in scan order and
+        // `pos(m)` the axis index of scan step `m`: dx[j] = (prod_{m' < jm} x[pos(m')]) * sum_{m >= jm} dy[pos(m)] * prod_{jm < m' <= m} x[pos(m')].
+        // `x[j]` itself is left out of every product, so a zero there gives its true gradient instead of inf / NaN. A NaN `x[j]` gives NaN
+        // (torch divides by `x[j]` when there is no zero, so its NaN reaches `dx[j]`).
+        const bool rev_scan = reverse != 0;
+        const int32_t jm = rev_scan ? (scan_extent - 1 - j) : j;
+        Acc pre = Acc(1);
+        for (int32_t m = 0; m < jm; ++m) {
+            const int32_t k = rev_scan ? (scan_extent - 1 - m) : m;
+            pre *= static_cast<Acc>(x[off_x_base + (int64_t)k * stride_x_axis]);
+        }
+        Acc run = Acc(1);
         Acc acc = Acc(0);
-        // Suffix over i: forward FW => i in [j, extent); reverse FW => i in [0, j].
-        int32_t i_lo, i_hi;
-        if (reverse != 0) {
-            i_lo = 0;
-            i_hi = j;
-        } else {
-            i_lo = j;
-            i_hi = scan_extent - 1;
+        for (int32_t m = jm; m < scan_extent; ++m) {
+            const int32_t k = rev_scan ? (scan_extent - 1 - m) : m;
+            if (m > jm) run *= static_cast<Acc>(x[off_x_base + (int64_t)k * stride_x_axis]);
+            acc += static_cast<Acc>(dy[off_dy_base + (int64_t)k * stride_dy_axis]) * run;
         }
-        for (int32_t ii = i_lo; ii <= i_hi; ++ii) {
-            T dy_i = dy[off_dy_base + (int64_t)ii * stride_dy_axis];
-            T y_i  = y [off_y_base  + (int64_t)ii * stride_y_axis];
-            acc += static_cast<Acc>(dy_i) * static_cast<Acc>(y_i) * inv_x_j;
-        }
+        acc *= pre;
+        if (isnan(static_cast<Acc>(x[off_x_base + (int64_t)j * stride_x_axis]))) acc = static_cast<Acc>(NAN);
         dx[off_dx] = static_cast<T>(acc);
     }
 }
@@ -3542,17 +3546,26 @@ __global__ void scan_cumprod_backward_kernel<__half, float>(
         int64_t stride_dy_axis = stride_dy.v[scan_axis];
         int64_t stride_x_axis  = stride_x.v[scan_axis];
         int64_t stride_y_axis  = stride_y.v[scan_axis];
-        float x_j = __half2float(x[off_x_base + (int64_t)j * stride_x_axis]);
-        float inv_x_j = 1.0f / x_j;
-        float acc = 0.0f;
-        int32_t i_lo, i_hi;
-        if (reverse != 0) { i_lo = 0; i_hi = j; }
-        else              { i_lo = j; i_hi = scan_extent - 1; }
-        for (int32_t ii = i_lo; ii <= i_hi; ++ii) {
-            float dy_i = __half2float(dy[off_dy_base + (int64_t)ii * stride_dy_axis]);
-            float y_i  = __half2float(y [off_y_base  + (int64_t)ii * stride_y_axis]);
-            acc += dy_i * y_i * inv_x_j;
+        // Division-free (torch convention: exact when `x` holds zeros, ROADMAP E0). With `jm` the position of `j` in scan order and
+        // `pos(m)` the axis index of scan step `m`: dx[j] = (prod_{m' < jm} x[pos(m')]) * sum_{m >= jm} dy[pos(m)] * prod_{jm < m' <= m} x[pos(m')].
+        // `x[j]` itself is left out of every product, so a zero there gives its true gradient instead of inf / NaN. A NaN `x[j]` gives NaN
+        // (torch divides by `x[j]` when there is no zero, so its NaN reaches `dx[j]`).
+        const bool rev_scan = reverse != 0;
+        const int32_t jm = rev_scan ? (scan_extent - 1 - j) : j;
+        float pre = 1.0f;
+        for (int32_t m = 0; m < jm; ++m) {
+            const int32_t k = rev_scan ? (scan_extent - 1 - m) : m;
+            pre *= __half2float(x[off_x_base + (int64_t)k * stride_x_axis]);
         }
+        float run = 1.0f;
+        float acc = 0.0f;
+        for (int32_t m = jm; m < scan_extent; ++m) {
+            const int32_t k = rev_scan ? (scan_extent - 1 - m) : m;
+            if (m > jm) run *= __half2float(x[off_x_base + (int64_t)k * stride_x_axis]);
+            acc += __half2float(dy[off_dy_base + (int64_t)k * stride_dy_axis]) * run;
+        }
+        acc *= pre;
+        if (isnan(__half2float(x[off_x_base + (int64_t)j * stride_x_axis]))) acc = NAN;
         dx[off_dx] = __float2half(acc);
     }
 }
@@ -3598,17 +3611,26 @@ __global__ void scan_cumprod_backward_kernel<__nv_bfloat16, float>(
         int64_t stride_dy_axis = stride_dy.v[scan_axis];
         int64_t stride_x_axis  = stride_x.v[scan_axis];
         int64_t stride_y_axis  = stride_y.v[scan_axis];
-        float x_j = __bfloat162float(x[off_x_base + (int64_t)j * stride_x_axis]);
-        float inv_x_j = 1.0f / x_j;
-        float acc = 0.0f;
-        int32_t i_lo, i_hi;
-        if (reverse != 0) { i_lo = 0; i_hi = j; }
-        else              { i_lo = j; i_hi = scan_extent - 1; }
-        for (int32_t ii = i_lo; ii <= i_hi; ++ii) {
-            float dy_i = __bfloat162float(dy[off_dy_base + (int64_t)ii * stride_dy_axis]);
-            float y_i  = __bfloat162float(y [off_y_base  + (int64_t)ii * stride_y_axis]);
-            acc += dy_i * y_i * inv_x_j;
+        // Division-free (torch convention: exact when `x` holds zeros, ROADMAP E0). With `jm` the position of `j` in scan order and
+        // `pos(m)` the axis index of scan step `m`: dx[j] = (prod_{m' < jm} x[pos(m')]) * sum_{m >= jm} dy[pos(m)] * prod_{jm < m' <= m} x[pos(m')].
+        // `x[j]` itself is left out of every product, so a zero there gives its true gradient instead of inf / NaN. A NaN `x[j]` gives NaN
+        // (torch divides by `x[j]` when there is no zero, so its NaN reaches `dx[j]`).
+        const bool rev_scan = reverse != 0;
+        const int32_t jm = rev_scan ? (scan_extent - 1 - j) : j;
+        float pre = 1.0f;
+        for (int32_t m = 0; m < jm; ++m) {
+            const int32_t k = rev_scan ? (scan_extent - 1 - m) : m;
+            pre *= __bfloat162float(x[off_x_base + (int64_t)k * stride_x_axis]);
         }
+        float run = 1.0f;
+        float acc = 0.0f;
+        for (int32_t m = jm; m < scan_extent; ++m) {
+            const int32_t k = rev_scan ? (scan_extent - 1 - m) : m;
+            if (m > jm) run *= __bfloat162float(x[off_x_base + (int64_t)k * stride_x_axis]);
+            acc += __bfloat162float(dy[off_dy_base + (int64_t)k * stride_dy_axis]) * run;
+        }
+        acc *= pre;
+        if (isnan(__bfloat162float(x[off_x_base + (int64_t)j * stride_x_axis]))) acc = NAN;
         dx[off_dx] = __float2bfloat16(acc);
     }
 }

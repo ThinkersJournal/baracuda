@@ -81,25 +81,10 @@ fn cpuc_emits_halves_and_f32_and_declines_vectorized_schedule() {
     );
 }
 
-/// Slang declines `Copysign` / `Nextafter` (no base-profile Slang intrinsic) and
-/// emits for the binaries it supports. As of unpopped-slang 0.3.0 this op-level
-/// refusal is a **typed `LowerError`**, not a panic: the seam returns
-/// `Ok(Spelling::Declined(Decline::UnsupportedOp { op: DeclinedOp::Binary(..), .. }))`,
-/// which `lower_dag` folds into `Err(LowerError::UnsupportedOp { detail })` at the top
-/// of the lowering (`detail` carries the `{op:?}` prefix, so it names the refused op).
-/// So it is asserted with a `Result` match, paired with a positive control in the same
-/// test.
-///
-/// Durability note for whoever touches this next: this asserts the 0.3.0 **typed**
-/// decline (both that it is `Err(LowerError::UnsupportedOp)` AND that the `detail`
-/// names the refused op). If it fails after an `vulkane-slang-emit` upgrade, first check
-/// whether the decline stopped being typed — a `panic!` boundary or a bare `String`
-/// reason would be a REGRESSION here (it was already typed), the inverse of the
-/// pre-0.3.0 note: a green→red now means the decline got WORSE, not better. (This
-/// inverts the old `catch_unwind` panic-boundary assertion, which the 0.1.0 op-level
-/// panic convention required and 0.3.0's typed-decline seam retired.)
+/// Slang emits `Pow`, `Copysign` and `Nextafter` (fishstringer-slang-emit 0.6.0; `Copysign` / `Nextafter` were typed declines,
+/// `LowerError::UnsupportedOp` naming the op, on 0.4.3). Each is asserted to emit ITS lowering, with `Pow` as the positive control.
 #[test]
-fn slang_declines_copysign_nextafter_and_emits_pow() {
+fn slang_emits_pow_copysign_and_nextafter() {
     let a = OperandDesc::new(1, &[1 << 16], &[1], ElementKind::F32, 4);
     let key = structure_key(OpCategory::BinaryElementwise, &[a, a, a], ArchSku::Sm89);
 
@@ -118,30 +103,37 @@ fn slang_declines_copysign_nextafter_and_emits_pow() {
         k.source
     );
 
-    // DECLINE (typed `LowerError`): Copysign / Nextafter have no base-profile Slang
-    // intrinsic and decline by design. Assert it is the DOCUMENTED op-level decline
-    // that names the refused op — otherwise "declines Copysign" would be satisfied by
-    // any unrelated `UnsupportedOp`.
-    for op_kind in [BinaryOp::Copysign, BinaryOp::Nextafter] {
-        let op = OpDef::elementwise(
-            "d",
-            2,
-            &[ElementKind::F32],
-            input(0).binary(op_kind, input(1)),
-        );
-        match try_generate(&op, &key, &Slang) {
-            Err(LowerError::UnsupportedOp { detail }) => assert!(
-                detail.contains(&format!("{op_kind:?}")),
-                "Slang typed-declined {op_kind:?} but the detail did not name it \
-                 (detail = {detail:?}); an unrelated UnsupportedOp must not satisfy this \
-                 contract"
-            ),
-            other => panic!(
-                "Slang should typed-decline {op_kind:?} as LowerError::UnsupportedOp \
-                 (vulkane-slang-emit typed-decline seam), got {other:?}"
-            ),
-        }
-    }
+    // fishstringer-slang-emit 0.6.0 (on unpopped 0.57.0) LOWERS Copysign (sign-bit arithmetic) and Nextafter (a polyfill); both were
+    // typed declines on 0.4.3. Assert each emits its own lowering, so an accidental revert to a decline, or an unrelated emit, is seen.
+    let copysign = OpDef::elementwise(
+        "d",
+        2,
+        &[ElementKind::F32],
+        input(0).binary(BinaryOp::Copysign, input(1)),
+    );
+    let k = try_generate(&copysign, &key, &Slang)
+        .unwrap_or_else(|e| panic!("Slang 0.6.0 should emit Copysign, but declined: {e:?}"));
+    assert!(
+        k.source.contains("0x7fffffffu") && k.source.contains("0x80000000u"),
+        "Slang Copysign is not the sign-bit composition:
+{}",
+        k.source
+    );
+
+    let nextafter = OpDef::elementwise(
+        "d",
+        2,
+        &[ElementKind::F32],
+        input(0).binary(BinaryOp::Nextafter, input(1)),
+    );
+    let k = try_generate(&nextafter, &key, &Slang)
+        .unwrap_or_else(|e| panic!("Slang 0.6.0 should emit Nextafter, but declined: {e:?}"));
+    assert!(
+        k.source.contains("fs_nextafter("),
+        "Slang Nextafter is not the polyfill:
+{}",
+        k.source
+    );
 }
 
 /// `Nextafter@f16` WIRING TEST — the concrete payoff of unpopped 0.6.0's plan-gate

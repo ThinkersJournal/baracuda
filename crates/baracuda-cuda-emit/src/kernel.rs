@@ -926,6 +926,18 @@ impl Cx<'_> {
                     )));
                 }
             }
+            Stmt::ProxyFence { space } => {
+                // `fence.proxy.async.shared::cta` orders this thread's earlier generic-proxy writes to shared memory before later
+                // async-proxy reads (wgmma, tcgen05, bulk copies). sm_90 and up; the `.global` and `.shared::cluster` forms are
+                // not modelled by the IR and are refused here, never approximated.
+                if !matches!(space, MemorySpace::Shared) {
+                    return Err(refuse(format!(
+                        "kernel `{}`: a `ProxyFence` of {space:?} is not lowered (only `Shared`)",
+                        self.k.name
+                    )));
+                }
+                self.line("asm volatile(\"fence.proxy.async.shared::cta;\" ::: \"memory\");");
+            }
             other => {
                 return Err(refuse(format!(
                     "kernel `{}`: statement `{}` is not lowered by the CUDA backend yet",
