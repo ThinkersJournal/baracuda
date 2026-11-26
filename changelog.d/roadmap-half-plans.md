@@ -1,0 +1,3 @@
+kind: Changed: ROADMAP rows E2 (f16/bf16 sort family) and E3 (plans without a half-precision path)
+---
+Docs only. E2 records that the sort, argsort, msort, topk, kthvalue, searchsorted and unique plans have no f16 or bf16 path, with the spec (NaN largest on the half bit patterns, -0/+0 equal, payloads canonicalised, subnormals kept) and Fuel's answer (no consumer today). E3 lists the 84 of 254 plan files that never name F16/Bf16 (control: 170 do), by family.
