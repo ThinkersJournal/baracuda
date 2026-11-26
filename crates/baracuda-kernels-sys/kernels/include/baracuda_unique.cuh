@@ -5,20 +5,14 @@
 // `unique_consecutive` is the trailblazer primitive — it walks the
 // already-sorted (or assumed-sorted by the caller) input row and emits
 // one cell per "run start" (position 0 OR a position where the value
-// differs from its predecessor). One global atomic counter assigns
-// output slots; the launcher zeroes it on the stream before launch.
+// differs from its predecessor), IN ORDER, with the run length as the
+// count (a block scan numbers the runs; see the kernel).
 //
 // `unique` is the same kernel with the contract that the caller
 // pre-sorted the row (calls SortPlan first). Since the per-row sort
 // then a per-row consecutive-dedup are two separate launches at the
 // Rust plan layer, the kernel here only implements the consecutive
 // variant. The Plan's `unique` op chains sort + this kernel.
-//
-// Output ordering caveat (matches the nonzero family): atomic-counter
-// assigns slots in CUDA-block race order, NOT in input order. Callers
-// that need input-order output should run unique_consecutive
-// single-threaded per row (deferred — set `unique_consecutive_blocked
-// (...)` below if needed). The trailblazer accepts the unordered output.
 //
 // Status codes mirror baracuda_sort.cuh.
 //
@@ -36,37 +30,65 @@ namespace baracuda { namespace unique_ns {
 template <typename T>
 __device__ inline bool eq_val(T a, T b) { return a == b; }
 
+// One block of 1024 threads per row, a loop over 1024-wide chunks. A thread's element starts a run when it differs from its predecessor
+// (`!(a == b)`: a NaN never equals a NaN, so every NaN is its own run, and -0.0 == +0.0, one run). A block scan numbers the runs of the chunk
+// and a carry numbers them across chunks, so output slot k holds the k-th run IN ORDER (no atomic slot race), `y_counts[k]` is the run LENGTH,
+// `y_vals[k]` its first element, and `counter[row]` the actual number of runs (it can exceed `max_unique`; the overflow runs are dropped).
+// A run that continues into the next chunk is finalised when that chunk finds the next run start (or at the end of the row).
 template <typename T>
 __global__ void unique_consecutive_kernel(
-    const T*  __restrict__ x,           // [batch, row_len], sorted per row
+    const T*  __restrict__ x,           // [batch, row_len]
     T*        __restrict__ y_vals,      // [batch, max_unique] flat
-    int32_t*  __restrict__ y_counts,    // [batch, max_unique] flat (1 per
-                                        //   detected run start; further
-                                        //   accumulation is the caller's
-                                        //   job since slot order is racy)
-    int32_t*  __restrict__ counter,     // [batch], one atomic counter
-                                        //   per row
+    int32_t*  __restrict__ y_counts,    // [batch, max_unique] flat, run lengths (nullable)
+    int32_t*  __restrict__ counter,     // [batch], the run count of each row
     int32_t   row_len,
     int32_t   max_unique)
 {
-    int row = blockIdx.x;
-    const T* x_row = x + (int64_t)row * (int64_t)row_len;
-    int64_t out_off = (int64_t)row * (int64_t)max_unique;
-
-    for (int col = threadIdx.x; col < row_len; col += blockDim.x) {
-        bool is_run_start;
-        if (col == 0) {
-            is_run_start = true;
-        } else {
-            is_run_start = !eq_val<T>(x_row[col], x_row[col - 1]);
+    __shared__ int32_t scan[1024];
+    __shared__ int32_t starts[1024];
+    __shared__ int32_t last_slot;   // slot of the run still open at the end of the previous chunk (-1: none)
+    __shared__ int32_t last_start;  // its first position
+    const int row = blockIdx.x;
+    const int t = threadIdx.x;
+    const T* xr = x + (int64_t)row * (int64_t)row_len;
+    const int64_t out_off = (int64_t)row * (int64_t)max_unique;
+    if (t == 0) { last_slot = -1; last_start = 0; }
+    int32_t carry = 0;  // runs started before this chunk (same value in every thread)
+    for (int32_t base = 0; base < row_len; base += 1024) {
+        const int32_t idx = base + t;
+        int32_t flag = 0;
+        if (idx < row_len) flag = (idx == 0 || !(xr[idx] == xr[idx - 1])) ? 1 : 0;
+        scan[t] = flag;
+        __syncthreads();
+        for (int off = 1; off < 1024; off <<= 1) {
+            int32_t v = (t >= off) ? scan[t - off] : 0;
+            __syncthreads();
+            scan[t] += v;
+            __syncthreads();
         }
-        if (is_run_start) {
-            int32_t slot = atomicAdd(&counter[row], 1);
-            if (slot < max_unique) {
-                y_vals  [out_off + (int64_t)slot] = x_row[col];
-                if (y_counts) y_counts[out_off + (int64_t)slot] = 1;
+        const int32_t runs = scan[1023];
+        if (flag) starts[scan[t] - 1] = idx;
+        __syncthreads();
+        if (runs > 0) {
+            // Close the run left open by the previous chunk: it ends where this chunk's first run starts.
+            if (t == 0 && last_slot >= 0 && last_slot < max_unique && y_counts)
+                y_counts[out_off + last_slot] = starts[0] - last_start;
+            for (int32_t k = t; k < runs; k += 1024) {
+                const int32_t slot = carry + k;
+                if (slot < max_unique) {
+                    y_vals[out_off + slot] = xr[starts[k]];
+                    if (y_counts && k + 1 < runs) y_counts[out_off + slot] = starts[k + 1] - starts[k];
+                }
             }
+            if (t == 0) { last_slot = carry + runs - 1; last_start = starts[runs - 1]; }
         }
+        carry += runs;
+        __syncthreads();  // `starts` and `scan` are reused by the next chunk
+    }
+    if (t == 0) {
+        if (last_slot >= 0 && last_slot < max_unique && y_counts)
+            y_counts[out_off + last_slot] = row_len - last_start;
+        counter[row] = carry;
     }
 }
 
@@ -78,19 +100,15 @@ __host__ inline int32_t launch_unique_consecutive(
 {
     if (batch < 0 || row_len < 0 || max_unique < 0) return 2;
     if (batch == 0) return 0;
-    if (x == nullptr || y_vals == nullptr || counter == nullptr) return 2;
-    // Zero the per-row counters.
-    cudaError_t err = cudaMemsetAsync(counter, 0,
-                                      (size_t)batch * sizeof(int32_t), stream);
-    if (err != cudaSuccess) return 5;
-    if (row_len == 0 || max_unique == 0) return 0;
-    int threads = 256;
-    if (threads > row_len) threads = row_len;
-    if (threads < 32) threads = 32;
-    unique_consecutive_kernel<T><<<batch, threads, 0, stream>>>(
+    if (counter == nullptr) return 2;
+    if (row_len == 0) {
+        return cudaMemsetAsync(counter, 0, (size_t)batch * sizeof(int32_t), stream) == cudaSuccess ? 0 : 5;
+    }
+    if (x == nullptr) return 2;
+    if (max_unique > 0 && y_vals == nullptr) return 2;
+    unique_consecutive_kernel<T><<<batch, 1024, 0, stream>>>(
         x, y_vals, y_counts, counter, row_len, max_unique);
-    err = cudaGetLastError();
-    return (err == cudaSuccess) ? 0 : 5;
+    return cudaGetLastError() == cudaSuccess ? 0 : 5;
 }
 
 }} // namespace baracuda::unique_ns
