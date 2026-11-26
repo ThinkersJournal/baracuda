@@ -1,3 +1,0 @@
-kind: Changed: the self-hosted kernel-feature-sets workflow runs one at a time and keeps only the newest waiting run
----
-CI only; no crate changes. `.github/workflows/device-tests-kernel-features.yml` (weekly schedule plus `workflow_dispatch`, runs on the self-hosted GPU runner) gains `concurrency: {group: device-tests-kernel-features, cancel-in-progress: false}`, the same pattern as `device-tests.yml`: a started run always finishes, and of the runs still waiting only the newest is kept. It has its own group rather than sharing `device-tests`, because one shared group would let a waiting run of one workflow replace a waiting run of the other, and they cover different tests. Triggers, the `DEVICE_RUNNER_ENABLED` gate and every step are unchanged.
