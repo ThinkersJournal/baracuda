@@ -1,0 +1,16 @@
+baracuda
+========
+
+baracuda is dual-licensed MIT OR Apache-2.0 (LICENSE-MIT, LICENSE-APACHE). Some files derive from
+third-party work and keep their upstream licence and credit. Where the origin of a file is recorded:
+
+- crates/baracuda-forge/NOTICE            cudaforge by Guoqing Bao (MIT OR Apache-2.0)
+- crates/baracuda-ozimmu-sys/ATTRIBUTION.md  enp1s0/ozIMMU (MIT), RIKEN-RCCS/accelerator_for_ozIMMU (MIT)
+- crates/baracuda-cutlass-kernels-sys/NOTICE  NVIDIA CUTLASS (BSD-3-Clause), including
+  kernels/include/baracuda_simt_broadcast_epilogue.h, derived from CUTLASS v4.2.0
+  default_gemm_with_broadcast.h, with the NVIDIA notice reproduced in the file
+- crates/baracuda-cutlass-sys/NOTICE, crates/baracuda-cutlass/NOTICE   CUTLASS (fetched at build time)
+- crates/baracuda-kernels-sys/LICENSE-thirdparty.md   vendored kernel sources
+- crates/baracuda-transformer-engine-sys/ATTRIBUTION.md, crates/baracuda-tensorrt/NOTICE.md
+
+Full file-by-file provenance: PROVENANCE.md.

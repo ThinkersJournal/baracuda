@@ -1,6 +1,6 @@
 [package]
 name = "baracuda-kernels-sys"
-version = "0.1.0-alpha.199"
+version = "0.1.0-alpha.201"
 description = "Compiled bespoke .cu kernel template instantiations for the baracuda ML kernel facade plus C-ABI FFI facades for the library-backed plans (cuDNN conv/pool, cuSOLVER linalg, cuFFT/cuRAND, CUTLASS GEMM re-export). Hosts curated CUDA kernel sources (int8/FP8/int4/bin GEMM RRR, elementwise, reduce, norm, attention, …), builds them via baracuda-forge, exposes extern \"C\" entry points for the safe baracuda-kernels crate. CUTLASS template kernels live in the sibling baracuda-cutlass-kernels-sys crate and are re-exported here under the unified baracuda_kernels_gemm_* namespace."
 edition.workspace = true
 license.workspace = true
@@ -184,6 +184,11 @@ baracuda-cutlass-kernels-sys = { workspace = true }
 # read when the `fa2` feature is on; otherwise this dep is a passive
 # version-pin and a no-op at compile time.
 baracuda-cutlass-sys = { workspace = true }
+
+[dev-dependencies]
+# `shared_align.rs` parses the vendored sampling.cuh with parse_cuda. Path only (no version): a
+# dev-dependency without a version is dropped from the published manifest.
+baracuda-cuda-parse = { path = "../baracuda-cuda-parse" }
 
 [build-dependencies]
 baracuda-forge = { workspace = true }
