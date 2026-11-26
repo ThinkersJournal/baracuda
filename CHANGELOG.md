@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.201 - 2026-11-25
+
+`SearchsortedPlan<f32|f64>` compared with a plain `<`, so a NaN query always returned 0 and a sequence ending in NaN was mis-searched. It now uses the NaN-largest order shared with sort/topk: a NaN query gives the first NaN index (left) or `len` (right), and +inf sorts before NaN. One deviation from torch is stated in OP-MATRIX: a NaN query against a NaN-containing sequence gives the first-NaN index for left (torch: `len`). The plan has no f16/bf16. Affects baracuda-kernels-sys from 0.0.1-alpha.26 (read from the published .crate). Fuel does not bind searchsorted (0 hits in `git grep` on origin/main; the same query finds 35 files for `topk`).
+
 ## 0.1.0-alpha.200 - 2026-11-25
 
 `baracuda-cuda-parse/tests/shared_align.rs` read `../../baracuda-kernels-sys/vendor/flashinfer/.../sampling.cuh`, outside its crate (SUP-004: the packaged `.crate` would carry a test that cannot run). It now lives in `baracuda-kernels-sys/tests/` next to the vendored file, with a path-only dev-dependency on `baracuda-cuda-parse` (dropped from the published manifest), and CI runs it in the driver-free job (sm80 leg). The portfolio workflow pin moves to CodeRipper 0.48.1 (coderipper#375, 467fd259), which grades a documented `pub const` of a public type Info (the `ERROR_UNKNOWN` MOD-011 Medium). ROADMAP.md gains the ranked Unpopped union rows S1-S11 (sm_90/sm_100 emitter requirements) and H1 (`baracuda-hip-emit`).

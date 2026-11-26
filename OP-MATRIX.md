@@ -3,7 +3,7 @@
 Baseline generated for **baracuda-kernels** on **RTX 4070 (sm_89)**; the body
 has since been re-annotated with the **baracuda-kernelgen op-matrix audit**
 (rounds through **2026-07-03**). The workspace was at **0.1.0-alpha.28**
-(2026-10-25; the workspace is now at 0.1.0-alpha.200). The body reflects the alpha.77 line, with these items re-checked
+(2026-10-25; the workspace is now at 0.1.0-alpha.201). The body reflects the alpha.77 line, with these items re-checked
 against the code at `origin/main` on 2026-10-25 (ROADMAP SA-37): the
 `RepeatPlan` / `InterpolatePlan` dtypes, the `ArgsortPlan` row length, adaptive
 pool, and strided siblings. The other rows have **not** been re-audited for
@@ -392,7 +392,7 @@ Block-bitonic sort + topk: one block per row. `row_len ≤ SORT_MAX_ROW = 1024`,
 | `KthvaluePlan<T>` | Bespoke | `{f32, f64}` | `k+1 ≤ 64`, `row_len ≤ 1024` | ✓ | ✓ via `KthvalueBackwardPlan` | |
 | `UniquePlan<T>` | Bespoke | `{f32, f64, i32}` | per-row | ✓ | N/A | **`run` declines with `Error::Unsupported`** (0.1.0-alpha.190): up to alpha.189 it sorted and returned `Ok` without writing `values`/`counts`/`counter` (ROADMAP E0b). Compose `SortPlan` + `UniqueConsecutivePlan`. |
 | `UniqueConsecutivePlan<T>` | Bespoke | `{f32, f64, i32}` | per-row | ✓ | N/A | Run-length unique. |
-| `SearchsortedPlan<T>` | Bespoke | `{f32, f64, i32, i64}` | per-query binary search | ✓ | N/A | |
+| `SearchsortedPlan<T>` | Bespoke | `{f32, f64, i32, i64}` | per-query binary search | ✓ | N/A NaN is the largest value (total order shared with sort/topk): a NaN query finds the first NaN (left) or `len` (right). One torch deviation: a NaN query against a NaN-containing sequence gives the first-NaN index for left, where torch gives `len`. The plan has no f16/bf16. |
 | `HistogramPlan<T>` | Bespoke | `{f32, f64}` | atomic-bin | ✓ | N/A | |
 | `HistogramddPlan<T>` | Bespoke | `{f32, f64}` | rank-2 + edges | ✓ | N/A | Multi-dim histogram. |
 | `BincountPlan<T>` | Bespoke | `{i32, i64}` | dense int counts | ✓ | N/A | |
