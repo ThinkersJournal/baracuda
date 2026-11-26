@@ -1,0 +1,3 @@
+kind: Added: NaN regression pins for the sequence-scan kernels (`ssd_chunk_scan` forward so far)
+---
+Test-only. `ssd_chunk_scan_nan` runs `SsdChunkScanPlan` (f32, f16, bf16) on the device with a NaN in `x`, `B`, `C`, `dt` or `A` and asserts the NaN reaches exactly the outputs the recurrence implies (a column from that step on, every column from that step on, one step only, or the head) and no other batch, head or earlier step. Measured on an RTX 4070 (sm89): 18 of 18 pass on the unchanged kernel, so this row of the NaN sweep needed no fix.
