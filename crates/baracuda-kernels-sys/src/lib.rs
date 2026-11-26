@@ -57298,6 +57298,44 @@ unsafe extern "C" {
         fill_bits: i64,
     ) -> i32;
 
+    /// `masked_fill` — 2-byte element (f16 / bf16 as raw bits; the fill value is the bit pattern in the low 16 bits of `fill_bits`).
+    pub fn baracuda_kernels_masked_fill_u16_run(
+        numel: i64,
+        src: *const c_void,
+        mask: *const c_void,
+        out: *mut c_void,
+        fill_bits: i64,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// Implementability check for `masked_fill_u16`.
+    pub fn baracuda_kernels_masked_fill_u16_can_implement(
+        numel: i64,
+        src: *const c_void,
+        mask: *const c_void,
+        out: *const c_void,
+        fill_bits: i64,
+    ) -> i32;
+
+    /// `masked_fill_backward` — 2-byte element (f16 / bf16 as raw bits).
+    pub fn baracuda_kernels_masked_fill_backward_u16_run(
+        numel: i64,
+        dout: *const c_void,
+        mask: *const c_void,
+        dsrc: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// Implementability check for `masked_fill_backward_u16`.
+    pub fn baracuda_kernels_masked_fill_backward_u16_can_implement(
+        numel: i64,
+        dout: *const c_void,
+        mask: *const c_void,
+        dsrc: *const c_void,
+    ) -> i32;
+
     /// `masked_fill` — i32.
     pub fn baracuda_kernels_masked_fill_i32_run(
         numel: i64,
