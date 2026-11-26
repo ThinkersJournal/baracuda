@@ -53,7 +53,7 @@ pub struct IndexSelectBackwardArgs<'a, T: Element, const N: usize, I: IndexEleme
 ///
 /// **When to use**: backward for [`IndexSelectPlan`](crate::IndexSelectPlan).
 ///
-/// **Dtypes**: `{f32, f64}` only (uses `atomicAdd`).
+/// **Dtypes**: `{f32, f64, f16, bf16}` (uses `atomicAdd`; half by compare-and-swap, the order of additions into one cell is undefined).
 ///
 /// **Shape limits**: rank in `[1, 8]`; `select_dim ∈ [0, N)`;
 /// `idx` is 1-D `i32` with `idx.numel() == out_shape[select_dim]`.
@@ -97,7 +97,10 @@ impl<T: Element, const N: usize> IndexSelectBackwardPlan<T, N> {
             ));
         }
 
-        let supported = matches!(T::KIND, ElementKind::F32 | ElementKind::F64);
+        let supported = matches!(
+            T::KIND,
+            ElementKind::F32 | ElementKind::F64 | ElementKind::F16 | ElementKind::Bf16
+        );
         if !supported {
             return Err(Error::Unsupported(
                 "baracuda-kernels::IndexSelectBackwardPlan: today only `f32`, `f64` wired \
@@ -219,6 +222,74 @@ impl<T: Element, const N: usize> IndexSelectBackwardPlan<T, N> {
         let status = match (T::KIND, I::KIND) {
             (ElementKind::F32, IndexElementKind::I32) => unsafe {
                 baracuda_kernels_sys::baracuda_kernels_index_select_backward_f32_run(
+                    out_numel,
+                    rank,
+                    self.desc.select_dim,
+                    self.desc.src_dim_size,
+                    out_shape.as_ptr(),
+                    stride_dout.as_ptr(),
+                    stride_dsrc.as_ptr(),
+                    dout_ptr,
+                    idx_ptr,
+                    dsrc_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            (ElementKind::F16, IndexElementKind::I32) => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_index_select_backward_f16_run(
+                    out_numel,
+                    rank,
+                    self.desc.select_dim,
+                    self.desc.src_dim_size,
+                    out_shape.as_ptr(),
+                    stride_dout.as_ptr(),
+                    stride_dsrc.as_ptr(),
+                    dout_ptr,
+                    idx_ptr,
+                    dsrc_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            (ElementKind::Bf16, IndexElementKind::I32) => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_index_select_backward_bf16_run(
+                    out_numel,
+                    rank,
+                    self.desc.select_dim,
+                    self.desc.src_dim_size,
+                    out_shape.as_ptr(),
+                    stride_dout.as_ptr(),
+                    stride_dsrc.as_ptr(),
+                    dout_ptr,
+                    idx_ptr,
+                    dsrc_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            (ElementKind::F16, IndexElementKind::I64) => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_index_select_backward_i64idx_f16_run(
+                    out_numel,
+                    rank,
+                    self.desc.select_dim,
+                    self.desc.src_dim_size,
+                    out_shape.as_ptr(),
+                    stride_dout.as_ptr(),
+                    stride_dsrc.as_ptr(),
+                    dout_ptr,
+                    idx_ptr,
+                    dsrc_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            (ElementKind::Bf16, IndexElementKind::I64) => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_index_select_backward_i64idx_bf16_run(
                     out_numel,
                     rank,
                     self.desc.select_dim,
