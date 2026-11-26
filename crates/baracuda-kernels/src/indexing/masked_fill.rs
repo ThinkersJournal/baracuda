@@ -70,6 +70,25 @@ impl<const N: usize> MaskedFillDescriptor<N> {
         }
     }
 
+    /// Build a descriptor with an f16 fill value. The value travels as its 16-bit pattern, so `-inf`, `-65504`, NaN payloads and `-0` fill
+    /// exactly (they are distinct values and stay distinct).
+    pub fn new_f16(shape: [i32; N], value: half::f16) -> Self {
+        Self {
+            shape,
+            fill_bits: i64::from(value.to_bits()),
+            element: ElementKind::F16,
+        }
+    }
+
+    /// Build a descriptor with a bf16 fill value, carried as its 16-bit pattern (see [`Self::new_f16`]).
+    pub fn new_bf16(shape: [i32; N], value: half::bf16) -> Self {
+        Self {
+            shape,
+            fill_bits: i64::from(value.to_bits()),
+            element: ElementKind::Bf16,
+        }
+    }
+
     /// Build a descriptor with a `bool` fill value.
     pub fn new_bool(shape: [i32; N], value: bool) -> Self {
         Self {
@@ -142,11 +161,16 @@ impl<T: Element, const N: usize> MaskedFillPlan<T, N> {
 
         let supported = matches!(
             T::KIND,
-            ElementKind::F32 | ElementKind::F64 | ElementKind::I32 | ElementKind::Bool
+            ElementKind::F32
+                | ElementKind::F64
+                | ElementKind::I32
+                | ElementKind::Bool
+                | ElementKind::F16
+                | ElementKind::Bf16
         );
         if !supported {
             return Err(Error::Unsupported(
-                "baracuda-kernels::MaskedFillPlan: today only `f32`, `f64`, `i32`, `bool` wired",
+                "baracuda-kernels::MaskedFillPlan: today only `f32`, `f64`, `i32`, `bool`, `f16`, `bf16` wired",
             ));
         }
 
@@ -298,6 +322,18 @@ impl<T: Element, const N: usize> MaskedFillPlan<T, N> {
             },
             ElementKind::Bool => unsafe {
                 baracuda_kernels_sys::baracuda_kernels_masked_fill_bool_run(
+                    numel,
+                    src_ptr,
+                    mask_ptr,
+                    out_ptr,
+                    self.desc.fill_bits,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            ElementKind::F16 | ElementKind::Bf16 => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_masked_fill_u16_run(
                     numel,
                     src_ptr,
                     mask_ptr,
