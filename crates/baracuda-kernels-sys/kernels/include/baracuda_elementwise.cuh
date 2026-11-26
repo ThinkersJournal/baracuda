@@ -925,10 +925,95 @@ __host__ inline int32_t launch_reduce_max_min_backward(
     return (err == cudaSuccess) ? 0 : 5;
 }
 
+// Reduce-prod backward over a reduced axis, torch-exact at zeros (ROADMAP E0). One block per reduced group. A group with no zero uses
+// torch's `dy * y / x`. A group with a zero uses the product of the OTHER elements, `dy * (prod_{k < j} x[k]) * (prod_{k > j} x[k])`: that is
+// `y / x` at the zero slot's neighbours made exact (the one zero slot gets the product of the rest, every other slot gets 0 because its
+// product holds the zero), and a NaN elsewhere still reaches the slots whose product holds it (torch computes it the same way).
+__device__ __forceinline__ float rp_get(const float* p) { return *p; }
+__device__ __forceinline__ double rp_get(const double* p) { return *p; }
+__device__ __forceinline__ float rp_get(const __half* p) { return __half2float(*p); }
+__device__ __forceinline__ float rp_get(const __nv_bfloat16* p) { return __bfloat162float(*p); }
+__device__ __forceinline__ void rp_put(float* p, float v) { *p = v; }
+__device__ __forceinline__ void rp_put(double* p, double v) { *p = v; }
+__device__ __forceinline__ void rp_put(__half* p, float v) { *p = __float2half(v); }
+__device__ __forceinline__ void rp_put(__nv_bfloat16* p, float v) { *p = __float2bfloat16(v); }
+template <typename T> struct rp_acc { using type = float; };
+template <> struct rp_acc<double> { using type = double; };
+
+template <typename T>
+__global__ void reduce_prod_backward_group_kernel(
+    const T* __restrict__ dy,
+    const T* __restrict__ x,
+    const T* __restrict__ y,
+    T* __restrict__ dx,
+    int64_t cells,
+    int32_t rank,
+    DimsI32 shape,
+    DimsI64 stride_dy,
+    DimsI64 stride_x,
+    DimsI64 stride_y,
+    DimsI64 stride_dx,
+    int32_t axis,
+    int32_t extent)
+{
+    using Acc = typename rp_acc<T>::type;
+    __shared__ int zeros;
+    __shared__ Acc chunk_prod[256];
+    const int32_t chunk = (extent + (int32_t)blockDim.x - 1) / (int32_t)blockDim.x;
+    const int32_t lo = (int32_t)threadIdx.x * chunk;
+    const int32_t hi = (lo + chunk < extent) ? (lo + chunk) : extent;
+    for (int64_t cell = blockIdx.x; cell < cells; cell += gridDim.x) {
+        int64_t linear = cell;
+        int64_t off_dy = 0, off_x = 0, off_y = 0, off_dx = 0;
+        for (int d = rank - 1; d >= 0; --d) {
+            if (d == axis) continue;
+            int32_t s = shape.v[d];
+            int64_t coord = (s == 0) ? 0 : (linear % (int64_t)s);
+            if (s != 0) linear /= (int64_t)s;
+            off_dy += coord * stride_dy.v[d];
+            off_x  += coord * stride_x.v[d];
+            off_y  += coord * stride_y.v[d];
+            off_dx += coord * stride_dx.v[d];
+        }
+        const int64_t sx = stride_x.v[axis];
+        const int64_t sdx = stride_dx.v[axis];
+        int mine = 0;
+        Acc prod = Acc(1);
+        for (int32_t k = lo; k < hi; ++k) {
+            const Acc xv = (Acc)rp_get(x + off_x + (int64_t)k * sx);
+            if (xv == Acc(0)) ++mine;
+            prod *= xv;
+        }
+        if (threadIdx.x == 0) zeros = 0;
+        chunk_prod[threadIdx.x] = prod;
+        __syncthreads();
+        atomicAdd(&zeros, mine);
+        __syncthreads();
+        if (zeros == 0) {
+            // torch's no-zero path, in `T` arithmetic as the elementwise kernel does.
+            for (int32_t k = lo; k < hi; ++k) {
+                dx[off_dx + (int64_t)k * sdx] =
+                    dy[off_dy] * y[off_y] / x[off_x + (int64_t)k * sx];
+            }
+        } else {
+            Acc left_chunk = Acc(1), right_chunk = Acc(1);
+            for (int32_t u = 0; u < (int32_t)threadIdx.x; ++u) left_chunk *= chunk_prod[u];
+            for (int32_t u = (int32_t)threadIdx.x + 1; u < (int32_t)blockDim.x; ++u) right_chunk *= chunk_prod[u];
+            const Acc g = (Acc)rp_get(dy + off_dy);
+            for (int32_t k = lo; k < hi; ++k) {
+                Acc left = left_chunk, right = right_chunk;
+                for (int32_t m = lo; m < k; ++m) left *= (Acc)rp_get(x + off_x + (int64_t)m * sx);
+                for (int32_t m = k + 1; m < hi; ++m) right *= (Acc)rp_get(x + off_x + (int64_t)m * sx);
+                rp_put(dx + off_dx + (int64_t)k * sdx, g * left * right);
+            }
+        }
+        __syncthreads();
+    }
+}
+
 // Reduce-prod backward kernel — `dx[c] = dy[c_reduced] * y[c_reduced]
 // / x[c]`. Saved-x AND saved-y, same ABI shape as Max/Min BW.
-// Caller must ensure no `x[c] == 0` (PyTorch's BW also produces NaN
-// in that case).
+// Exact at zeros (see `reduce_prod_backward_group_kernel`); this elementwise kernel only runs when no axis is reduced.
 
 template <typename T>
 __global__ void reduce_prod_backward_kernel(
@@ -958,7 +1043,10 @@ __global__ void reduce_prod_backward_kernel(
             off_y  += coord * stride_y.v[d];
             off_dx += coord * stride_dx.v[d];
         }
-        dx[off_dx] = dy[off_dy] * y[off_y] / x[off_x];
+        // No reduced axis reaches this kernel (see the launcher), so every group is one element: its product's derivative is 1, i.e. `dy`.
+        // `dy * y / x` would be 0 / 0 = NaN at `x == 0`.
+        const T xv = x[off_x];
+        dx[off_dx] = (xv == T(0)) ? dy[off_dy] : dy[off_dy] * y[off_y] / xv;
     }
 }
 
@@ -989,6 +1077,25 @@ __host__ inline int32_t launch_reduce_prod_backward(
     }
     constexpr int kBlock = 256;
     constexpr int64_t kMaxBlocks = 65535;
+    // The reduced axis is the one the plan broadcast (stride 0 on dy and y) with extent > 1, as for Max/Min. A reduction walks the whole
+    // group (zeros need the product of the other elements); with no such axis every group has one element and the elementwise kernel is exact.
+    int axis = -1;
+    for (int i = 0; i < rank; ++i) {
+        if (shape.v[i] > 1 && s_y.v[i] == 0 && s_dy.v[i] == 0) {
+            if (axis >= 0) return 2;
+            axis = i;
+        }
+    }
+    if (axis >= 0) {
+        const int32_t extent = shape.v[axis];
+        const int64_t cells = numel / (int64_t)extent;
+        int gblocks = static_cast<int>(cells > kMaxBlocks ? kMaxBlocks : cells);
+        if (gblocks <= 0) gblocks = 1;
+        reduce_prod_backward_group_kernel<T><<<gblocks, kBlock, 0, stream>>>(
+            dy, x, y, dx, cells, rank, shape, s_dy, s_x, s_y, s_dx, axis, extent);
+        cudaError_t gerr = cudaGetLastError();
+        return (gerr == cudaSuccess) ? 0 : 5;
+    }
     int64_t blocks_i64 = (numel + kBlock - 1) / kBlock;
     int blocks = static_cast<int>(blocks_i64 > kMaxBlocks ? kMaxBlocks : blocks_i64);
     if (blocks <= 0) blocks = 1;
@@ -4185,6 +4292,9 @@ __global__ void log_cumsum_exp_backward_kernel(
         for (int32_t ii = i_lo; ii <= i_hi; ++ii) {
             C dy_i = DT::load(dy[off_dy_base + (int64_t)ii * stride_dy_axis]);
             C y_i  = DT::load(y [off_y_base  + (int64_t)ii * stride_y_axis]);
+            // A prefix of -inf has a -inf output and zero mass: `exp(x_k - y_i)` would be exp(-inf - -inf) = NaN, torch's weight there is 0
+            // (ROADMAP E0). +inf / +inf stays NaN, and a NaN in `x`, `y` or `dy` still poisons the sum (only the exact -inf pair is masked).
+            if (x_k == C(-INFINITY) && y_i == C(-INFINITY)) continue;
             acc += dy_i * DT::gexp(x_k - y_i);
         }
         dx[off_dx] = DT::store_from(acc);

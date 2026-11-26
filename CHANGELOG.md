@@ -16,6 +16,14 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.206 - 2026-11-26
+
+`log_cumsum_exp_backward` computes `dx[k] = sum_i dy[i] * exp(x[k] - y[i])`. When a prefix of the input is all `-inf` (leading masked entries), `x[k]` and `y[i]` are both `-inf` and the weight was `exp(-inf - -inf) = NaN`, so `dx` was NaN although the forward result is a clean `-inf`. Torch's weight there is 0 (zero mass); the kernel now skips exactly the `-inf`/`-inf` pair. `+inf` / `+inf` stays NaN and a NaN in `x`, `y` or `dy` still poisons the sum. f32, f16, bf16, f64, forward and reverse. Device test `scan_log_cumsum_exp_backward_neginf`: red on the old kernel (8 of 8), green on the fix; the existing smoke test still passes. KISS `spec/ops.md` has no logcumsumexp clause (a grep for it finds nothing; the same grep for `cumsum` finds `spec/ops.md`), so the torch convention applies (pm-kernels ruling).
+
+## 0.1.0-alpha.205 - 2026-11-25
+
+The Prod reduction backward computed `dy * y / x` everywhere, so the zero slot of a group with a zero gave 0/0 = NaN. It is now torch-exact: a group with no zero keeps `dy * y / x`; a group with a zero gets, per slot, `dy * (product of the elements before) * (product of the elements after)`, i.e. the product of the rest at the one zero slot and 0 elsewhere (0 everywhere with two zeros); a NaN reaches the slots whose product holds it. No new symbol and no ABI change: the launcher finds the reduced axis from the broadcast dy / y strides, as the Max/Min backward does, and runs one block per group; a reduction with no axis (every group one element) gives `dy`. f32, f16, bf16, f64. Device test `reduce_prod_backward_zeros` (zeros at 0, 1, 2 positions plus NaN, groups of 4 and 1000, first/middle/last axis, size-1 axes, a length-1 reduced axis; a strided saved `x` is refused by the plan): red on the old kernel, green on the fix.
+
 ## 0.1.0-alpha.204 - 2026-11-25
 
 The norm2 (L2) reduction backward computed `dy * x / y`; when every element of a reduced group is zero, `y == 0` and the result was 0/0 = NaN. torch masks that case to 0 (the subgradient at the origin). It now returns 0 there; a NaN norm still gives NaN. f32, f16, bf16, f64. Device test `reduce_norm2_backward_zero`: red on the old kernel, green on the fix.
