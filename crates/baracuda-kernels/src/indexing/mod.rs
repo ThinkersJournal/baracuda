@@ -34,6 +34,7 @@
 pub mod gather;
 pub mod gather_backward;
 pub mod index_add;
+pub mod index_bounds;
 pub mod index_select;
 pub mod index_select_backward;
 pub mod masked_fill;
@@ -46,6 +47,7 @@ pub mod scatter_add;
 pub use gather::{GatherArgs, GatherDescriptor, GatherPlan};
 pub use gather_backward::{GatherBackwardArgs, GatherBackwardDescriptor, GatherBackwardPlan};
 pub use index_add::{IndexAddArgs, IndexAddDescriptor, IndexAddPlan};
+pub use index_bounds::{IndexBoundsArgs, IndexBoundsPlan};
 pub use index_select::{IndexSelectArgs, IndexSelectDescriptor, IndexSelectPlan};
 pub use index_select_backward::{
     IndexSelectBackwardArgs, IndexSelectBackwardDescriptor, IndexSelectBackwardPlan,
