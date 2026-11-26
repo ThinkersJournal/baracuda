@@ -27,13 +27,20 @@
 
 namespace baracuda { namespace searchsorted {
 
+// The order is the one the sort plans use: NaN is the LARGEST value (`baracuda_sort.cuh` `total_order_precedes`). `a` precedes `b` when
+// `a < b`, or when `b` is NaN and `a` is not. Plain `<` / `<=` made a NaN query compare false against every element and return 0.
+template <typename T>
+__device__ inline bool nan_largest_less(T a, T b) {
+    return (a < b) || (b != b && a == a);
+}
+
 template <typename T>
 __device__ inline int32_t lower_bound(const T* arr, int32_t n, T target) {
     int32_t lo = 0, hi = n;
     while (lo < hi) {
         int32_t mid = lo + ((hi - lo) >> 1);
-        if (arr[mid] < target) lo = mid + 1;
-        else                   hi = mid;
+        if (nan_largest_less<T>(arr[mid], target)) lo = mid + 1;
+        else                                       hi = mid;
     }
     return lo;
 }
@@ -43,8 +50,8 @@ __device__ inline int32_t upper_bound(const T* arr, int32_t n, T target) {
     int32_t lo = 0, hi = n;
     while (lo < hi) {
         int32_t mid = lo + ((hi - lo) >> 1);
-        if (arr[mid] <= target) lo = mid + 1;
-        else                    hi = mid;
+        if (!nan_largest_less<T>(target, arr[mid])) lo = mid + 1;   // arr[mid] <= target in the NaN-largest order
+        else                                        hi = mid;
     }
     return lo;
 }
