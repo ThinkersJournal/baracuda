@@ -487,16 +487,6 @@ owner = "baracuda lane"
 # crates/baracuda-kernels-sys): a member's run reads its own file, not this one. Each is a row in docs/planning/arc-mod-programme.md.
 
 [[allow]]
-check = "SEC-012"
-file = "crates/baracuda-cuda-vocab/src/manifest.rs"
-reason = "false positive: `Member::token` is the canonical `cuda:` architecture token (an identifier such as `sm_89`, from the codec), not a secret; the type derives Debug on purpose so manifests print. Owner: baracuda lane. Remove this entry when coderipper's SEC-012 reads field types instead of names."
-
-[[allow]]
-check = "SEC-012"
-file = "crates/baracuda-kernels/src/random/perrow_spec_sampling.rs"
-reason = "false positive: `output_accepted_token_num` and `output_emitted_draft_token_num` are counters of accepted and emitted language-model tokens (device buffers), not secrets. Owner: baracuda lane. Remove this entry when coderipper's SEC-012 reads field types instead of names."
-
-[[allow]]
 check = "ARC-005"
 file = "crates/baracuda-ozimmu/Cargo.toml"
 symbol = "baracuda-ozimmu->baracuda-ozimmu-sys"
