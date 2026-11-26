@@ -1,0 +1,3 @@
+kind: Changed: the self-hosted device-test workflow runs one at a time and keeps only the newest waiting run
+---
+CI only; no crate changes. `.github/workflows/device-tests.yml` gains `concurrency: {group: device-tests, cancel-in-progress: false}`. The device job runs on one machine for hours, and every push to main used to queue another run (19 deep on 2026-11-26). Now a run that has started always finishes (`cancel-in-progress: false`), and of the runs still waiting only the newest is kept; GitHub reports a replaced run as cancelled, not failed. The workflow's triggers (push to main, the nightly schedule, `workflow_dispatch`), its `if: vars.DEVICE_RUNNER_ENABLED == 'true'` gate and its steps are unchanged.
