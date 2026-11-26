@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.212 - 2026-11-26
+
+CI only; no crate changes. `.github/workflows/device-tests.yml` gains `concurrency: {group: device-tests, cancel-in-progress: false}`. The device job runs on one machine for hours, and every push to main used to queue another run (19 deep on 2026-11-26). Now a run that has started always finishes (`cancel-in-progress: false`), and of the runs still waiting only the newest is kept; GitHub reports a replaced run as cancelled, not failed. The workflow's triggers (push to main, the nightly schedule, `workflow_dispatch`), its `if: vars.DEVICE_RUNNER_ENABLED == 'true'` gate and its steps are unchanged.
+
 ## 0.1.0-alpha.211 - 2026-11-26
 
 `UniqueConsecutivePlan` (`baracuda_kernels_unique_consecutive_{f32,f64,i32}_run`) numbered each run's output slot with a per-row `atomicAdd`, so the runs came back in block-race order, not row order, and wrote `counts = 1` for every run (the plan's own rustdoc said "NOT input-order" and the `return_counts` flag was "reserved"). `torch.unique_consecutive` returns the runs in order and the run LENGTHS, so any caller that used the output as that op got silently wrong order and counts. The kernel is now an ordered scan-based compaction (one block per row, a block scan per 1024-wide chunk with a carry across chunks, no atomics for slot numbering): slot k is the k-th run, `counts[k]` its length, `values[k]` its first element, and `counter[row]` the true run count (it can exceed `max_unique`; the extra runs are dropped, cells past the counter are untouched). Equality is `==`: every NaN is its own run (NaN != NaN, as torch) and `-0.0` and `+0.0` are one run. Rows of any length work (the old grid-stride loop did too; the new one keeps order across chunks). New: `i64` (`baracuda_kernels_unique_consecutive_i64_run`).
