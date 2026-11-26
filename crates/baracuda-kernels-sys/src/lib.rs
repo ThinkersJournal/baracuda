@@ -57030,6 +57030,74 @@ unsafe extern "C" {
 
     // ---------- scatter_add ----------
 
+    /// `scatter_add` for f16: atomic add by compare-and-swap on the containing 32-bit word (the order of additions into one cell is not defined).
+    pub fn baracuda_kernels_scatter_add_f16_run(
+        upd_numel: i64,
+        rank: i32,
+        scatter_dim: i32,
+        out_dim_size: i32,
+        upd_shape: *const i32,
+        stride_upd: *const i64,
+        stride_index: *const i64,
+        stride_out: *const i64,
+        updates: *const c_void,
+        index: *const c_void,
+        out: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// `scatter_add` for bf16: atomic add by compare-and-swap on the containing 32-bit word (the order of additions into one cell is not defined).
+    pub fn baracuda_kernels_scatter_add_bf16_run(
+        upd_numel: i64,
+        rank: i32,
+        scatter_dim: i32,
+        out_dim_size: i32,
+        upd_shape: *const i32,
+        stride_upd: *const i64,
+        stride_index: *const i64,
+        stride_out: *const i64,
+        updates: *const c_void,
+        index: *const c_void,
+        out: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// `scatter_add` for f16, i64 index: atomic add by compare-and-swap on the containing 32-bit word (the order of additions into one cell is not defined).
+    pub fn baracuda_kernels_scatter_add_i64idx_f16_run(
+        upd_numel: i64,
+        rank: i32,
+        scatter_dim: i32,
+        out_dim_size: i32,
+        upd_shape: *const i32,
+        stride_upd: *const i64,
+        stride_index: *const i64,
+        stride_out: *const i64,
+        updates: *const c_void,
+        index: *const c_void,
+        out: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// `scatter_add` for bf16, i64 index: atomic add by compare-and-swap on the containing 32-bit word (the order of additions into one cell is not defined).
+    pub fn baracuda_kernels_scatter_add_i64idx_bf16_run(
+        upd_numel: i64,
+        rank: i32,
+        scatter_dim: i32,
+        out_dim_size: i32,
+        upd_shape: *const i32,
+        stride_upd: *const i64,
+        stride_index: *const i64,
+        stride_out: *const i64,
+        updates: *const c_void,
+        index: *const c_void,
+        out: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
     /// `out[..., index[..., j, ...], ...] += updates[..., j, ...]`
     /// along `scatter_dim`. f32 (atomicAdd).
     pub fn baracuda_kernels_scatter_add_f32_run(
