@@ -152,3 +152,210 @@ mod nvrtc {
         }
     }
 }
+
+/// Values on the device (ROADMAP 6.21: NVRTC proves syntax, not values). The lowered exclusive Max / Min scan is launched on a 64-thread block
+/// (two warps: each scans its own 32 lanes, so lane 32 is a second "lane 0") and compared with unpopped's oracle (`run_launch`) AND with a
+/// hand-written left fold. Data: a prefix with the type's extreme value, all lanes equal to the extreme, strictly ascending, strictly descending.
+#[cfg(all(feature = "nvrtc", feature = "device-tests"))]
+mod device {
+    use super::*;
+    use baracuda_cuda_emit::NvrtcCompiler;
+    use baracuda_driver::{Context, Device, DeviceBuffer, Module, Stream, init};
+    use unpopped::jit::Compiler;
+    use unpopped::oracle::TypedBuffer;
+    use unpopped::oracle::kernel_eval::KernelArg;
+    use unpopped::oracle::kernel_launch::run_launch_with_subgroup;
+    use unpopped_vocab::TargetId;
+
+    const THREADS: usize = 64;
+
+    fn kernel(t: ElementKind, op: ReduceOp) -> KernelFn {
+        KernelFn::new(
+            "scan",
+            t,
+            vec![
+                Param::buffer("inp", t, BufferRole::Read, Some(1)),
+                Param::buffer("out", t, BufferRole::Write, Some(1)),
+            ],
+            vec![LocalDecl::scalar(t), LocalDecl::scalar(t)],
+            Block(vec![
+                Stmt::Load {
+                    local: 0,
+                    place: Place::Logical {
+                        buffer: 0,
+                        coords: vec![ScalarExpr::Exec(ExecId::ThreadIdx(0))],
+                    },
+                },
+                Stmt::Collective {
+                    kind: CollectiveKind::Scan {
+                        op,
+                        exclusive: true,
+                    },
+                    value: ScalarExpr::Local(0),
+                    result: 1,
+                    scope: Scope::Subgroup,
+                },
+                Stmt::Store {
+                    place: Place::Logical {
+                        buffer: 1,
+                        coords: vec![ScalarExpr::Exec(ExecId::ThreadIdx(0))],
+                    },
+                    value: ScalarExpr::Local(1),
+                },
+            ]),
+        )
+        .with_launch(LaunchShape::new([THREADS as u32, 1, 1], [1, 1, 1]))
+    }
+
+    fn width(t: ElementKind) -> usize {
+        match t {
+            ElementKind::I32 | ElementKind::U32 => 4,
+            _ => 8,
+        }
+    }
+
+    fn range(t: ElementKind) -> (i128, i128) {
+        match t {
+            ElementKind::I32 => (i32::MIN.into(), i32::MAX.into()),
+            ElementKind::I64 => (i64::MIN.into(), i64::MAX.into()),
+            _ => (0, u32::MAX.into()),
+        }
+    }
+
+    fn enc(t: ElementKind, vals: &[i128]) -> Vec<u8> {
+        vals.iter()
+            .flat_map(|v| v.to_le_bytes()[..width(t)].to_vec())
+            .collect()
+    }
+
+    fn dec(t: ElementKind, bytes: &[u8]) -> Vec<i128> {
+        bytes
+            .chunks(width(t))
+            .map(|c| match t {
+                ElementKind::I32 => i128::from(i32::from_le_bytes(c.try_into().unwrap())),
+                ElementKind::I64 => i128::from(i64::from_le_bytes(c.try_into().unwrap())),
+                _ => i128::from(u32::from_le_bytes(c.try_into().unwrap())),
+            })
+            .collect()
+    }
+
+    /// The spec: per warp, lane 0 = identity, lane i = fold of lanes 0..i.
+    fn by_hand(t: ElementKind, op: ReduceOp, x: &[i128]) -> Vec<i128> {
+        let (lo, hi) = range(t);
+        let ident = if matches!(op, ReduceOp::Max) { lo } else { hi };
+        let mut out = Vec::new();
+        for warp in x.chunks(32) {
+            let mut acc = ident;
+            for v in warp {
+                out.push(acc);
+                acc = if matches!(op, ReduceOp::Max) {
+                    acc.max(*v)
+                } else {
+                    acc.min(*v)
+                };
+            }
+        }
+        out
+    }
+
+    fn cases(t: ElementKind, op: ReduceOp) -> Vec<(&'static str, Vec<i128>)> {
+        let (lo, hi) = range(t);
+        let ext = if matches!(op, ReduceOp::Max) { hi } else { lo };
+        let other = if matches!(op, ReduceOp::Max) { lo } else { hi };
+        let mid = |i: i128| lo / 2 + hi / 2 + i;
+        let mut prefix: Vec<i128> = (0..THREADS as i128).map(|i| mid(i * 7 % 13)).collect();
+        prefix[3] = ext; // the extreme inside the prefix of warp 0
+        prefix[40] = ext; // and inside warp 1
+        vec![
+            ("extreme in a prefix", prefix),
+            ("every lane the extreme", vec![ext; THREADS]),
+            ("every lane the opposite extreme", vec![other; THREADS]),
+            ("ascending", (0..THREADS as i128).map(mid).collect()),
+            (
+                "descending",
+                (0..THREADS as i128).map(|i| mid(-i)).collect(),
+            ),
+        ]
+    }
+
+    fn device_run(
+        ctx: &Context,
+        stream: &Stream,
+        t: ElementKind,
+        op: ReduceOp,
+        x: &[i128],
+    ) -> Vec<i128> {
+        let k = kernel(t, op);
+        check_kernel(&k).expect("well-formed");
+        let g = Cuda.lower_kernel(&k).expect("lowers");
+        let cc = NvrtcCompiler::new(TargetId::parse("cuda:sm89").expect("token")).expect("nvrtc");
+        let ptx = cc
+            .compile(&g.source, &g.name, 10_000)
+            .unwrap_or_else(|e| panic!("{t:?} {op:?}: {e}\n{}", g.source));
+        let module = Module::load_ptx(ctx, &String::from_utf8(ptx).expect("utf8")).expect("load");
+        let func = module.get_function(&g.name).expect("function");
+        let bytes = enc(t, x);
+        let d_in = DeviceBuffer::<u8>::from_slice(ctx, &bytes).expect("upload");
+        let d_out = DeviceBuffer::<u8>::zeros(ctx, bytes.len()).expect("alloc");
+        let (p_in, p_out) = (d_in.as_raw(), d_out.as_raw());
+        // The argument block of two rank-1 buffers: { shape, stride, base } each (see the emitted `Args_scan`).
+        let blk: [i64; 6] = [THREADS as i64, 1, 0, THREADS as i64, 1, 0];
+        // SAFETY: the kernel is `(T* p0, T* p1, Args_scan a)` with `Args_scan` = 6 x i64 (the static_assert in the source pins 48 bytes
+        // for two rank-1 buffers); both buffers hold `THREADS` elements and outlive the launch (synchronised below).
+        unsafe {
+            func.launch()
+                .grid((1, 1, 1))
+                .block((THREADS as u32, 1, 1))
+                .stream(stream)
+                .arg(&p_in)
+                .arg(&p_out)
+                .arg(&blk)
+                .launch()
+                .expect("launch");
+        }
+        stream.synchronize().expect("sync");
+        let mut got = vec![0u8; bytes.len()];
+        d_out.copy_to_host(&mut got).expect("download");
+        dec(t, &got)
+    }
+
+    fn oracle_run(t: ElementKind, op: ReduceOp, x: &[i128]) -> Vec<i128> {
+        let k = kernel(t, op);
+        let n = THREADS as i64;
+        let mut args = vec![
+            KernelArg::Buffer(TypedBuffer::new(t, vec![n], vec![1], enc(t, x))),
+            KernelArg::Buffer(TypedBuffer::new(
+                t,
+                vec![n],
+                vec![1],
+                vec![0; THREADS * width(t)],
+            )),
+        ];
+        run_launch_with_subgroup(&k, &mut args, Some(32)).expect("the oracle runs it");
+        match &args[1] {
+            KernelArg::Buffer(b) => dec(t, &b.bytes),
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[test]
+    fn exclusive_integer_max_min_scans_match_the_oracle_on_the_device() {
+        init().expect("driver init");
+        let ctx = Context::new(&Device::get(0).expect("device 0")).expect("context");
+        let stream = Stream::new(&ctx).expect("stream");
+        for t in [ElementKind::I32, ElementKind::I64, ElementKind::U32] {
+            for op in [ReduceOp::Max, ReduceOp::Min] {
+                for (name, x) in cases(t, op) {
+                    let want = by_hand(t, op, &x);
+                    assert_eq!(
+                        oracle_run(t, op, &x),
+                        want,
+                        "{t:?} {op:?} {name}: the oracle and the hand fold disagree"
+                    );
+                    let got = device_run(&ctx, &stream, t, op, &x);
+                    assert_eq!(got, want, "{t:?} {op:?} {name}: device != oracle");
+                }
+            }
+        }
+    }
+}
