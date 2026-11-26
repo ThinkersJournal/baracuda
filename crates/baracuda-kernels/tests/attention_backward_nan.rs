@@ -99,7 +99,7 @@ fn oracle(x: &Inp) -> (Vec<f64>, Vec<f64>, Vec<f64>) {
 }
 
 macro_rules! suite {
-    ($m:ident, $T:ty, $to:expr, $from:expr, $fw:path, $bw:path, $tol:expr) => {
+    ($m:ident, $T:ty, $to:expr, $from:expr, $fw:path, $bw:path, $tol:expr, $big:expr) => {
         mod $m {
             use super::*;
 
@@ -195,6 +195,29 @@ macro_rules! suite {
                 assert!(b.is_empty(), "{b:#?}");
             }
 
+            /// A fully masked row (every score `-inf`, built with finite operands whose products overflow: `q = +big`, `k = -big`) keeps the
+            /// inference convention: lse is `-inf`, `p = 0`, and the gradient is exactly zero, not NaN. Guards the `lse == -inf` branch of the fix.
+            #[test]
+            fn fully_masked_rows_give_zero_gradient() {
+                let big: f64 = $big;
+                if big == 0.0 {
+                    return; // dtype cannot hold an overflowing finite operand (f16): not probed
+                }
+                let mut x = base();
+                x.q.iter_mut().for_each(|a| *a = big);
+                x.k.iter_mut().for_each(|a| *a = -big);
+                for v in [&mut x.q, &mut x.k] {
+                    for a in v.iter_mut() {
+                        *a = $from($to(*a));
+                    }
+                }
+                assert!(x.q.iter().chain(x.k.iter()).all(|a| a.is_finite()), "operands must be finite");
+                let (gq, gk, gv) = run(&x);
+                for (label, g) in [("dQ", &gq), ("dK", &gk), ("dV", &gv)] {
+                    assert!(g.iter().all(|a| *a == 0.0), "{label} of a fully masked row must be exactly 0, got {:?}", &g[..4]);
+                }
+            }
+
             #[test]
             fn nan_and_inf_inputs_match_the_ieee_oracle() {
                 let mut bad = Vec::new();
@@ -221,7 +244,8 @@ suite!(
     |v: f32| v as f64,
     sys::baracuda_kernels_flash_sdpa_f32_run,
     sys::baracuda_kernels_flash_sdpa_backward_f32_run,
-    2e-4
+    2e-4,
+    1e20
 );
 suite!(
     f16s,
@@ -230,7 +254,8 @@ suite!(
     |v: f16| v.to_f64(),
     sys::baracuda_kernels_flash_sdpa_f16_run,
     sys::baracuda_kernels_flash_sdpa_backward_f16_run,
-    2e-2
+    2e-2,
+    0.0
 );
 suite!(
     bf16s,
@@ -239,5 +264,6 @@ suite!(
     |v: bf16| v.to_f64(),
     sys::baracuda_kernels_flash_sdpa_bf16_run,
     sys::baracuda_kernels_flash_sdpa_backward_bf16_run,
-    8e-2
+    8e-2,
+    1e20
 );
