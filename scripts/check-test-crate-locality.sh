@@ -37,6 +37,11 @@ exempt=(
   # linked code. Lives next to #139/#141's sibling MMVQ tests for discoverability,
   # not because it exercises baracuda-kernels' compiled surface.
   "crates/baracuda-kernels/tests/mmvq_kquant_row_guard_offbyone.rs"
+  # shared_align.rs checks baracuda-cuda-parse's shared-alignment parse against the VENDORED FlashInfer `sampling.cuh`, which lives in
+  # baracuda-kernels-sys. It cannot move to baracuda-cuda-parse: a test there would read a file outside its own crate, which the packaged
+  # `.crate` does not carry (CodeRipper SUP-004). It uses `baracuda_cuda_parse` (a path-only dev-dependency) and the vendored file, and
+  # never names `baracuda_kernels_sys` because kernels-sys has no Rust item the test exercises. It stays a would-be violation (honesty 2).
+  "crates/baracuda-kernels-sys/tests/shared_align.rs"
 )
 is_exempt() { local f="$1" e; for e in "${exempt[@]}"; do [ "$f" = "$e" ] && return 0; done; return 1; }
 libname() { local c; c=$(basename "$(dirname "$(dirname "$1")")"); echo "${c//-/_}"; }
