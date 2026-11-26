@@ -3612,10 +3612,14 @@ fn	baracuda-kernels-sys	baracuda_kernels_scan_log_cumsum_exp_f32_can_implement	b
 fn	baracuda-kernels-sys	baracuda_kernels_scan_log_cumsum_exp_f32_run	8c2ed3dfdac8ff95	-
 fn	baracuda-kernels-sys	baracuda_kernels_scan_log_cumsum_exp_f64_can_implement	bac43f754d3b80ae	-
 fn	baracuda-kernels-sys	baracuda_kernels_scan_log_cumsum_exp_f64_run	8c2ed3dfdac8ff95	-
+fn	baracuda-kernels-sys	baracuda_kernels_scatter_add_bf16_run	abd8147ddac1373b	-
+fn	baracuda-kernels-sys	baracuda_kernels_scatter_add_f16_run	abd8147ddac1373b	-
 fn	baracuda-kernels-sys	baracuda_kernels_scatter_add_f32_can_implement	ca41a6d684c7b7e0	-
 fn	baracuda-kernels-sys	baracuda_kernels_scatter_add_f32_run	abd8147ddac1373b	-
 fn	baracuda-kernels-sys	baracuda_kernels_scatter_add_f64_can_implement	ca41a6d684c7b7e0	-
 fn	baracuda-kernels-sys	baracuda_kernels_scatter_add_f64_run	abd8147ddac1373b	-
+fn	baracuda-kernels-sys	baracuda_kernels_scatter_add_i64idx_bf16_run	abd8147ddac1373b	-
+fn	baracuda-kernels-sys	baracuda_kernels_scatter_add_i64idx_f16_run	abd8147ddac1373b	-
 fn	baracuda-kernels-sys	baracuda_kernels_scatter_add_i64idx_f32_can_implement	ca41a6d684c7b7e0	-
 fn	baracuda-kernels-sys	baracuda_kernels_scatter_add_i64idx_f32_run	abd8147ddac1373b	-
 fn	baracuda-kernels-sys	baracuda_kernels_scatter_add_i64idx_f64_can_implement	ca41a6d684c7b7e0	-
