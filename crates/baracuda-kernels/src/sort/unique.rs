@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! `unique` plan — sort + consecutive-dedup composition (**not wired: `run` returns `Error::Unsupported`**).
-//!
-//! Meant to compose [`crate::sort::SortPlan`] (into a caller-supplied scratch buffer) followed by
-//! [`crate::sort::UniqueConsecutivePlan`], PyTorch `torch.unique(x, sorted=True)`. Up to 0.1.0-alpha.189 `run` only sorted and returned
-//! `Ok` without writing any output; it now declines. Compose the two plans yourself until ROADMAP E0b lands.
+//! `unique` plan: [`crate::sort::SortPlan`] into a caller-supplied scratch buffer, then an ordered dedup of each sorted row
+//! (PyTorch `torch.unique(x, sorted=True, return_counts=True)`). Up to 0.1.0-alpha.189 `run` only sorted and returned `Ok` without writing
+//! any output; alpha.191 made it decline; ROADMAP E0b wires it. The second stage is the ordered
+//! [`crate::sort::UniqueConsecutivePlan`] kernel (run order, run-length counts), called directly on the sorted scratch.
 //!
 //! Trailblazer dtype coverage: `f32, f64, i32`. Set-valued — no BW.
 //!
@@ -12,6 +11,7 @@
 //! reads from it. We compose at the plan layer so the kernel side
 //! stays simple — no fused sort+dedup kernel ships.
 
+use core::ffi::c_void;
 use core::marker::PhantomData;
 
 use baracuda_cutlass::{Error, Result};
@@ -165,19 +165,104 @@ impl<T: Element> UniquePlan<T> {
         self.sku.precision_guarantee
     }
 
-    /// Launch — sort, then dedup.
+    /// Launch: sort each row ascending (NaN largest, the [`SortPlan`](crate::SortPlan) order) into `sorted_scratch`, then dedup the sorted rows
+    /// in order.
+    ///
+    /// Convention (torch `unique(sorted=True)`): `values` holds the distinct values ascending; every NaN is its own value (NaN != NaN, and NaN sorts
+    /// last), `-0.0` and `+0.0` are one value (the first of the run in sort order is kept); `counts[k]` is the number of times `values[k]` occurs
+    /// (the run length); `counter[row]` is the actual number of distinct values, which can exceed `max_unique` (the extra values are dropped).
+    /// Cells of `values` / `counts` past the counter are left untouched.
     pub fn run(
         &self,
-        _stream: &Stream,
+        stream: &Stream,
         _workspace: Workspace<'_>,
         args: UniqueArgs<'_, T>,
     ) -> Result<()> {
         self.can_implement(&args)?;
-        // Until the dedup stage is wired this plan declines rather than "succeed" with an empty result: up to 0.1.0-alpha.189 `run` only
-        // sorted into `sorted_scratch` and never wrote `values`, `counts` or `counter` (ROADMAP E0b). To get `unique` today, sort with
-        // `SortPlan` and dedup the sorted row with `UniqueConsecutivePlan` (the pair this plan is meant to compose).
-        Err(Error::Unsupported(
-            "baracuda-kernels::UniquePlan::run: the sort-then-dedup composition is not wired; compose SortPlan and UniqueConsecutivePlan",
-        ))
+        if self.desc.batch == 0 {
+            return Ok(());
+        }
+        if self.desc.row_len > 1024 {
+            return Err(Error::Unsupported(
+                "baracuda-kernels::UniquePlan: row_len > 1024 (the sort and the dedup are one block per row)",
+            ));
+        }
+        let sorted = args.sorted_scratch.data().as_raw().0 as *const c_void;
+        let vals = args.values.data().as_raw().0 as *mut c_void;
+        let counts = args.counts.data().as_raw().0 as *mut c_void;
+        let counter = args.counter.data().as_raw().0 as *mut c_void;
+        if self.desc.row_len > 0 {
+            let sort = crate::sort::SortPlan::<T>::select(
+                stream,
+                &crate::sort::SortDescriptor {
+                    batch: self.desc.batch,
+                    row_len: self.desc.row_len,
+                    descending: false,
+                    element: self.desc.element,
+                },
+                PlanPreference::default(),
+            )?;
+            sort.run(
+                stream,
+                Workspace::None,
+                crate::sort::SortArgs {
+                    input: args.input,
+                    values: args.sorted_scratch,
+                    indices: args.sorted_idx_scratch,
+                },
+            )?;
+        }
+        let (b, n, m) = (self.desc.batch, self.desc.row_len, self.desc.max_unique);
+        let sp = stream.as_raw();
+        let status = match T::KIND {
+            ElementKind::F32 => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_unique_consecutive_f32_run(
+                    b,
+                    n,
+                    m,
+                    sorted,
+                    vals,
+                    counts,
+                    counter,
+                    core::ptr::null_mut(),
+                    0,
+                    sp,
+                )
+            },
+            ElementKind::F64 => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_unique_consecutive_f64_run(
+                    b,
+                    n,
+                    m,
+                    sorted,
+                    vals,
+                    counts,
+                    counter,
+                    core::ptr::null_mut(),
+                    0,
+                    sp,
+                )
+            },
+            ElementKind::I32 => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_unique_consecutive_i32_run(
+                    b,
+                    n,
+                    m,
+                    sorted,
+                    vals,
+                    counts,
+                    counter,
+                    core::ptr::null_mut(),
+                    0,
+                    sp,
+                )
+            },
+            _ => {
+                return Err(Error::Unsupported(
+                    "baracuda-kernels::UniquePlan::run reached an unimplemented dtype",
+                ));
+            }
+        };
+        crate::indexing::gather::map_status(status)
     }
 }
