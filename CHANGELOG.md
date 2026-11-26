@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.213 - 2026-11-26
+
+CI only; no crate changes. `.github/workflows/device-tests-kernel-features.yml` (weekly schedule plus `workflow_dispatch`, runs on the self-hosted GPU runner) gains `concurrency: {group: device-tests-kernel-features, cancel-in-progress: false}`, the same pattern as `device-tests.yml`: a started run always finishes, and of the runs still waiting only the newest is kept. It has its own group rather than sharing `device-tests`, because one shared group would let a waiting run of one workflow replace a waiting run of the other, and they cover different tests. Triggers, the `DEVICE_RUNNER_ENABLED` gate and every step are unchanged.
+
 ## 0.1.0-alpha.212 - 2026-11-26
 
 CI only; no crate changes. `.github/workflows/device-tests.yml` gains `concurrency: {group: device-tests, cancel-in-progress: false}`. The device job runs on one machine for hours, and every push to main used to queue another run (19 deep on 2026-11-26). Now a run that has started always finishes (`cancel-in-progress: false`), and of the runs still waiting only the newest is kept; GitHub reports a replaced run as cancelled, not failed. The workflow's triggers (push to main, the nightly schedule, `workflow_dispatch`), its `if: vars.DEVICE_RUNNER_ENABLED == 'true'` gate and its steps are unchanged.
