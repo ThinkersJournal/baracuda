@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! `unique_consecutive` plan — emit one cell per run-start in each row.
 //!
-//! Input must be pre-sorted (or the user only wants consecutive-equal
-//! runs collapsed — the PyTorch `torch.unique_consecutive` semantics).
+//! `torch.unique_consecutive`: each maximal run of equal neighbours becomes one cell, in row order. Input need not be sorted.
 //!
-//! Output is **NOT input-order** — slot assignment uses a per-row
-//! atomic counter (block-race order). Callers that need input-order
-//! output should issue a follow-up sort on `[batch, counter]` rows.
-//! The per-row count is written to `counter[batch]` (a separate
-//! tensor) — callers read it post-launch to learn the actual unique
-//! count per row.
+//! - `values[row][k]` is the first element of the k-th run, `counts[row][k]` the run LENGTH, `counter[row]` the actual number of runs (it can
+//!   exceed `max_unique`; the extra runs are dropped and cells past the counter are untouched).
+//! - Equality is `==`: every NaN is its own run (NaN != NaN, as torch), `-0.0` and `+0.0` are one run (the first element's sign is kept).
+//! - Up to 0.1.0-alpha.210 the output slots were numbered by an atomic counter (block-race order, NOT row order) and `counts` was always 1;
+//!   both are fixed (ordered scan-based compaction, no atomics for slot numbering).
 //!
-//! Trailblazer dtype coverage: `f32, f64, i32`. Set-valued — no BW.
+//! Dtype coverage: `f32, f64, i32, i64`. Set-valued — no BW.
 
 use core::ffi::c_void;
 use core::marker::PhantomData;
@@ -35,9 +33,7 @@ pub struct UniqueConsecutiveDescriptor {
     /// Maximum number of unique values the output table can hold per
     /// row. Set to `row_len` for a worst-case-safe bound.
     pub max_unique: i32,
-    /// Whether to emit per-run counts (`y_counts`). Today the kernel
-    /// writes `1` per detected run-start regardless; this flag is
-    /// reserved for future counts-aware variants.
+    /// Reserved: the run-length `counts` are always written (the `counts` tensor is a required argument).
     pub return_counts: bool,
     /// Value element type.
     pub element: ElementKind,
@@ -109,10 +105,10 @@ impl<T: Element> UniqueConsecutivePlan<T> {
         }
         if !matches!(
             T::KIND,
-            ElementKind::F32 | ElementKind::F64 | ElementKind::I32
+            ElementKind::F32 | ElementKind::F64 | ElementKind::I32 | ElementKind::I64
         ) {
             return Err(Error::Unsupported(
-                "baracuda-kernels::UniqueConsecutivePlan: today only f32 / f64 / i32 wired",
+                "baracuda-kernels::UniqueConsecutivePlan: today only f32 / f64 / i32 / i64 wired",
             ));
         }
         let sku = build_unique_sku::<T>(SortKind::UniqueConsecutive);
@@ -218,6 +214,20 @@ impl<T: Element> UniqueConsecutivePlan<T> {
             },
             ElementKind::I32 => unsafe {
                 baracuda_kernels_sys::baracuda_kernels_unique_consecutive_i32_run(
+                    self.desc.batch,
+                    self.desc.row_len,
+                    self.desc.max_unique,
+                    in_ptr,
+                    vals_ptr,
+                    counts_ptr,
+                    counter_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            ElementKind::I64 => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_unique_consecutive_i64_run(
                     self.desc.batch,
                     self.desc.row_len,
                     self.desc.max_unique,
