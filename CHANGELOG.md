@@ -16,6 +16,15 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.203 - 2026-11-25
+
+The cumprod backward kernel computed `dy * y / x[j]`, so every zero in the input produced inf or NaN (torch gives the exact gradient). It now multiplies the other elements instead of dividing: `dx[j] = (prod of x before j) * sum_{i >= j} dy[i] * (prod of x between j and i)`, mirrored for a reverse scan. A zero at `x[j]` gets its true gradient, and a NaN `x[j]` still gives NaN (torch divides by it). f32, f16, bf16 and f64. Device test `scan_cumprod_backward_zeros` (zeros at 0, 1 and 2 positions and a NaN row, forward and reverse): red on the old kernel (NaN at the zero slot), green on the fix.
+Retraction: the `proxy_fence` and `named_barrier` refusal tests added with the unpopped 0.57.0 rebuild (alpha.202) passed on the IR checker's refusal text, not the emitter's, so they proved only what `check_kernel` refuses; `unlowered_statements` (checker-valid fixtures, mutant-checked) is the test that reaches the emitter's refusal arm.
+
+## 0.1.0-alpha.202 - 2026-11-25
+
+The emitter, parser and seam crates move to 0.57.0 to match unpopped 0.57.0. `baracuda-cuda-emit` now lowers `Stmt::ProxyFence { space: Shared }` to `fence.proxy.async.shared::cta` (ptxas accepts it for sm_90 and refuses it for sm_89, as the ISA says); any other space is refused with a reason. The other new 0.57.0 statements and the `Wgmma`/`Tcgen05` operand-layout fields stay refused with an explicit reason ("not lowered by the CUDA backend yet"), never a default. The CUDA test dev-dependencies move to fishstringer-slang-emit/-parse ~0.6.0 (on unpopped 0.57.0), which now emits `Copysign` and `Nextafter` instead of declining them; `backend_declines` asserts the new lowering. The seam crates take fireline ~0.8.
+
 ## 0.1.0-alpha.201 - 2026-11-25
 
 `SearchsortedPlan<f32|f64>` compared with a plain `<`, so a NaN query always returned 0 and a sequence ending in NaN was mis-searched. It now uses the NaN-largest order shared with sort/topk: a NaN query gives the first NaN index (left) or `len` (right), and +inf sorts before NaN. One deviation from torch is stated in OP-MATRIX: a NaN query against a NaN-containing sequence gives the first-NaN index for left (torch: `len`). The plan has no f16/bf16. Affects baracuda-kernels-sys from 0.0.1-alpha.26 (read from the published .crate). Fuel does not bind searchsorted (0 hits in `git grep` on origin/main; the same query finds 35 files for `topk`).
