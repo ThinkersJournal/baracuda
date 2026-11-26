@@ -10,8 +10,8 @@ use unpopped::backend::{Backend, LowerError};
 use unpopped::exec::{AllocDecl, ExecId, Extent, LaunchShape, MemorySpace};
 use unpopped::ir::{BinaryOp, ScalarExpr};
 use unpopped::kernel::{
-    Block, BufferRole, CacheHint, CollectiveKind, KernelFn, LocalDecl, Param, Place, ShuffleMode,
-    Stmt, VoteKind, check_kernel,
+    Block, BufferRole, CacheHint, CollectiveKind, KernelError, KernelFn, LocalDecl, Param, Place,
+    ShuffleMode, Stmt, VoteKind, check_kernel,
 };
 use unpopped_vocab::ElementKind;
 
@@ -596,6 +596,42 @@ fn an_element_type_outside_the_cuda_table_is_declined_by_name() {
         d.contains("buffer `x`") && d.contains("no CUDA spelling"),
         "{d}"
     );
+}
+
+/// KISS 0.24.0 element rows (unpopped 0.60): the checker itself refuses a kernel that declares one of these as a buffer
+/// (`KernelError::DtypeNotComputed { dtype }`: the row exists in the vocabulary but nothing computes it yet), and the lowering
+/// reports that refusal as an ill-formed kernel naming the dtype, so each is declined BY NAME before the CUDA table is consulted.
+/// `F16` in the test above is the control for the other path (checker-valid, then "no CUDA spelling" from the emitter's own table).
+/// Rows to lower later are recorded in ROADMAP S14.
+#[test]
+fn the_seven_new_element_rows_are_each_declined_by_name() {
+    for (kind, name) in [
+        (ElementKind::F128, "F128"),
+        (ElementKind::I128, "I128"),
+        (ElementKind::U128, "U128"),
+        (ElementKind::I256, "I256"),
+        (ElementKind::U256, "U256"),
+        (ElementKind::F8E3M4, "F8E3M4"),
+        (ElementKind::F8UE4M3, "F8UE4M3"),
+    ] {
+        let k = KernelFn::new(
+            "w",
+            I32,
+            vec![Param::buffer("x", kind, BufferRole::Read, Some(1))],
+            vec![],
+            Block(Vec::new()),
+        );
+        assert!(
+            matches!(check_kernel(&k), Err(KernelError::DtypeNotComputed { dtype }) if dtype == kind),
+            "{name}: the checker must refuse it by name: {:?}",
+            check_kernel(&k)
+        );
+        let d = detail(Cuda.lower_kernel(&k));
+        assert!(
+            d.contains("ill-formed") && d.contains("DtypeNotComputed") && d.contains(name),
+            "{name}: {d}"
+        );
+    }
 }
 
 /// The emitted source must be real CUDA: compile it with NVRTC (PTX only, nothing runs). `sm_89` always; `sm_61` when the
