@@ -1,3 +1,0 @@
-kind: Fixed: std backward gives 0 for a constant group (it gave NaN)
----
-The Std reduction backward computed `dy * (x - mean) / (m * y)`; for a constant group the standard deviation `y` is 0 and the result was 0/0 = NaN. torch's `std_backward` masks `result == 0` to a zero gradient, and so does the kernel now. A NaN standard deviation (a NaN in the group, or no divisor) still gives NaN. One kernel template serves f32, f16, bf16 and f64; the device test runs f32 and f64. Device test `reduce_std_backward_zero`: red on the old kernel, green on the fix; the existing Std backward smoke tests still pass.
