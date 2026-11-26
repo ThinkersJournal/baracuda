@@ -1414,9 +1414,10 @@ __global__ void reduce_welford_backward_kernel(
         Acc diff = xc - mean;
         Acc out;
         if (DoSqrt) {
-            // Std BW: dy * (x - mean) / (m * y). Caller must ensure y != 0.
+            // Std BW: dy * (x - mean) / (m * y). A zero std (a constant group) has gradient 0, as in torch (`std_backward` masks
+            // `result == 0`), not 0/0 = NaN (ROADMAP E0). A NaN std (a NaN in the group, or no divisor) still gives NaN.
             Acc yc = welford_load_as_acc<T>(y[off_y]);
-            out = dyc * diff / (denom * yc);
+            out = (yc == (Acc)0) ? (Acc)0 : dyc * diff / (denom * yc);
         } else {
             // Var BW: dy * 2 * (x - mean) / m.
             out = dyc * (Acc)2 * diff / denom;
@@ -4292,6 +4293,9 @@ __global__ void log_cumsum_exp_backward_kernel(
         for (int32_t ii = i_lo; ii <= i_hi; ++ii) {
             C dy_i = DT::load(dy[off_dy_base + (int64_t)ii * stride_dy_axis]);
             C y_i  = DT::load(y [off_y_base  + (int64_t)ii * stride_y_axis]);
+            // A prefix of -inf has a -inf output and zero mass: `exp(x_k - y_i)` would be exp(-inf - -inf) = NaN, torch's weight there is 0
+            // (ROADMAP E0). +inf / +inf stays NaN, and a NaN in `x`, `y` or `dy` still poisons the sum (only the exact -inf pair is masked).
+            if (x_k == C(-INFINITY) && y_i == C(-INFINITY)) continue;
             acc += dy_i * DT::gexp(x_k - y_i);
         }
         dx[off_dx] = DT::store_from(acc);
