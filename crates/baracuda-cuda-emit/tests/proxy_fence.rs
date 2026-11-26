@@ -43,12 +43,24 @@ fn a_kernel_without_the_statement_has_no_fence() {
     assert!(!g.source.contains("fence.proxy"), "{}", g.source);
 }
 
-/// The checker admits only `Shared`; the emitter repeats that as a second line, so the other spaces never print a fence.
+/// `lower_kernel` runs the IR checker first, and the checker admits only `Shared`, so another space is refused there as `ill-formed`; the
+/// emitter's own `ProxyFence` guard is a defensive second line that no public call reaches, so nothing is asserted about its text (a test
+/// that did would be vacuous: the checker's text would satisfy it). What is asserted: a non-`Shared` fence never lowers.
 #[test]
-fn other_spaces_are_refused() {
+fn other_spaces_never_lower() {
     for space in [MemorySpace::Global, MemorySpace::Private] {
         let k = kernel(vec![Stmt::ProxyFence { space }]);
-        let refused = check_kernel(&k).is_err() || Cuda.lower_kernel(&k).is_err();
-        assert!(refused, "{space:?} must not lower");
+        assert!(
+            check_kernel(&k).is_err(),
+            "{space:?}: the checker refuses it"
+        );
+        let e = Cuda
+            .lower_kernel(&k)
+            .expect_err("a non-Shared ProxyFence must not lower");
+        let d = format!("{e:?}");
+        assert!(
+            d.contains("ill-formed"),
+            "{space:?}: refused by the checker, got: {d}"
+        );
     }
 }
