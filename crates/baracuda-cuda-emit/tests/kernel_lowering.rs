@@ -604,6 +604,7 @@ fn an_element_type_outside_the_cuda_table_is_declined_by_name() {
 ///    ("no CUDA spelling") is unreachable through `lower_kernel` for these kinds until a checker admits them;
 /// 2. the EMITTER's own answer, asserted directly: `Cuda.supports_dtype` says `Unsupported` and `scalar_ctype` is `None` for each,
 ///    so the day a checker admits a row the emitter still declines. `F32` is the positive control for both.
+///
 /// Rows to lower later are recorded in ROADMAP S14.
 #[test]
 fn the_seven_new_element_rows_are_each_declined_by_name() {
