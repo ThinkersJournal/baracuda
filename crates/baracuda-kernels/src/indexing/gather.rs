@@ -15,7 +15,7 @@
 //! `gather` the buffer's previous contents). This holds for every element type, f32 and half alike
 //! (ROADMAP E4 tracks a device error flag that turns it into a typed error).
 //!
-//! Trailblazer dtype coverage: `f32, f64, i32`. The kernel is a pure
+//! Trailblazer dtype coverage: `f32, f64, i32, f16, bf16` (half routes onto the 2-byte bit-copy kernel). The kernel is a pure
 //! load + store — no arithmetic — so output is bit-exact against
 //! reference at every dtype.
 
@@ -76,7 +76,7 @@ pub struct GatherArgs<'a, T: Element, const N: usize, I: IndexElement = i32> {
 /// **When to use**: forward `gather`. Pair with [`GatherBackwardPlan`](crate::GatherBackwardPlan)
 /// for the autograd pass (which scatter-adds into `dsrc`).
 ///
-/// **Dtypes**: value tensor `{f32, f64, i32}`; index tensor always
+/// **Dtypes**: value tensor `{f32, f64, i32, f16, bf16}`; index tensor always
 /// `i32`. (i64 indices deferred.)
 ///
 /// **Shape limits**: rank in `[1, 8]`; `gather_dim ∈ [0, N)`; every
@@ -106,7 +106,7 @@ impl<T: Element, const N: usize> GatherPlan<T, N> {
     /// Pick a kernel for `desc`.
     ///
     /// Validates: `T::KIND == desc.element`, rank > 0, `gather_dim`
-    /// in range, non-negative extents, and dtype in `{f32, f64, i32}`.
+    /// in range, non-negative extents, and dtype in `{f32, f64, i32, f16, bf16}`.
     pub fn select(
         _stream: &Stream,
         desc: &GatherDescriptor<N>,
@@ -142,11 +142,15 @@ impl<T: Element, const N: usize> GatherPlan<T, N> {
 
         let supported = matches!(
             T::KIND,
-            ElementKind::F32 | ElementKind::F64 | ElementKind::I32
+            ElementKind::F32
+                | ElementKind::F64
+                | ElementKind::I32
+                | ElementKind::F16
+                | ElementKind::Bf16
         );
         if !supported {
             return Err(Error::Unsupported(
-                "baracuda-kernels::GatherPlan: today only `f32`, `f64`, `i32` wired",
+                "baracuda-kernels::GatherPlan: today only `f32`, `f64`, `i32`, `f16`, `bf16` wired",
             ));
         }
 
@@ -310,6 +314,44 @@ impl<T: Element, const N: usize> GatherPlan<T, N> {
             },
             (ElementKind::I32, IndexElementKind::I32) => unsafe {
                 baracuda_kernels_sys::baracuda_kernels_gather_i32_run(
+                    out_numel,
+                    rank,
+                    self.desc.gather_dim,
+                    self.desc.src_dim_size,
+                    out_shape.as_ptr(),
+                    stride_src.as_ptr(),
+                    stride_index.as_ptr(),
+                    stride_out.as_ptr(),
+                    src_ptr,
+                    idx_ptr,
+                    out_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            (ElementKind::F16 | ElementKind::Bf16, IndexElementKind::I32) => unsafe {
+                // A gather has no arithmetic: the 2-byte bit-copy kernel moves f16 and bf16 bit-for-bit.
+                baracuda_kernels_sys::baracuda_kernels_gather_u16_run(
+                    out_numel,
+                    rank,
+                    self.desc.gather_dim,
+                    self.desc.src_dim_size,
+                    out_shape.as_ptr(),
+                    stride_src.as_ptr(),
+                    stride_index.as_ptr(),
+                    stride_out.as_ptr(),
+                    src_ptr,
+                    idx_ptr,
+                    out_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            (ElementKind::F16 | ElementKind::Bf16, IndexElementKind::I64) => unsafe {
+                // A gather has no arithmetic: the 2-byte bit-copy kernel moves f16 and bf16 bit-for-bit.
+                baracuda_kernels_sys::baracuda_kernels_gather_i64idx_u16_run(
                     out_numel,
                     rank,
                     self.desc.gather_dim,
