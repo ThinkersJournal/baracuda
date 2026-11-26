@@ -113,11 +113,15 @@ impl<T: Element, const N: usize> IndexSelectPlan<T, N> {
 
         let supported = matches!(
             T::KIND,
-            ElementKind::F32 | ElementKind::F64 | ElementKind::I32
+            ElementKind::F32
+                | ElementKind::F64
+                | ElementKind::I32
+                | ElementKind::F16
+                | ElementKind::Bf16
         );
         if !supported {
             return Err(Error::Unsupported(
-                "baracuda-kernels::IndexSelectPlan: today only `f32`, `f64`, `i32` wired",
+                "baracuda-kernels::IndexSelectPlan: today only `f32`, `f64`, `i32`, `f16`, `bf16` wired",
             ));
         }
 
@@ -319,6 +323,44 @@ impl<T: Element, const N: usize> IndexSelectPlan<T, N> {
             },
             (ElementKind::I32, IndexElementKind::I64) => unsafe {
                 baracuda_kernels_sys::baracuda_kernels_index_select_i64idx_i32_run(
+                    out_numel,
+                    rank,
+                    self.desc.select_dim,
+                    self.desc.src_dim_size,
+                    out_shape.as_ptr(),
+                    stride_src.as_ptr(),
+                    stride_out.as_ptr(),
+                    src_ptr,
+                    idx_ptr,
+                    out_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            (ElementKind::F16 | ElementKind::Bf16, IndexElementKind::I32) => unsafe {
+                // f16 and bf16 are two bytes with no arithmetic: the kernel is a bit copy, so the 16-bit
+                // integer instantiation is exact for every value (NaN payloads, -0, subnormals, infinities).
+                baracuda_kernels_sys::baracuda_kernels_index_select_u16_run(
+                    out_numel,
+                    rank,
+                    self.desc.select_dim,
+                    self.desc.src_dim_size,
+                    out_shape.as_ptr(),
+                    stride_src.as_ptr(),
+                    stride_out.as_ptr(),
+                    src_ptr,
+                    idx_ptr,
+                    out_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            (ElementKind::F16 | ElementKind::Bf16, IndexElementKind::I64) => unsafe {
+                // f16 and bf16 are two bytes with no arithmetic: the kernel is a bit copy, so the 16-bit
+                // integer instantiation is exact for every value (NaN payloads, -0, subnormals, infinities).
+                baracuda_kernels_sys::baracuda_kernels_index_select_i64idx_u16_run(
                     out_numel,
                     rank,
                     self.desc.select_dim,
