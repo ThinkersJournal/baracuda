@@ -20,6 +20,10 @@ pub fn init() -> Result<()> {
         return Ok(());
     }
     let d = driver()?;
+    // A device test outside `gpu-run` is refused here, after the driver library loaded (so a machine without CUDA never reaches it) and
+    // before `cuInit` (so the refusal does not touch the device). `test-support` is a dev-dependency feature: production builds do not have it.
+    #[cfg(feature = "test-support")]
+    crate::test_support::require_gpu_run_lock();
     let cu = d.cu_init()?;
     // SAFETY: `cuInit` takes a flags word; NVIDIA reserves all bits (pass 0).
     check(unsafe { cu(0) })?;

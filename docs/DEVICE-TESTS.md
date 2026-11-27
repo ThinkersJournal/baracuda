@@ -44,3 +44,7 @@ What cannot run even on that box is listed, by name, in [`UNVERIFIED-HARDWARE.md
 ## Feature-gated kernel tests
 
 `device-tests.yml` builds `baracuda-kernels` with default features (sm80, fa2), so test files gated on any other feature compile to empty binaries there. `device-tests-kernel-features.yml` (weekly + manual) builds each feature set (sm89, cudnn, mamba, flashinfer, fa2_backward, bnb_nf4, xformers_sparse24, xformers_blocksparse, ring_attention, mhc) and runs exactly those binaries; marlin/awq stay in `device-tests.yml`. Static census at 34477f16: 55 binaries, 257 `#[test]` fns. Unverified: whether each feature set builds on the runner (not run).
+
+## A device test refuses to run outside `gpu-run`
+
+`baracuda_driver::init()` (which every device test reaches, directly or through `Device::get`) panics, in a build with the `test-support` feature, unless the process holds the machine-wide GPU lock: `GPU_RUN_HELD=1`, which `scripts/gpu-run.ps1` exports into its child. A bare `cargo test --features device-tests` therefore fails at once naming `gpu-run`, without having touched the device; `cargo gpu-test ...` (compile unlocked, then one lock hold per test binary) and `pwsh scripts/gpu-run.ps1 -Project <lane> -- <test binary>` after `cargo test --no-run` pass. `BARACUDA_ALLOW_UNGATED_GPU=1` is for a machine with no other user of the GPU, not for a lane. A machine without a CUDA driver library never reaches the check. Not covered: tests that never call `baracuda_driver::init` (the cudart-based `baracuda-runtime` tests); ROADMAP S19.

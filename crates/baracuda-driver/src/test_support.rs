@@ -89,6 +89,38 @@ pub fn __declined(reason: &str, critical: bool) {
     print!("{record}");
 }
 
+/// Whether this process may use the GPU: it runs under `gpu-run` (which exports `GPU_RUN_HELD=1` into its child, so every test binary
+/// that `cargo gpu-test` launches has it) or the caller said so with `BARACUDA_ALLOW_UNGATED_GPU=1` (a machine with no other lane on the
+/// GPU). Pure, so the rule is unit-tested without a GPU.
+#[must_use]
+pub fn gpu_run_marker_ok(held: Option<&str>, allow: Option<&str>) -> bool {
+    held == Some("1") || allow == Some("1")
+}
+
+/// Refuse to touch the GPU outside `gpu-run`: the GPU is one machine-wide resource shared by every lane (the `gpu-run` lock), and a device
+/// test started by a bare `cargo test --features device-tests` used it without the lock (twice, 2026-11-27, disclosed). Called by
+/// [`crate::init`] once the driver library has loaded and BEFORE `cuInit`, so the refusal itself never touches the device, and a machine
+/// with no CUDA driver (hosted CI, a laptop without NVIDIA) never reaches it. Only compiled with the `test-support` feature, a
+/// dev-dependency, so a production build never has it.
+#[doc(hidden)]
+pub fn require_gpu_run_lock() {
+    let held = ::std::env::var("GPU_RUN_HELD").ok();
+    let allow = ::std::env::var("BARACUDA_ALLOW_UNGATED_GPU").ok();
+    if gpu_run_marker_ok(held.as_deref(), allow.as_deref()) {
+        return;
+    }
+    let where_ = ::std::thread::current()
+        .name()
+        .map(str::to_owned)
+        .unwrap_or_else(|| "<unknown test>".to_owned());
+    panic!(
+        "refusing to use the GPU outside gpu-run (GPU_RUN_HELD is not 1): the GPU is shared by every lane through one machine-wide \
+         lock. Run `cargo gpu-test -p <crate> --features device-tests ...` (it compiles unlocked, then takes the lock per test binary) \
+         or `pwsh scripts/gpu-run.ps1 -Project <lane> -- <test binary>` after `cargo test --no-run`. A machine with no other user of \
+         the GPU can set BARACUDA_ALLOW_UNGATED_GPU=1. [{where_}]"
+    );
+}
+
 /// Require a resource for an on-device `#[test]` (which returns `()`). `$probe`
 /// is any `Result` or `Option`.
 ///
@@ -151,5 +183,21 @@ mod tests {
         // — are validated end-to-end by `cargo gpu-test`, since they read the
         // environment and return from the test; unit-testing them would race on
         // process-global env.)
+    }
+
+    #[test]
+    fn the_gpu_run_marker_rule() {
+        use super::gpu_run_marker_ok as ok;
+        assert!(ok(Some("1"), None), "gpu-run exports GPU_RUN_HELD=1");
+        assert!(ok(None, Some("1")), "an explicit opt-out");
+        assert!(ok(Some("1"), Some("1")));
+        // The refusals (so the assertions above can fail): no marker, a wrong value, an empty one.
+        assert!(!ok(None, None));
+        assert!(!ok(Some("0"), None));
+        assert!(!ok(Some(""), Some("0")));
+        assert!(
+            !ok(Some("true"), None),
+            "only the exact `1` gpu-run exports"
+        );
     }
 }
