@@ -19,6 +19,14 @@ on:
 permissions:
   contents: read
 
+# One device run at a time, and only the NEWEST waiting run is kept. The runner is a single machine and a run takes hours (a kernels build and
+# the device suites), so without a group every push to main queued another run (19 deep on 2026-11-26). `cancel-in-progress: false` is
+# deliberate: a run that has started always finishes; only a run that has not started yet is replaced by a newer one. A run replaced this way is
+# reported as cancelled by GitHub, never as failed; the newest main commit is the one that gets tested.
+concurrency:
+  group: device-tests
+  cancel-in-progress: false
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1

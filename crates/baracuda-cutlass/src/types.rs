@@ -337,6 +337,13 @@ impl GemmSku {
             | ElementKind::F6E2M3
             | ElementKind::F6E3M2
             | ElementKind::F8E6M2
+            | ElementKind::F128
+            | ElementKind::I128
+            | ElementKind::U128
+            | ElementKind::I256
+            | ElementKind::U256
+            | ElementKind::F8E3M4
+            | ElementKind::F8UE4M3
             | ElementKind::Fp8E4M3FNUZ
             | ElementKind::Fp8E5M2FNUZ => MathPrecision::Int8,
             // FP8 kernels live in baracuda-kernels-sys, not baracuda-cutlass.

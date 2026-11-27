@@ -85,12 +85,17 @@ impl<T: Element, const N: usize> MaskedFillBackwardPlan<T, N> {
 
         let supported = matches!(
             T::KIND,
-            ElementKind::F32 | ElementKind::F64 | ElementKind::I32 | ElementKind::Bool
+            ElementKind::F32
+                | ElementKind::F64
+                | ElementKind::I32
+                | ElementKind::Bool
+                | ElementKind::F16
+                | ElementKind::Bf16
         );
         if !supported {
             return Err(Error::Unsupported(
                 "baracuda-kernels::MaskedFillBackwardPlan: today only \
-                 `f32`, `f64`, `i32`, `bool` wired",
+                 `f32`, `f64`, `i32`, `bool`, `f16`, `bf16` wired",
             ));
         }
 
@@ -239,6 +244,17 @@ impl<T: Element, const N: usize> MaskedFillBackwardPlan<T, N> {
             },
             ElementKind::Bool => unsafe {
                 baracuda_kernels_sys::baracuda_kernels_masked_fill_backward_bool_run(
+                    numel,
+                    dout_ptr,
+                    mask_ptr,
+                    dsrc_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            ElementKind::F16 | ElementKind::Bf16 => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_masked_fill_backward_u16_run(
                     numel,
                     dout_ptr,
                     mask_ptr,
