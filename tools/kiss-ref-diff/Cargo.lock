@@ -4,11 +4,11 @@ version = 4
 
 [[package]]
 name = "baracuda-build"
-version = "0.1.0-alpha.221"
+version = "0.1.0-alpha.222"
 
 [[package]]
 name = "baracuda-core"
-version = "0.1.0-alpha.221"
+version = "0.1.0-alpha.222"
 dependencies = [
  "baracuda-types",
  "libloading",
@@ -25,7 +25,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-cuda-sys"
-version = "0.1.0-alpha.221"
+version = "0.1.0-alpha.222"
 dependencies = [
  "baracuda-build",
  "baracuda-core",
@@ -34,7 +34,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-driver"
-version = "0.1.0-alpha.221"
+version = "0.1.0-alpha.222"
 dependencies = [
  "baracuda-core",
  "baracuda-cuda-sys",
@@ -44,7 +44,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-nvrtc"
-version = "0.1.0-alpha.221"
+version = "0.1.0-alpha.222"
 dependencies = [
  "baracuda-core",
  "baracuda-nvrtc-sys",
@@ -54,7 +54,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-nvrtc-sys"
-version = "0.1.0-alpha.221"
+version = "0.1.0-alpha.222"
 dependencies = [
  "baracuda-build",
  "baracuda-core",
@@ -63,7 +63,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-types"
-version = "0.1.0-alpha.221"
+version = "0.1.0-alpha.222"
 dependencies = [
  "unpopped-vocab",
 ]
@@ -277,9 +277,9 @@ checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
 
 [[package]]
 name = "unpopped"
-version = "0.60.8"
+version = "0.60.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "30cde1f1e184a68abf426a8f58c4d6e3c7d4b966559f9249ba0606abed7f1a2a"
+checksum = "fa4f2985a8fa7d05e870a0548db68985a99ebcf74833ad39171581e72a6e4246"
 dependencies = [
  "libm",
  "serde",
@@ -289,9 +289,9 @@ dependencies = [
 
 [[package]]
 name = "unpopped-vocab"
-version = "0.60.8"
+version = "0.60.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf4bb1850609fa84f850227dce6e07d1e1deeb8ed8ce7cdeb2a2cbf89b44ef49"
+checksum = "8f3ea10278fd24e72662f77e7d2a82453f683e35dfd6ffda72327cc5f717757d"
 dependencies = [
  "float8",
  "half",
