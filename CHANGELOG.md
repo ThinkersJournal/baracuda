@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.222 - 2026-11-27
+
+The `unpopped`, `unpopped-vocab`, `unpopped-convert` and `unpopped-cpu-c` requirements move from `~0.60.1` to `~0.60.32` (root `Cargo.toml`, `baracuda-cuda-emit`, `tools/kiss-ref-diff`), and both lockfiles resolve 0.60.32 (was 0.60.8). One copy of `unpopped-vocab` in each (`cargo tree --locked -i unpopped-vocab` prints one line). Unpopped 0.60.32 makes its oracle trap `DataRace` for a kernel whose named-barrier phases raced, where it previously ran with wrong values; a baracuda differential or oracle test that newly traps names a racy kernel to fix. Measured: the driver-free suite (`baracuda-cuda-emit`, `-vocab`, `-parse`, `-bench-stats`, no GPU) passes unchanged on 0.60.32, none trapping. No Rust source changes. The CI device run is queued, not claimed.
+
 ## 0.1.0-alpha.221 - 2026-11-27
 
 `UniquePlan::run` (torch `unique(sorted=True, return_counts=True)`) was a stub: up to 0.1.0-alpha.189 it sorted into the scratch buffer and returned `Ok` without writing `values`, `counts` or `counter`; alpha.191 made it return `Error::Unsupported` (ROADMAP E0b). It now works: each row is sorted ascending (NaN largest, the `SortPlan` order) into `sorted_scratch` and the sorted row is deduplicated by the ordered `unique_consecutive` kernel (which no longer races or writes counts of 1: alpha.211). Per row, `values` holds the distinct values ascending, `counts[k]` the number of occurrences (the run length), and `counter[row]` the true distinct count, which can exceed `max_unique` (the extra values are dropped, cells past the counter are untouched). Every NaN is its own value (NaN != NaN, as torch) and sorts last; `-0.0` and `+0.0` are one value, and the value kept is the first of the run in the stable sort order, which is the first zero in the row (a row starting with `-0.0` keeps `-0.0`). f32, f64 and i32; `row_len <= 1024` (the sort cap; larger rows return `Unsupported`).
