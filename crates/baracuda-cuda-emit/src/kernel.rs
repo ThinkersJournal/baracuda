@@ -1395,6 +1395,13 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
                     )));
                 }
             }
+            // The opaque tile statements (`TileLoad`, `TileMma`, `TileFill`, `TileStore`, unpopped 0.62) are held: a `Tile` allocation is declined by name.
+            (MemorySpace::Tile, _) => {
+                return Err(refuse(format!(
+                    "kernel `{}`: allocation `{}` in `Tile` memory has no CUDA spelling (the tile statements are not lowered; ROADMAP B1 hold)",
+                    k.name, a.name
+                )));
+            }
             (space, extent) => {
                 return Err(refuse(format!(
                     "kernel `{}`: allocation `{}` ({space:?}, {extent:?}) is not lowered yet (static `Shared` and `Private` arrays and `Tensor` allocations only)",

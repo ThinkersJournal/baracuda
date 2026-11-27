@@ -1,0 +1,3 @@
+kind: **BREAKING**: take unpopped 0.62 (emit, parse and seam crates move to 0.62.0)
+---
+The unpopped family pins move to `~0.62.0`, `fireline-*` to `~0.13`, and the emit, parse and seam crates to 0.62.0 (the emitter version follows the Unpopped it works with). Unpopped 0.62 adds the opaque tile statements (`TileLoad`, `TileMma`, `TileFill`, `TileStore`) and `MemorySpace::Tile`; the CUDA backend declines a `Tile` allocation by name and the statements are not lowered (ROADMAP B1 hold; no clearance implied). The published-fixture census pins the four new refusals. Verified: library crates build, `fixtures_decline` passes. CI device run queued, not claimed. Publishes: whole workspace.
