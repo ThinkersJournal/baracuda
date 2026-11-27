@@ -57650,6 +57650,28 @@ unsafe extern "C" {
         dsrc: *const c_void,
     ) -> i32;
 
+    // ---------- index_bounds (ROADMAP E4) ----------
+
+    /// Counts the values of a contiguous i32 index buffer outside `[0, bound)` into the device
+    /// `uint32` word `flag` (zeroed first when `clear != 0`).
+    pub fn baracuda_kernels_index_bounds_i32_run(
+        n: i64,
+        bound: i64,
+        index: *const c_void,
+        flag: *mut c_void,
+        clear: i32,
+        stream: *mut c_void,
+    ) -> i32;
+    /// As `index_bounds_i32`, for an i64 index buffer.
+    pub fn baracuda_kernels_index_bounds_i64_run(
+        n: i64,
+        bound: i64,
+        index: *const c_void,
+        flag: *mut c_void,
+        clear: i32,
+        stream: *mut c_void,
+    ) -> i32;
+
     // ---------- one_hot (FW) ----------
 
     /// `out[..., c] = 1 if c == src[...] else 0`. Output last axis has

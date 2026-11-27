@@ -13,7 +13,8 @@
 //! DIVERGES FROM TORCH: torch raises on an out-of-range index; a kernel cannot, so such an index is
 //! skipped and the output cell is left untouched (it may hold stale data, for `index_select` /
 //! `gather` the buffer's previous contents). This holds for every element type, f32 and half alike
-//! (ROADMAP E4 tracks a device error flag that turns it into a typed error).
+//! To detect it, run [`crate::IndexBoundsPlan`] on the index buffer (it raises `Error::IndexOutOfRange`);
+//! ROADMAP E4 tracks fusing that check into these launches.
 //!
 //! Trailblazer dtype coverage: `f32, f64, i32, f16, bf16` (half routes onto the 2-byte bit-copy kernel). The kernel is a pure
 //! load + store — no arithmetic — so output is bit-exact against
@@ -94,7 +95,8 @@ pub struct GatherArgs<'a, T: Element, const N: usize, I: IndexElement = i32> {
 /// DIVERGES FROM TORCH: torch raises on an out-of-range index; a kernel cannot, so such an index is
 /// skipped and the output cell is left untouched (it may hold stale data, for `index_select` /
 /// `gather` the buffer's previous contents). This holds for every element type, f32 and half alike
-/// (ROADMAP E4 tracks a device error flag that turns it into a typed error).
+/// To detect it, run [`crate::IndexBoundsPlan`] on the index buffer (it raises `Error::IndexOutOfRange`);
+/// ROADMAP E4 tracks fusing that check into these launches.
 #[derive(Debug)]
 pub struct GatherPlan<T: Element, const N: usize> {
     desc: GatherDescriptor<N>,

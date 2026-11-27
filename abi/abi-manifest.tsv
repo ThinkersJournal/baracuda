@@ -2090,6 +2090,8 @@ fn	baracuda-kernels-sys	baracuda_kernels_index_add_i64idx_u32_can_implement	af62
 fn	baracuda-kernels-sys	baracuda_kernels_index_add_i64idx_u32_run	754f4d1df15de447	-
 fn	baracuda-kernels-sys	baracuda_kernels_index_add_u32_can_implement	af62e30d97a9b0bf	-
 fn	baracuda-kernels-sys	baracuda_kernels_index_add_u32_run	754f4d1df15de447	-
+fn	baracuda-kernels-sys	baracuda_kernels_index_bounds_i32_run	10ac6b35bc861ec9	-
+fn	baracuda-kernels-sys	baracuda_kernels_index_bounds_i64_run	10ac6b35bc861ec9	-
 fn	baracuda-kernels-sys	baracuda_kernels_index_select_backward_bf16_run	02b47c635c1b54fa	-
 fn	baracuda-kernels-sys	baracuda_kernels_index_select_backward_f16_run	02b47c635c1b54fa	-
 fn	baracuda-kernels-sys	baracuda_kernels_index_select_backward_f32_can_implement	236b651781050be4	-

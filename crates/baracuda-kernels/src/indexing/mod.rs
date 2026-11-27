@@ -26,7 +26,8 @@
 //! DIVERGES FROM TORCH: torch raises on an out-of-range index; a kernel cannot, so such an index is
 //! skipped and the output cell is left untouched (it may hold stale data, for `index_select` /
 //! `gather` the buffer's previous contents). This holds for every element type, f32 and half alike
-//! (ROADMAP E4 tracks a device error flag that turns it into a typed error).
+//! To detect it, run [`IndexBoundsPlan`] on the index buffer (it raises `Error::IndexOutOfRange`);
+//! ROADMAP E4 tracks fusing that check into these launches.
 //!
 //! `ScatterAdd` has no separate BW plan — the backward of `scatter_add`
 //! is `gather`, which callers route through [`GatherPlan`].
@@ -34,6 +35,7 @@
 pub mod gather;
 pub mod gather_backward;
 pub mod index_add;
+pub mod index_bounds;
 pub mod index_select;
 pub mod index_select_backward;
 pub mod masked_fill;
@@ -46,6 +48,7 @@ pub mod scatter_add;
 pub use gather::{GatherArgs, GatherDescriptor, GatherPlan};
 pub use gather_backward::{GatherBackwardArgs, GatherBackwardDescriptor, GatherBackwardPlan};
 pub use index_add::{IndexAddArgs, IndexAddDescriptor, IndexAddPlan};
+pub use index_bounds::{IndexBoundsArgs, IndexBoundsPlan};
 pub use index_select::{IndexSelectArgs, IndexSelectDescriptor, IndexSelectPlan};
 pub use index_select_backward::{
     IndexSelectBackwardArgs, IndexSelectBackwardDescriptor, IndexSelectBackwardPlan,
