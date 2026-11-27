@@ -709,3 +709,96 @@ mod nvrtc {
         }
     }
 }
+
+/// unpopped 0.61's integer bit operations on the KERNEL-IR surface. A float operand is refused by the checker by name
+/// (`TypeError::IntegerOnlyOperand`); an `I32` operand is well typed and this emitter declines it BY NODE (`Unary` is not lowered
+/// yet), never a panic. The kernel surface lowers no `Unary` node at all today (`Neg` declines the same way).
+#[test]
+fn the_integer_bit_ops_on_the_kernel_surface_are_refused_by_name_or_declined() {
+    use unpopped::ir::UnaryOp;
+    let build = |dt: ElementKind, op: UnaryOp| {
+        let u = |e: ScalarExpr| Box::new(e);
+        let i = ScalarExpr::Add(
+            u(ScalarExpr::Mul(
+                u(ScalarExpr::Exec(ExecId::BlockIdx(0))),
+                u(ScalarExpr::Exec(ExecId::BlockDim(0))),
+            )),
+            u(ScalarExpr::Exec(ExecId::ThreadIdx(0))),
+        );
+        let at_i = |buffer| Place::Logical {
+            buffer,
+            coords: vec![ScalarExpr::Local(1)],
+        };
+        KernelFn::new(
+            "bitop",
+            dt,
+            vec![
+                Param::buffer("x", dt, BufferRole::Read, Some(1)),
+                Param::buffer("out", dt, BufferRole::Write, Some(1)),
+                Param::scalar("n", U32, 0),
+            ],
+            vec![
+                LocalDecl::scalar(U32),
+                LocalDecl::scalar(U32),
+                LocalDecl::scalar(dt),
+            ],
+            Block(vec![
+                Stmt::Let { local: 1, init: i },
+                Stmt::If {
+                    cond: ScalarExpr::Binary(
+                        BinaryOp::CmpLt,
+                        u(ScalarExpr::Local(1)),
+                        u(ScalarExpr::Local(0)),
+                    ),
+                    then: Block(vec![
+                        Stmt::Load {
+                            local: 2,
+                            place: at_i(0),
+                        },
+                        Stmt::Store {
+                            place: at_i(1),
+                            value: ScalarExpr::Unary(op, u(ScalarExpr::Local(2))),
+                        },
+                    ]),
+                    els: Block(Vec::new()),
+                },
+            ]),
+        )
+        .with_launch(LaunchShape::new([256, 1, 1], [4, 1, 1]))
+    };
+    // Controls: `scale()` (same shape, a `Mul` body) lowers, so a decline below is about the node. And `Neg` declines with the
+    // same message: the kernel surface lowers NO `Unary` node yet, so the bit-op decline is by node, not specific to them.
+    assert!(
+        Cuda.lower_kernel(&scale()).is_ok(),
+        "control: scale() must lower"
+    );
+    let neg = detail(Cuda.lower_kernel(&build(F32, UnaryOp::Neg)));
+    assert!(
+        neg.contains("`Unary`") && neg.contains("not lowered"),
+        "{neg}"
+    );
+    for op in [UnaryOp::Popc, UnaryOp::Clz, UnaryOp::Brev] {
+        let f = build(F32, op);
+        assert!(
+            matches!(
+                check_kernel(&f),
+                Err(KernelError::Type(
+                    unpopped::types::TypeError::IntegerOnlyOperand { .. }
+                ))
+            ),
+            "{op:?} on F32: the checker must refuse it by name: {:?}",
+            check_kernel(&f)
+        );
+        let i = build(I32, op);
+        assert!(
+            check_kernel(&i).is_ok(),
+            "{op:?} on I32 is well typed: {:?}",
+            check_kernel(&i)
+        );
+        let d = detail(std::panic::catch_unwind(|| Cuda.lower_kernel(&i)).expect("no panic"));
+        assert!(
+            d.contains("`Unary`") && d.contains("not lowered"),
+            "{op:?} on I32: {d}"
+        );
+    }
+}

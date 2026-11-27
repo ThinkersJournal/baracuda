@@ -14,9 +14,9 @@ use unpopped::contract::{
     AccuracyKey, bundle, bundle_kisc, cell_suffix, contract, contract_admissible, front_matter,
     fuel_primitive_op_kind, precision_of, root_op_name,
 };
-use unpopped::generate;
 use unpopped::ir::*;
 use unpopped::pattern::*;
+use unpopped::{generate, try_generate};
 use unpopped_vocab::*;
 
 fn key_for(n_operands: usize, op_cat: OpCategory) -> StructureKey {
@@ -1945,4 +1945,63 @@ fn identity_copy_root_never_reaches_the_op_kind_line() {
         unpopped::derive_pattern(&copy).unwrap(),
         PatternNode::Bind(0)
     ));
+}
+
+/// unpopped 0.61 added the integer bit operations `Popc`, `Clz` and `Brev`. This emitter lowers none of them, at any dtype, and
+/// declines BY NAME: a float operand used to reach `unpopped::cfamily::unary_f32`/`unary_f64`, which PANIC on them ("refused by the
+/// typing gate"); an integer dtype misses at the plan gate. Both are a typed `Err` from `try_generate` naming the op, never a panic
+/// and never wrong math. Positive control: `Relu` at the same keys emits.
+#[test]
+fn the_integer_bit_ops_decline_by_name_at_every_dtype() {
+    let key = |dt: ElementKind| {
+        let a = OperandDesc::new(2, &[128, 256], &[256, 1], dt, 256);
+        structure_key(OpCategory::UnaryElementwise, &[a, a], ArchSku::Sm89)
+    };
+    for dt in [
+        ElementKind::F32,
+        ElementKind::F64,
+        ElementKind::F16,
+        ElementKind::Bf16,
+        ElementKind::I32,
+        ElementKind::U32,
+    ] {
+        // Positive control first: the same key lowers an ordinary unary op, so a refusal below is about the op.
+        let relu = OpDef::elementwise("relu", 1, &[dt], input(0).unary(UnaryOp::Relu));
+        let float = !matches!(dt, ElementKind::I32 | ElementKind::U32);
+        if float {
+            assert!(
+                try_generate(&relu, &key(dt), &Cuda).is_ok(),
+                "control: Relu must lower at {dt:?}"
+            );
+        }
+        for op in [UnaryOp::Popc, UnaryOp::Clz, UnaryOp::Brev] {
+            let o = OpDef::elementwise("bit", 1, &[dt], input(0).unary(op));
+            let r = std::panic::catch_unwind(|| try_generate(&o, &key(dt), &Cuda));
+            let r =
+                r.unwrap_or_else(|_| panic!("{op:?} at {dt:?}: PANICKED (must be a typed Err)"));
+            let e = match r {
+                Ok(k) => panic!("{op:?} at {dt:?} lowered:\n{}", k.source),
+                Err(e) => format!("{e:?}"),
+            };
+            assert!(
+                e.contains(&format!("{op:?}")),
+                "{op:?} at {dt:?}: the decline must name the op: {e}"
+            );
+        }
+    }
+    // A float RowReduce epilogue reaches the float spellers through a different access path: the same decline.
+    use unpopped::ir::{ReduceOp, ReduceStage, reduced};
+    let stages = vec![ReduceStage {
+        pre: input(0).0,
+        op: ReduceOp::Sum,
+    }];
+    let epi = input(0) + reduced(0).unary(UnaryOp::Popc);
+    let sm = OpDef::row_reduce("bitrow", 1, &[ElementKind::F32], stages, epi);
+    let a = OperandDesc::new(2, &[8, 4096], &[4096, 1], ElementKind::F32, 256);
+    let o = OperandDesc::new(2, &[8, 4096], &[4096, 1], ElementKind::F32, 256);
+    let k = structure_key(OpCategory::Softmax, &[a, o], ArchSku::Sm89);
+    let r = std::panic::catch_unwind(|| try_generate(&sm, &k, &Cuda))
+        .expect("a RowReduce epilogue with Popc must decline typed, not panic");
+    let e = format!("{:?}", r.expect_err("must decline"));
+    assert!(e.contains("Popc"), "{e}");
 }

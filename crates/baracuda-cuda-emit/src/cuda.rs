@@ -199,6 +199,33 @@ impl Backend for Cuda {
             let Some(ctype) = scalar_ctype(plan.dtype) else {
                 panic!("cuda backend: unsupported dtype {:?}", plan.dtype);
             };
+            // Integer bit operations are not lowered at any dtype (see `first_bit_op`): decline by name. Every expression the plan
+            // can lower, body + extra outputs + the reduction-class stages and epilogues.
+            {
+                let mut exprs: Vec<&ScalarExpr> = plan.output_bodies();
+                match plan.access {
+                    Access::RowReduce { stages, epilogue } => {
+                        exprs.extend(stages.iter().map(|s| &s.pre));
+                        exprs.push(epilogue);
+                    }
+                    Access::Contraction { epilogue, .. } => exprs.push(epilogue),
+                    Access::Reduction { post, .. } => exprs.push(post),
+                    Access::Scan { pre, post, .. } | Access::Window { pre, post, .. } => {
+                        exprs.push(pre);
+                        exprs.push(post);
+                    }
+                    _ => {}
+                }
+                if let Some(op) = exprs.into_iter().find_map(first_bit_op) {
+                    return Err(LowerError::UnsupportedOp {
+                        detail: format!(
+                            "Unary({op:?}): cuda backend: {op:?} is an integer bit operation, not lowered by this \
+                             emitter at any dtype (decline by name; the typing gate refuses it on a float operand \
+                             with IntegerOnlyOperand)"
+                        ),
+                    });
+                }
+            }
             // §6.8-0004: this is SEAM-REACHABLE (a plan-admissible f16/bf16 elementwise op
             // that uses a scalar Param reaches here through `try_generate`), so it must be a
             // TYPED decline, not an abort — the reachability fuzz (`fuzz.rs`) caught it
@@ -4365,6 +4392,45 @@ fn row_reduce_materialize_variant(plan: &KernelPlan<'_>) -> Option<Variant> {
              ceiling. Bit-identical to the base kernel; the tradeoff is occupancy."
         ),
     ))
+}
+
+/// The first integer bit operation (`Popc`, `Clz`, `Brev`, unpopped 0.61) in `e`, if any. They have no float spelling:
+/// `unpopped::cfamily::unary_f32` / `unary_f64` PANIC on them (the typing gate refuses them first with
+/// `TypeError::IntegerOnlyOperand`), and this emitter reaches those spellers from a dozen sites, so [`Cuda::lower`] declines the
+/// plan by name once, up front, instead of guarding each site.
+fn first_bit_op(e: &ScalarExpr) -> Option<UnaryOp> {
+    match e {
+        ScalarExpr::Input(_)
+        | ScalarExpr::Const(_)
+        | ScalarExpr::Param(_)
+        | ScalarExpr::Reduced(_)
+        | ScalarExpr::Coord(_)
+        | ScalarExpr::ConstInt(..)
+        | ScalarExpr::CoordInt(..)
+        | ScalarExpr::Local(_)
+        | ScalarExpr::Exec(_) => None,
+        ScalarExpr::Pack(xs) => xs.iter().find_map(first_bit_op),
+        ScalarExpr::Unary(op, x) => {
+            if op.is_bit_op() {
+                Some(*op)
+            } else {
+                first_bit_op(x)
+            }
+        }
+        ScalarExpr::Extract(x, _)
+        | ScalarExpr::BitcastPacked(x, _, _)
+        | ScalarExpr::Qualified(x, _)
+        | ScalarExpr::Cast(x, _)
+        | ScalarExpr::Bitcast(x, _) => first_bit_op(x),
+        ScalarExpr::Add(a, b)
+        | ScalarExpr::Sub(a, b)
+        | ScalarExpr::Mul(a, b)
+        | ScalarExpr::Div(a, b)
+        | ScalarExpr::Binary(_, a, b) => first_bit_op(a).or_else(|| first_bit_op(b)),
+        ScalarExpr::Select(c, a, b) | ScalarExpr::Fma(c, a, b) => first_bit_op(c)
+            .or_else(|| first_bit_op(a))
+            .or_else(|| first_bit_op(b)),
+    }
 }
 
 /// `true` if `t` occurs as a subexpression of `e` (structural equality).
