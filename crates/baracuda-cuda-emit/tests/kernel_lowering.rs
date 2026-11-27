@@ -626,16 +626,25 @@ fn the_seven_new_element_rows_are_each_declined_by_name() {
             vec![],
             Block(Vec::new()),
         );
-        assert!(
-            matches!(check_kernel(&k), Err(KernelError::DtypeNotComputed { dtype }) if dtype == kind),
-            "{name}: the checker must refuse it by name: {:?}",
-            check_kernel(&k)
-        );
+        // Gate 1. Unpopped 0.62 admits some of these rows as buffers (I128 at least): then the EMITTER declines the buffer by name
+        // ("no CUDA spelling"); a row the checker still refuses is refused as an ill-formed kernel naming the dtype.
         let d = detail(Cuda.lower_kernel(&k));
-        assert!(
-            d.contains("ill-formed") && d.contains("DtypeNotComputed") && d.contains(name),
-            "{name}: {d}"
-        );
+        match check_kernel(&k) {
+            Err(KernelError::DtypeNotComputed { dtype }) => {
+                assert_eq!(dtype, kind, "{name}: the checker names another dtype");
+                assert!(
+                    d.contains("ill-formed") && d.contains("DtypeNotComputed") && d.contains(name),
+                    "{name}: {d}"
+                );
+            }
+            Ok(()) => assert!(
+                !d.contains("ill-formed")
+                    && d.contains("buffer `x`")
+                    && d.contains("no CUDA spelling"),
+                "{name}: the checker admits it, so the emitter must decline it by name: {d}"
+            ),
+            other => panic!("{name}: an unexpected checker answer: {other:?}"),
+        }
         // Gate 2: the emitter's own table, independent of the checker.
         let sm89 = TargetId::parse("cuda:sm89").expect("token");
         assert!(

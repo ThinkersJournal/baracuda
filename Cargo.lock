@@ -120,10 +120,10 @@ dependencies = [
  "baracuda-nvrtc",
  "fishstringer-slang-emit",
  "fishstringer-slang-parse",
- "unpopped 0.62.0",
- "unpopped-convert 0.62.0",
+ "unpopped",
+ "unpopped-convert",
  "unpopped-cpu-c",
- "unpopped-vocab 0.62.0",
+ "unpopped-vocab",
 ]
 
 [[package]]
@@ -133,9 +133,9 @@ dependencies = [
  "fishstringer-slang-parse",
  "tree-sitter",
  "tree-sitter-cuda",
- "unpopped 0.62.0",
- "unpopped-convert 0.62.0",
- "unpopped-vocab 0.62.0",
+ "unpopped",
+ "unpopped-convert",
+ "unpopped-vocab",
 ]
 
 [[package]]
@@ -145,8 +145,8 @@ dependencies = [
  "baracuda-cuda-emit",
  "fireline-grammar",
  "fireline-synth",
- "unpopped 0.62.0",
- "unpopped-vocab 0.62.0",
+ "unpopped",
+ "unpopped-vocab",
 ]
 
 [[package]]
@@ -164,7 +164,7 @@ version = "0.1.0-alpha.235"
 dependencies = [
  "serde",
  "serde_json",
- "unpopped-vocab 0.62.0",
+ "unpopped-vocab",
 ]
 
 [[package]]
@@ -537,7 +537,7 @@ dependencies = [
  "half",
  "serde",
  "serde_json",
- "unpopped 0.62.0",
+ "unpopped",
 ]
 
 [[package]]
@@ -559,7 +559,7 @@ dependencies = [
  "float8",
  "half",
  "thiserror",
- "unpopped-vocab 0.62.0",
+ "unpopped-vocab",
 ]
 
 [[package]]
@@ -875,7 +875,7 @@ dependencies = [
  "float8",
  "half",
  "num-complex",
- "unpopped-vocab 0.62.0",
+ "unpopped-vocab",
 ]
 
 [[package]]
@@ -1157,30 +1157,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b97ccef9e5740e09cd883c475d96346a03044123fcdcb374fc5c5d279a70f3a"
 dependencies = [
  "fireline-grammar",
- "unpopped-vocab 0.62.0",
+ "unpopped-vocab",
 ]
 
 [[package]]
 name = "fishstringer-slang-emit"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1622160d4f193e569896b2c57ed660ed59e6d3228c4f14539194bd4a2a94099e"
+checksum = "7c3f4efcefb0f0da69c03d88954661a586e4e153ebfc1421397bb735a6257ddf"
 dependencies = [
  "kiss-vulkan-vocab",
- "unpopped 0.61.10",
- "unpopped-vocab 0.61.10",
+ "unpopped",
+ "unpopped-vocab",
 ]
 
 [[package]]
 name = "fishstringer-slang-parse"
-version = "0.11.0"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf484f5dd6e75dfa5c3f9ac0467ac0dc100e637d29aef8cdf1946c6403ff9e50"
+checksum = "bc474d5b88cb6d185d500bfd46c5c16648f7006dfac127f47728917d532d04c8"
 dependencies = [
  "tree-sitter",
  "tree-sitter-slang",
- "unpopped 0.61.10",
- "unpopped-convert 0.61.2",
+ "unpopped",
+ "unpopped-convert",
 ]
 
 [[package]]
@@ -1642,18 +1642,6 @@ checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
 
 [[package]]
 name = "unpopped"
-version = "0.61.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46469e392561f7efc7394967e0a77bbf066712171a4815db0c24c1405a81037a"
-dependencies = [
- "libm",
- "serde",
- "serde_json",
- "unpopped-vocab 0.61.10",
-]
-
-[[package]]
-name = "unpopped"
 version = "0.62.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57bb9b99e9b0410c04d39925a50ffdf7787ae9abbf1ecd4315a11dfeaa277632"
@@ -1661,18 +1649,7 @@ dependencies = [
  "libm",
  "serde",
  "serde_json",
- "unpopped-vocab 0.62.0",
-]
-
-[[package]]
-name = "unpopped-convert"
-version = "0.61.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d689d9e962ac4a19c059a045b20b4a525fb2ec6eadd6cf2cee479f36c28060f"
-dependencies = [
- "tree-sitter",
- "unpopped 0.61.10",
- "unpopped-vocab 0.61.10",
+ "unpopped-vocab",
 ]
 
 [[package]]
@@ -1682,8 +1659,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "494a7ecbf683ac958d9f03b629bd04f41e47d031326feedf76572aef613156ee"
 dependencies = [
  "tree-sitter",
- "unpopped 0.62.0",
- "unpopped-vocab 0.62.0",
+ "unpopped",
+ "unpopped-vocab",
 ]
 
 [[package]]
@@ -1692,18 +1669,8 @@ version = "0.62.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93f81a3c6cfd6b50d97dc967c3cb41b9eab629f7a7edc644c99da5e624d28559"
 dependencies = [
- "unpopped 0.62.0",
- "unpopped-vocab 0.62.0",
-]
-
-[[package]]
-name = "unpopped-vocab"
-version = "0.61.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c63ac21fc0db6ec543a143b30b2d18bf9a129499443504c1d50fa0d0b8e8c3a8"
-dependencies = [
- "float8",
- "half",
+ "unpopped",
+ "unpopped-vocab",
 ]
 
 [[package]]
