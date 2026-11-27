@@ -79,6 +79,12 @@ impl Stream {
     /// (906). cargo's test harness reuses threads from a pool, so a
     /// leaked capture from a panicking test poisons every following
     /// test that lands on the same thread.
+    ///
+    /// **Capture on a non-blocking stream ([`Stream::non_blocking`]) when other threads use the device.** A blocking stream
+    /// synchronises implicitly with the legacy default stream, so another thread's legacy-stream call (an allocation or a
+    /// plain `cudaMemcpy`) during the capture can invalidate it (`cudaErrorStreamCaptureInvalidated`, 901) and itself fail
+    /// with `cudaErrorStreamCaptureImplicit` (906). Measured on the box with cargo's parallel test harness: a capture test on
+    /// a blocking stream failed in 9 to 11 of 80 runs of its binary, and in 0 of 80 on a non-blocking stream.
     pub fn capture<F>(&self, mode: CaptureMode, f: F) -> Result<Graph>
     where
         F: FnOnce(&Stream) -> Result<()>,

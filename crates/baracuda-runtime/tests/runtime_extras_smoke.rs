@@ -172,7 +172,7 @@ fn stream_capture_and_replay_vector_add() {
 
     let lib = Library::load_ptx(VECTOR_ADD_PTX).unwrap();
     let kernel = lib.get_kernel("vector_add").unwrap();
-    let stream = Stream::new().unwrap();
+    let stream = Stream::non_blocking().unwrap();
 
     let a_ptr = d_a.as_device_ptr();
     let b_ptr = d_b.as_device_ptr();
