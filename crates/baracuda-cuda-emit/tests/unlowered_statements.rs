@@ -5,7 +5,8 @@
 
 use baracuda_cuda_emit::Cuda;
 use unpopped::backend::Backend;
-use unpopped::exec::{AllocDecl, Extent, LaunchShape, MemorySpace};
+use unpopped::exec::{AllocDecl, Extent, LaunchShape, MemorySpace, SubgroupSize};
+use unpopped::ir::ScalarExpr;
 use unpopped::kernel::{Block, KernelFn, LocalDecl, Stmt, check_kernel};
 use unpopped_vocab::ElementKind;
 
@@ -36,8 +37,6 @@ fn unlowered_statements_are_refused_by_the_emitter_and_named() {
         (Stmt::WgmmaCommit, "WgmmaCommit"),
         (Stmt::WgmmaWait { pending: 0 }, "WgmmaWait"),
         (Stmt::GridDepWait, "GridDepWait"),
-        // unpopped 0.58.0 (ROADMAP U8c slice 4): `tcgen05.relinquish_alloc_permit` needs no allocation, so it reaches the statement arm.
-        (Stmt::Tcgen05RelinquishPermit, "Tcgen05RelinquishPermit"),
     ];
     let mut reached = Vec::new();
     for (stmt, name) in cases {
@@ -61,11 +60,6 @@ fn unlowered_statements_are_refused_by_the_emitter_and_named() {
         !reached.is_empty(),
         "no fixture passed the checker, so the emitter arm was never reached (vacuous)"
     );
-    // The 0.58.0 statement must get past the checker, or its refusal text would be the checker's.
-    assert!(
-        reached.contains(&"Tcgen05RelinquishPermit"),
-        "Tcgen05RelinquishPermit: the fixture did not pass `check_kernel`, so the emitter's refusal was not reached"
-    );
 }
 
 /// Control: the same harness on a statement the emitter DOES lower must not be refused.
@@ -76,27 +70,67 @@ fn a_lowered_statement_is_not_refused() {
     Cuda.lower_kernel(&k).expect("Return lowers");
 }
 
-/// `Tcgen05Alloc` / `Tcgen05Dealloc` act on a tensor-memory allocation, and the backend does not lower tensor memory (nor `Tcgen05Mma` /
-/// `Tcgen05Ld`, the statements that use it): the emitter refuses the kernel at the allocation, naming it, before it reaches the statements.
-/// Each fixture passes `check_kernel`, so the text asserted (an `allocation ... is not lowered yet` refusal, not `ill-formed`) is the emitter's.
+/// ROADMAP S12a-1: `Tcgen05Alloc`, `Tcgen05Dealloc` and `Tcgen05RelinquishPermit` and the `Tensor` allocation they act on now LOWER (see
+/// `tcgen05_alloc.rs`). This is the control for the refusal below: the same fixtures are accepted.
 #[test]
-fn tensor_memory_allocations_are_refused_by_the_emitter_and_named() {
-    for (stmt, name) in [
-        (Stmt::Tcgen05Alloc { d: 0, ncols: 32 }, "Tcgen05Alloc"),
-        (Stmt::Tcgen05Dealloc { d: 0, ncols: 32 }, "Tcgen05Dealloc"),
+fn the_tensor_memory_management_statements_are_lowered() {
+    for (stmt, want) in [
+        (Stmt::Tcgen05Alloc { d: 0, ncols: 32 }, "tcgen05.alloc"),
+        (Stmt::Tcgen05Dealloc { d: 0, ncols: 32 }, "tcgen05.dealloc"),
+        (
+            Stmt::Tcgen05RelinquishPermit,
+            "tcgen05.relinquish_alloc_permit",
+        ),
     ] {
         let k = kernel_with_tmem(vec![stmt]);
-        check_kernel(&k)
-            .unwrap_or_else(|e| panic!("{name}: the fixture must pass the checker: {e:?}"));
-        let e = Cuda
+        check_kernel(&k).unwrap_or_else(|e| panic!("{want}: the fixture must pass: {e:?}"));
+        let g = Cuda
             .lower_kernel(&k)
-            .expect_err("tensor memory must be refused");
-        let d = format!("{e:?}");
-        assert!(
-            d.contains("allocation `tmem`")
-                && d.contains("is not lowered yet")
-                && !d.contains("ill-formed"),
-            "{name}: refusal does not come from the emitter's allocation arm: {d}"
-        );
+            .unwrap_or_else(|e| panic!("{want} must lower: {e:?}"));
+        assert!(g.source.contains(want), "{want}:\n{}", g.source);
     }
+}
+
+/// `Tcgen05Ld` (and `Tcgen05Mma`, `Tcgen05Commit`) are not lowered yet (S12a-3 to S12a-5). The fixture passes `check_kernel`, so the refusal asserted is
+/// the emitter's, not an `ill-formed` one.
+#[test]
+fn the_other_tcgen05_statements_are_refused_by_the_emitter_and_named() {
+    let k = kernel_with_tmem(vec![Stmt::Tcgen05Ld {
+        src: 0,
+        col: ScalarExpr::ConstInt(0, ElementKind::U32),
+        count: 4,
+        dst: 1,
+    }])
+    .with_allocs(vec![
+        AllocDecl::new(
+            "tmem",
+            MemorySpace::Tensor,
+            ElementKind::F32,
+            Extent::Static(128 * 32),
+        ),
+        AllocDecl::new(
+            "regs",
+            MemorySpace::Private,
+            ElementKind::F32,
+            Extent::Static(4),
+        ),
+    ])
+    .with_launch({
+        // A tensor-memory load needs a one-dimensional launch of 32-lane subgroups (the checker's rule).
+        let mut l = LaunchShape::new([128, 1, 1], [1, 1, 1]);
+        l.subgroup = Some(SubgroupSize::new(32, 32));
+        l
+    });
+    check_kernel(&k)
+        .unwrap_or_else(|e| panic!("Tcgen05Ld: the fixture must pass the checker: {e:?}"));
+    let e = Cuda
+        .lower_kernel(&k)
+        .expect_err("Tcgen05Ld is not lowered yet");
+    let d = format!("{e:?}");
+    // The emitter refuses it, by name, before the statement: the checker's rule makes a tensor-memory load need a launch of 32-lane
+    // subgroups, and the emitter does not lower a subgroup launch yet (a prerequisite of S12a-4, with the `Private` allocation `regs`).
+    assert!(
+        !d.contains("ill-formed") && d.contains("subgroup"),
+        "refusal does not come from the emitter: {d}"
+    );
 }
