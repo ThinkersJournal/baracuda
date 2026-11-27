@@ -37,6 +37,12 @@
 //! but only the five above are loaded or stored. An out-of-bounds coordinate or `Shared` index, or a zero `For`
 //! step, executes `__trap()`, as the IR's semantics trap.
 //!
+//! # `mbarrier` (ROADMAP S12a-2)
+//!
+//! `MbarInit`, `MbarArrive` (no transaction count) and `MbarWait` lower to the plain sm_80 spellings of `mbarrier.init`,
+//! `mbarrier.arrive` and a `mbarrier.test_wait.parity` loop on a `Shared` allocation of 64-bit elements (`I64` here); `#error` guard
+//! below sm_80. An `MbarArrive` with a transaction count and `MbarCompleteTx` are refused by name.
+//!
 //! # Tensor memory (ROADMAP S12a-1; runtime unverified, ptxas for `sm_100a` only)
 //!
 //! A `Tensor` allocation is the 32-bit tensor-memory address that `tcgen05.alloc` writes, kept in one `__shared__` word (it is not an
@@ -293,6 +299,8 @@ struct Cx<'a> {
     async_used: bool,
     /// The kernel uses a `tcgen05` statement (needs sm_100a or newer; ROADMAP S12a).
     tcgen05_used: bool,
+    /// The kernel uses an `mbarrier` statement (needs sm_80 or newer; ROADMAP S12a-2).
+    mbar_used: bool,
     /// The kernel lowers a statement under a patent risk note (board 434 C).
     flagged: bool,
 }
@@ -1006,6 +1014,52 @@ impl Cx<'_> {
                 }
                 self.line("asm volatile(\"fence.proxy.async.shared::cta;\" ::: \"memory\");");
             }
+            // ROADMAP S12a-2: the PLAIN `mbarrier` forms (sm_80 spellings: no `.sem` or `.scope` qualifier, so the default release / acquire at
+            // CTA scope; the arrival count is the default, no `ctaMask`, no multicast). `MbarArrive` with a transaction count
+            // (`arrive.expect_tx`) and `MbarCompleteTx` are not lowered here (see ROADMAP S12 (a) and (b)).
+            Stmt::MbarInit { bar, count } => {
+                let addr = self.mbar_addr(bar, "MbarInit")?;
+                let c = self.ex(count)?;
+                self.mbar_used = true;
+                self.line(&format!(
+                    "asm volatile(\"mbarrier.init.shared::cta.b64 [%0], %1;\" :: \"r\"({addr}), \"r\"((unsigned int)({c})) : \"memory\");"
+                ));
+            }
+            Stmt::MbarArrive { bar, tx } => {
+                if tx.is_some() {
+                    return Err(refuse(format!(
+                        "kernel `{}`: an `MbarArrive` with a transaction count (`mbarrier.arrive.expect_tx`) is not lowered (ROADMAP S12)",
+                        self.k.name
+                    )));
+                }
+                let addr = self.mbar_addr(bar, "MbarArrive")?;
+                self.mbar_used = true;
+                self.line("{");
+                self.depth += 1;
+                self.line("unsigned long long _st;");
+                self.line(&format!(
+                    "asm volatile(\"mbarrier.arrive.shared::cta.b64 %0, [%1];\" : \"=l\"(_st) : \"r\"({addr}) : \"memory\");"
+                ));
+                self.line("(void)_st;");
+                self.depth -= 1;
+                self.line("}");
+            }
+            Stmt::MbarWait { bar, parity } => {
+                let addr = self.mbar_addr(bar, "MbarWait")?;
+                let q = self.ex(parity)?;
+                self.mbar_used = true;
+                self.line("{");
+                self.depth += 1;
+                self.line(&format!("unsigned int _par = (unsigned int)({q});"));
+                self.line("if (_par > 1u) __trap();");
+                // A loop of `mbarrier.test_wait.parity` (sm_80): resume once the phase of that parity has completed. The braces scope the
+                // labels, so the statement can appear more than once in a kernel.
+                self.line(&format!(
+                    "asm volatile(\"{{\\n\\t.reg .pred P1;\\n\\tLAB_WAIT:\\n\\tmbarrier.test_wait.parity.shared::cta.b64 P1, [%0], %1;\\n\\t@P1 bra DONE;\\n\\tbra LAB_WAIT;\\n\\tDONE:\\n\\t}}\" :: \"r\"({addr}), \"r\"(_par) : \"memory\");"
+                ));
+                self.depth -= 1;
+                self.line("}");
+            }
             // ROADMAP S12a-1: tensor-memory management. `.cta_group::1` only (the IR does not model a CTA pair); issued by a whole warp
             // (`.sync.aligned`), which the kernel arranges, as the oracle acts on the warp's first lane. Runtime UNVERIFIED on hardware (no
             // sm_100 device on the lane's box): the emitted text is checked by ptxas for `sm_100a` only.
@@ -1051,6 +1105,25 @@ impl Cx<'_> {
             }
         }
         Ok(())
+    }
+
+    /// The shared-memory address of the `mbarrier` object at `bar`: a place of a `Shared` allocation of 64-bit elements.
+    fn mbar_addr(&mut self, bar: &Place, what: &str) -> Result<String, LowerError> {
+        let name = self.k.name.clone();
+        let Place::Alloc { alloc, .. } = bar else {
+            return Err(refuse(format!(
+                "kernel `{name}`: `{what}` needs a `Shared` allocation place for its barrier"
+            )));
+        };
+        let decl = &self.k.allocs[*alloc as usize];
+        if !matches!(decl.space, MemorySpace::Shared) || !matches!(decl.elem, ElementKind::I64) {
+            return Err(refuse(format!(
+                "kernel `{name}`: `{what}` on `{}` ({:?} of {:?}): the barrier must be a `Shared` allocation of 64-bit elements (`I64` in this emitter's table)",
+                decl.name, decl.space, decl.elem
+            )));
+        }
+        let lv = self.place(bar)?;
+        Ok(format!("(unsigned int)__cvta_generic_to_shared(&{lv})"))
     }
 
     /// The backstop for a tensor-memory allocation statement: `d` names a declared `Tensor` allocation, `ncols` is a power of two in
@@ -1236,6 +1309,7 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
         fresh: 0,
         async_used: false,
         tcgen05_used: false,
+        mbar_used: false,
         flagged: false,
     };
     for (i, p) in k.params.iter().enumerate() {
@@ -1281,6 +1355,9 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     if cx.tcgen05_used {
         src.push_str("#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 1000\n#error \"tcgen05 needs sm_100a or newer\"\n#endif\n");
     }
+    if cx.mbar_used {
+        src.push_str("#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 800\n#error \"mbarrier needs sm_80 or newer\"\n#endif\n");
+    }
     if cx.flagged {
         src.push_str("// Lowers an asynchronous-copy or collective statement under a patent risk note (board 434 C, docs/PATENT-SWEEP.md hits 22 and 23). Not a clearance.\n");
     }
@@ -1311,6 +1388,9 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     }
     if cx.tcgen05_used {
         iface = iface.with_requires("tcgen05 (sm_100a or newer)");
+    }
+    if cx.mbar_used {
+        iface = iface.with_requires("mbarrier (sm_80 or newer)");
     }
     Ok(GeneratedKernel::new(name, src).with_interface(iface))
 }
