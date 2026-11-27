@@ -100,7 +100,7 @@
 #include <cuda_fp16.h>
 #include <cuda_bf16.h>
 #include <cuda_pipeline.h>
-// Phase 59c (alpha.59 consolidation): brings in `set_dynamic_smem_serialized`
+// Phase 59c (alpha.59 consolidation): brings in `smem_attr_mutex` and `set_dynamic_smem_unlocked`
 // so the sm_89 sibling shares the same mutex with the sm_80 baseline (one
 // process-wide critical section, not one per kernel template).
 #include "baracuda_flash_sdpa.cuh"
@@ -545,7 +545,9 @@ __host__ inline int32_t launch_flash_sdpa_sm89_fp(
     dim3 grid((unsigned)num_qb, (unsigned)heads, (unsigned)batch);
     dim3 block((unsigned)kThreadsPerBlock);
     size_t smem = flash_sm89_smem_bytes<T>(d_k, d_v);
+    std::unique_lock<std::mutex> attr_lk(baracuda::flash_sdpa::smem_attr_mutex(), std::defer_lock);
     if (smem > 48 * 1024) {
+        attr_lk.lock();  // held through the launch below
         // The `d_k > kMaxD` gate above is DTYPE- AND SCHEDULE-BLIND; the SMEM
         // requirement is neither. MEASURED on sm_89 (opt-in cap 101376 B):
         //
@@ -557,7 +559,7 @@ __host__ inline int32_t launch_flash_sdpa_sm89_fp(
         // `cudaError 1`, and surfaced the opaque `1001` — from a plan
         // `can_implement()` had already ACCEPTED. Decline typed instead.
         if (!baracuda::flash_sdpa::dynamic_smem_fits(smem)) return 3;
-        cudaError_t serr = baracuda::flash_sdpa::set_dynamic_smem_serialized(
+        cudaError_t serr = baracuda::flash_sdpa::set_dynamic_smem_unlocked(
             (const void*)flash_sdpa_sm89_fw_kernel<T>, smem);
         if (serr != cudaSuccess) return 1000 + (int32_t)serr;
     }
@@ -893,7 +895,9 @@ __host__ inline int32_t launch_flash_sdpa_sm89_fp_strided(
     dim3 grid((unsigned)num_qb, (unsigned)heads, (unsigned)batch);
     dim3 block((unsigned)kThreadsPerBlock);
     size_t smem = flash_sm89_smem_bytes<T>(d_k, d_v);
+    std::unique_lock<std::mutex> attr_lk(baracuda::flash_sdpa::smem_attr_mutex(), std::defer_lock);
     if (smem > 48 * 1024) {
+        attr_lk.lock();  // held through the launch below
         // The `d_k > kMaxD` gate above is DTYPE- AND SCHEDULE-BLIND; the SMEM
         // requirement is neither. MEASURED on sm_89 (opt-in cap 101376 B):
         //
@@ -905,7 +909,7 @@ __host__ inline int32_t launch_flash_sdpa_sm89_fp_strided(
         // `cudaError 1`, and surfaced the opaque `1001` — from a plan
         // `can_implement()` had already ACCEPTED. Decline typed instead.
         if (!baracuda::flash_sdpa::dynamic_smem_fits(smem)) return 3;
-        cudaError_t serr = baracuda::flash_sdpa::set_dynamic_smem_serialized(
+        cudaError_t serr = baracuda::flash_sdpa::set_dynamic_smem_unlocked(
             (const void*)flash_sdpa_sm89_fw_kernel_strided<T>, smem);
         if (serr != cudaSuccess) return 1000 + (int32_t)serr;
     }
