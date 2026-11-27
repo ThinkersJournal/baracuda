@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.231 - 2026-11-27
+
+Lockfile only (`Cargo.lock`, `tools/kiss-ref-diff/Cargo.lock`), no `Cargo.toml` change: every requirement already admits the latest version, found by listing the 33 direct external dependencies against crates.io's latest stable (2026-11-27). Behind and now updated: `unpopped`, `unpopped-vocab`, `unpopped-convert`, `unpopped-cpu-c` 0.61.0 to 0.61.2, `cc` 1.11.3 to 1.12.0 (and `find-msvc-tools` 0.1.15 to 0.1.16), `sha2` 0.11.1 to 0.11.2, `tree-sitter` 0.27.1 to 0.27.2; in `tools/kiss-ref-diff`: `unpopped`, `unpopped-vocab` 0.61.2, `libloading` 0.9.0 to 0.9.1, `syn` 3.0.9 to 3.0.10. One copy of `unpopped-vocab` in each lock (`cargo tree --locked -i unpopped-vocab`: one line). The driver-free suite (`baracuda-cuda-emit`, `-vocab`, `-parse`, `-seam`, `baracuda-bench-stats`) passes and `clippy --workspace --tests -D warnings` is clean on the updated lock. `float8` is at its latest (0.7.0) and baracuda's lock has no `rand` at all (float8's `rand` is optional, behind its `rand_distr` feature, which baracuda does not enable). The CI device run is queued, not claimed.
+
 ## 0.1.0-alpha.230 - 2026-11-27
 
 `baracuda-cuda-emit` lowers the unpopped IR's tensor-memory management statements. A `Tensor` allocation becomes the 32-bit tensor-memory address that `tcgen05.alloc` writes, kept in one `__shared__ unsigned int` word (not an array: an ordinary access is still refused); `Tcgen05Alloc`, `Tcgen05RelinquishPermit` and `Tcgen05Dealloc` lower to `tcgen05.alloc.cta_group::1.sync.aligned.shared::cta.b32`, `tcgen05.relinquish_alloc_permit.cta_group::1.sync.aligned` and `tcgen05.dealloc.cta_group::1.sync.aligned.b32` (PTX ISA 9.5 9.7.18.7.1). The source carries an `#error` guard for an older `__CUDA_ARCH__` and the interface requires `tcgen05 (sm_100a or newer)`; the emitter's backstop refuses by name a column count that is not a power of two in 32..=512 and an allocation that does not hold `128 * ncols` elements.
