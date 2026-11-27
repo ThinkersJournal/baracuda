@@ -14,9 +14,13 @@ BARACUDA_KERNELS_INDEX_SELECT_INSTANTIATE(index_select_i64idx_i32, int32_t, int6
 
 BARACUDA_KERNELS_INDEX_SELECT_BACKWARD_INSTANTIATE(index_select_backward_f32, float,  int32_t)
 BARACUDA_KERNELS_INDEX_SELECT_BACKWARD_INSTANTIATE(index_select_backward_f64, double, int32_t)
+BARACUDA_KERNELS_INDEX_SELECT_BACKWARD_INSTANTIATE(index_select_backward_f16, __half,        int32_t)
+BARACUDA_KERNELS_INDEX_SELECT_BACKWARD_INSTANTIATE(index_select_backward_bf16, __nv_bfloat16, int32_t)
 
 BARACUDA_KERNELS_INDEX_SELECT_BACKWARD_INSTANTIATE(index_select_backward_i64idx_f32, float,  int64_t)
 BARACUDA_KERNELS_INDEX_SELECT_BACKWARD_INSTANTIATE(index_select_backward_i64idx_f64, double, int64_t)
+BARACUDA_KERNELS_INDEX_SELECT_BACKWARD_INSTANTIATE(index_select_backward_i64idx_f16, __half,        int64_t)
+BARACUDA_KERNELS_INDEX_SELECT_BACKWARD_INSTANTIATE(index_select_backward_i64idx_bf16, __nv_bfloat16, int64_t)
 
 // Phase 40 (Fuel 6c.4 Gap 6b spillover) — integer value-dtype fanout
 // for `index_select` (read-only; no atomics needed). Coverage:

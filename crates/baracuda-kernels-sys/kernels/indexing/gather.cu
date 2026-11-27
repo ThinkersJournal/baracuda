@@ -24,9 +24,13 @@ BARACUDA_KERNELS_GATHER_INSTANTIATE(gather_i64idx_i32, int32_t, int64_t)
 // Backward — atomicAdd into dsrc, FP-only.
 BARACUDA_KERNELS_GATHER_BACKWARD_INSTANTIATE(gather_backward_f32, float,  int32_t)
 BARACUDA_KERNELS_GATHER_BACKWARD_INSTANTIATE(gather_backward_f64, double, int32_t)
+BARACUDA_KERNELS_GATHER_BACKWARD_INSTANTIATE(gather_backward_f16, __half,        int32_t)
+BARACUDA_KERNELS_GATHER_BACKWARD_INSTANTIATE(gather_backward_bf16, __nv_bfloat16, int32_t)
 
 BARACUDA_KERNELS_GATHER_BACKWARD_INSTANTIATE(gather_backward_i64idx_f32, float,  int64_t)
 BARACUDA_KERNELS_GATHER_BACKWARD_INSTANTIATE(gather_backward_i64idx_f64, double, int64_t)
+BARACUDA_KERNELS_GATHER_BACKWARD_INSTANTIATE(gather_backward_i64idx_f16, __half,        int64_t)
+BARACUDA_KERNELS_GATHER_BACKWARD_INSTANTIATE(gather_backward_i64idx_bf16, __nv_bfloat16, int64_t)
 
 // Phase 39 (Fuel 6c.4 Gap 5) — u8 idx fanout for gather FW.
 // The kernel templates compile fine against `uint8_t` (the kernel's
