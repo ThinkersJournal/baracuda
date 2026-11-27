@@ -777,6 +777,48 @@ fn wide_integers_are_refused_by_name_on_every_kernel_surface() {
     }
 }
 
+/// The PLAN path (`try_generate` over `Cuda`) for the wide integers: an elementwise plan at `I128` / `U128` / `I256` / `U256` must come back
+/// as a typed `InadmissiblePlan` naming the dtype (Unpopped's plan admission, before the backend), never a panic and never source. Control: the
+/// same plan at `F32` emits (integer elementwise plans are declined by the bespoke surface at every width today).
+#[test]
+fn wide_integer_plans_are_declined_not_emitted_or_panicked() {
+    use unpopped::ir::BinaryOp;
+    use unpopped::{OpDef, input, try_generate};
+    use unpopped_vocab::{ArchSku, OpCategory, OperandDesc, structure_key};
+    let at = |dt: ElementKind| {
+        let op = OpDef::elementwise("max", 2, &[dt], input(0).binary(BinaryOp::Max, input(1)));
+        let a = OperandDesc::new(1, &[1 << 16], &[1], dt, 1);
+        let key = structure_key(OpCategory::BinaryElementwise, &[a, a, a], ArchSku::Sm89);
+        std::panic::catch_unwind(|| try_generate(&op, &key, &Cuda))
+    };
+    for dt in [
+        ElementKind::I128,
+        ElementKind::U128,
+        ElementKind::I256,
+        ElementKind::U256,
+    ] {
+        match at(dt).unwrap_or_else(|_| panic!("{dt:?}: the plan path PANICKED")) {
+            Err(e) => {
+                let t = format!("{e:?}");
+                assert!(
+                    t.contains("InadmissiblePlan") && t.contains(&format!("{dt:?}")),
+                    "{dt:?}: the decline must be the plan admission naming the dtype: {t}"
+                );
+            }
+            Ok(k) => panic!(
+                "{dt:?}: the plan path EMITTED:
+{}",
+                k.source
+            ),
+        }
+    }
+    // Control: the bespoke elementwise surface is float-only today (an `I32` plan is declined the same way), so the control is `F32`.
+    let k = at(F32)
+        .expect("no panic")
+        .expect("control: an F32 plan must emit");
+    assert!(k.source.contains("__global__"), "{}", k.source);
+}
+
 /// The emitted source must be real CUDA: compile it with NVRTC (PTX only, nothing runs). `sm_89` always; `sm_61` when the
 /// installed NVRTC accepts it (CUDA 13.x does not: set `BARACUDA_NVRTC_PATH` to a 12.x one, see `docs/sm61-p40-design.md`).
 #[cfg(all(feature = "nvrtc", feature = "device-tests"))]
