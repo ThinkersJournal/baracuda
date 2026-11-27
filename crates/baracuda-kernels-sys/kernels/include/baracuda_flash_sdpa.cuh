@@ -78,9 +78,18 @@ namespace baracuda { namespace flash_sdpa {
 // Pre-existing flake (root cause is Phase 6 / Milestone 6.6 code); surfaced
 // by Phase 59a's 5-head_dim × 2-dtype × 2-causal = 20-test fanout.
 // -----------------------------------------------------------------------------
-inline cudaError_t set_dynamic_smem_serialized(const void* func, size_t bytes) {
+// The process-wide mutex of the SMEM-attribute critical section. A launcher takes it BEFORE `cudaFuncSetAttribute` and holds it
+// through its own `<<<>>>` launch and the `cudaGetLastError()` after it. Observed: with the lock around the set only,
+// `fa2_hdim_fanout_smoke` failed 8 of 40 runs at the default test threads (0 of 40 single-threaded, 0 of 60 one test per process),
+// every failure `2001` (the launch check, `cudaErrorMissingConfiguration`) in an hdim96 fp16 test. HYPOTHESIS for the cause: another
+// thread's re-set of the same kernel (causal and non-causal share one template) landing between this thread's set and launch.
+inline std::mutex& smem_attr_mutex() {
     static std::mutex s_attr_mutex;
-    std::lock_guard<std::mutex> lk(s_attr_mutex);
+    return s_attr_mutex;
+}
+
+// The caller MUST hold `smem_attr_mutex()`.
+inline cudaError_t set_dynamic_smem_unlocked(const void* func, size_t bytes) {
     return cudaFuncSetAttribute(
         func,
         cudaFuncAttributeMaxDynamicSharedMemorySize,
@@ -90,7 +99,7 @@ inline cudaError_t set_dynamic_smem_serialized(const void* func, size_t bytes) {
 // -----------------------------------------------------------------------------
 // Which CUDA call failed? (evidence for the intermittent `KernelInternal(1001)`)
 //
-// The launchers return `1000 + cudaError_t` when `set_dynamic_smem_serialized` fails and
+// The launchers return `1000 + cudaError_t` when `set_dynamic_smem_unlocked` fails and
 // `2000 + cudaError_t` when the `cudaGetLastError()` after the `<<<>>>` launch reports an
 // error. Before this the two sites shared the `1000 +` encoding, so a bare `1001`
 // (`cudaErrorMissingConfiguration`, seen in CI runs 42260016489 and 42366907753 on the
@@ -571,9 +580,11 @@ __host__ inline int32_t launch_flash_sdpa_fp(
     size_t smem = flash_fw_smem_bytes<T>(d_k, d_v);
     // Opt into the full sm_80+ dynamic SMEM budget. Default carveout is
     // 48 KiB on most archs; this kernel can exceed that for f32/f64.
+    std::unique_lock<std::mutex> attr_lk(smem_attr_mutex(), std::defer_lock);
     if (smem > 48 * 1024) {
+        attr_lk.lock();  // held through the launch below
         if (!dynamic_smem_fits(smem)) return 3;
-        cudaError_t serr = set_dynamic_smem_serialized(
+        cudaError_t serr = set_dynamic_smem_unlocked(
             (const void*)flash_sdpa_fw_kernel<T>, smem);
         if (serr != cudaSuccess) return 1000 + (int32_t)serr;
     }
@@ -1151,9 +1162,11 @@ __host__ inline int32_t launch_flash_sdpa_backward_fp(
             dim3 grid((unsigned)num_qb, (unsigned)heads, (unsigned)batch);
             dim3 block((unsigned)kThreadsPerBlock);
             size_t smem = flash_bw_dQ_smem_bytes<T>(d_k, d_v);
+            std::unique_lock<std::mutex> attr_lk(smem_attr_mutex(), std::defer_lock);
             if (smem > 48 * 1024) {
+                attr_lk.lock();  // held through the launch below
                 if (!dynamic_smem_fits(smem)) return 3;
-                cudaError_t serr = set_dynamic_smem_serialized(
+                cudaError_t serr = set_dynamic_smem_unlocked(
                     (const void*)flash_sdpa_bw_dQ_kernel<T>, smem);
                 if (serr != cudaSuccess) return 1000 + (int32_t)serr;
             }
@@ -1171,9 +1184,11 @@ __host__ inline int32_t launch_flash_sdpa_backward_fp(
             dim3 grid((unsigned)num_kb, (unsigned)heads, (unsigned)batch);
             dim3 block((unsigned)kThreadsPerBlock);
             size_t smem = flash_bw_dKdV_smem_bytes<T>(d_k, d_v);
+            std::unique_lock<std::mutex> attr_lk(smem_attr_mutex(), std::defer_lock);
             if (smem > 48 * 1024) {
+                attr_lk.lock();  // held through the launch below
                 if (!dynamic_smem_fits(smem)) return 3;
-                cudaError_t serr = set_dynamic_smem_serialized(
+                cudaError_t serr = set_dynamic_smem_unlocked(
                     (const void*)flash_sdpa_bw_dKdV_kernel<T>, smem);
                 if (serr != cudaSuccess) return 1000 + (int32_t)serr;
             }
