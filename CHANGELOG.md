@@ -16,6 +16,16 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.221 - 2026-11-27
+
+`UniquePlan::run` (torch `unique(sorted=True, return_counts=True)`) was a stub: up to 0.1.0-alpha.189 it sorted into the scratch buffer and returned `Ok` without writing `values`, `counts` or `counter`; alpha.191 made it return `Error::Unsupported` (ROADMAP E0b). It now works: each row is sorted ascending (NaN largest, the `SortPlan` order) into `sorted_scratch` and the sorted row is deduplicated by the ordered `unique_consecutive` kernel (which no longer races or writes counts of 1: alpha.211). Per row, `values` holds the distinct values ascending, `counts[k]` the number of occurrences (the run length), and `counter[row]` the true distinct count, which can exceed `max_unique` (the extra values are dropped, cells past the counter are untouched). Every NaN is its own value (NaN != NaN, as torch) and sorts last; `-0.0` and `+0.0` are one value, and the value kept is the first of the run in the stable sort order, which is the first zero in the row (a row starting with `-0.0` keeps `-0.0`). f32, f64 and i32; `row_len <= 1024` (the sort cap; larger rows return `Unsupported`).
+
+Because `UniquePlan` returned nothing useful in every published version (a stub that returned `Ok` with empty output up to alpha.189, then `Unsupported`), this is a new capability, not a fix to a working op; the silent-empty-result defect was fixed by the alpha.191 decline.
+
+Device test `unique_plan` (sm89): basic run-length counts, NaNs each distinct and last (`-inf, 1, 2, inf, NaN, NaN`), signed zeros one value (both signs pinned), a count past `max_unique`, independent rows, an all-equal row, a full 1024-wide row, i32 and f64, zero-width rows. Red on the old plan: `run` returned `Unsupported` (all 7). Uses the ordered `unique_consecutive` kernel (alpha.211). The CI device run is queued, not claimed.
+
+Also in this PR (docs only, no code): ROADMAP rows E2 and E3 (plans with no f16/bf16 path; E3's half-indexing ledger now records alpha.208, .215 and .219 as shipped), E4 and E4b (out-of-range index error flag; slice 1 shipped in alpha.218), S12 (`tcgen05` lowering), S13 (float Max/Min and Prod collectives), S14 (the 7 KISS 0.24.0 element rows) and S15 (FA2 backward NaN-key divergence).
+
 ## 0.1.0-alpha.220 - 2026-11-26
 
 Test-only; every probe below passed on the unchanged kernels except ONE measured divergence from torch in the vendored FlashAttention-2 backward (last paragraph), which is pinned by name, not fixed.
