@@ -46,10 +46,11 @@
 //! the IR does not promise (the whole run in bounds, a unit innermost source stride, natural alignment of both addresses)
 //! are checked and trap. `Collective` lowers at `Subgroup` scope only, as a warp of 32 with the full mask: `Shuffle`
 //! (`Idx` any integer, `Up`/`Down`/`Xor` with a `u32` distance or mask, since a signed one means something else off the
-//! ends of the warp), `Vote`, `Broadcast`, `Reduce` and `Scan` (inclusive, and exclusive for `Sum`/`And`/`Or`/`Xor` and the integer `Max`/`Min`) with
-//! `Sum` (wrapping), `Max`, `Min` on integers, `Sum` on floats (the order differs from the oracle's left-to-right fold, so
-//! compare within a tolerance), and the integer bit ops. A float `Max`/`Min`, a `Block`-scope collective, a block that is
-//! not whole warps, `CollectiveTuple`, `ReduceWith` and `ScanWith` decline by name. The emitted source says it lowers a
+//! ends of the warp), `Vote`, `Broadcast`, `Reduce` and `Scan` (inclusive and exclusive) with `Sum` (wrapping on an integer),
+//! `Max`, `Min` (NaN-propagating on a float, lane 0 of an exclusive scan `-inf` / `+inf`), `Prod` (wrapping on a signed integer,
+//! identity 1), `And`, `Or` and `Xor`; `Sum` and `Prod` on floats fold in a different order from the oracle's left-to-right fold, so
+//! compare within a tolerance unless the data make every partial result exact. A `Block`-scope collective, a block that is
+//! not whole warps, a half type, `CollectiveTuple`, `ReduceWith` and `ScanWith` decline by name. The emitted source says it lowers a
 //! statement under a patent risk note: US11294713B2 and US12118382B2 (async copy and wait), US8539204B2 (barrier
 //! aggregation), `docs/PATENT-SWEEP.md` hits 22 and 23; **not a clearance**. Targets other than NVIDIA decline these
 //! statements by name in their own emitters; this crate has only the NVIDIA one.
@@ -659,13 +660,28 @@ impl Cx<'_> {
                 _ => None,
             };
             Ok(match (op, sym) {
+                // A float `Max` / `Min` fold propagates NaN (the oracle's rule, `kernel_collective.rs`: a NaN anywhere in the fold gives
+                // NaN, as the reductions do). Per lane and per step, no vote and no extra collective: a NaN operand is the result, else the
+                // larger / smaller one. `x` and `y` are plain identifiers here, so the repeats are free. Signed zeros are not pinned (PM
+                // ruling B): `-0.0` and `+0.0` compare equal, so either may win.
                 (ReduceOp::Max | ReduceOp::Min, _) if is_float(t) => {
-                    return Err(refuse(format!(
-                        "kernel `{name}`: a float `{op:?}` collective is not lowered yet (its NaN behaviour is not pinned down)"
-                    )));
+                    let cmp = if matches!(op, ReduceOp::Max) {
+                        ">"
+                    } else {
+                        "<"
+                    };
+                    format!(
+                        "(({x}) != ({x}) ? ({x}) : (({y}) != ({y}) ? ({y}) : ((({x}) {cmp} ({y})) ? ({x}) : ({y}))))"
+                    )
                 }
                 (ReduceOp::Max, _) => format!("(({x}) > ({y}) ? ({x}) : ({y}))"),
                 (ReduceOp::Min, _) => format!("(({x}) < ({y}) ? ({x}) : ({y}))"),
+                // `Prod`: wrapping on a signed integer (through the unsigned type, as `Sum`), plain `*` on an unsigned integer and a float.
+                (ReduceOp::Prod, _) if is_signed_int(t) => {
+                    let u = unsigned_of(t);
+                    format!("(({tn})(({u})({x}) * ({u})({y})))")
+                }
+                (ReduceOp::Prod, _) => format!("(({x}) * ({y}))"),
                 (_, Some(s)) if is_signed_int(t) && matches!(op, ReduceOp::Sum) => {
                     let u = unsigned_of(t);
                     format!("(({tn})(({u})({x}) {s} ({u})({y})))")
@@ -757,11 +773,21 @@ impl Cx<'_> {
                 ));
                 if *exclusive {
                     // Lane 0 of an exclusive scan is the fold's identity (the oracle's rule, unpopped 0.58.4): 0 for Sum/Or/Xor, all ones for
-                    // And, the type's minimum for an integer Max and its maximum for an integer Min. A float Max/Min and a Prod never reach
-                    // here: the fold above has already refused them by name.
+                    // And, 1 for Prod, the type's minimum for an integer Max and its maximum for an integer Min, and `-inf` / `+inf` for a
+                    // float Max / Min (spelled by bit pattern: no `INFINITY` macro is assumed in the NVRTC source).
                     let ident = match op {
                         ReduceOp::Sum | ReduceOp::Or | ReduceOp::Xor => format!("({tn})0"),
                         ReduceOp::And => format!("({tn})(~({tn})0)"),
+                        ReduceOp::Prod => format!("({tn})1"),
+                        ReduceOp::Max | ReduceOp::Min if is_float(t) => {
+                            let neg = matches!(op, ReduceOp::Max);
+                            match (t, neg) {
+                                (ElementKind::F32, true) => "__int_as_float(0xff800000)".to_string(),
+                                (ElementKind::F32, false) => "__int_as_float(0x7f800000)".to_string(),
+                                (_, true) => "__longlong_as_double(0xfff0000000000000ll)".to_string(),
+                                (_, false) => "__longlong_as_double(0x7ff0000000000000ll)".to_string(),
+                            }
+                        }
                         ReduceOp::Max | ReduceOp::Min => int_extreme(t, matches!(op, ReduceOp::Min), &tn)
                             .ok_or_else(|| {
                                 refuse(format!(
