@@ -206,12 +206,16 @@ fn inf_query_gives_nan_dv() {
     poisoned_query(f32::INFINITY, "inf_q");
 }
 
-/// MEASURED DIVERGENCE (torch gives NaN for every `dV` here: row i's softmax over a NaN score is all NaN, so `P` is NaN and so is
-/// `dV = P^T dO`). The vendored FA2 forward writes `lse = +inf` for a row whose softmax sum is NaN (`softmax.h`: `sum == 0 || sum != sum`
-/// gives `INFINITY`), and its backward rebuilds `P = exp(s * scale - lse)`, which is `0` for every FINITE score and NaN only for the
-/// NaN score itself. So only the poisoned key's `dV` row is NaN (64 of 8192 here, `d = 64`); `dQ` and `dK` are all NaN through the
-/// `D = rowsum(dO * y)` term, so the NaN still reaches the caller. This pins what FA2 does today, not what torch does; if the vendored
-/// kernel changes, the pin fails and says so. The bespoke backward gives all-NaN `dV` (alpha.210).
+/// KNOWN DIVERGENCE from the torch convention (NaN key): `dV` is NaN only in the poisoned key's row (64 of 8192 elements), where torch
+/// gives NaN for every `dV` (row i's softmax over a NaN score is all NaN, so `P` and `dV = P^T dO` are NaN); `dQ` and `dK` are all NaN,
+/// as torch. Measured on the device (RTX 4070 Laptop, sm_89, through `gpu-run`) with f16, `d = 64`, `h = 1`, 128 x 128, non-causal,
+/// against the vendored FlashAttention-2 pinned in `kernels-sys/vendor/flash-attention/VENDOR.md` (v2.8.3, commit `060c9188`).
+/// CAUSE: read from vendor `softmax.h`, NOT mutant-isolated, so a HYPOTHESIS until a mutant on that vendored line shows it: the forward
+/// stores `lse = +inf` for a row whose softmax sum is NaN (`sum == 0 || sum != sum`), and the backward's `exp(s * scale - lse)` is then
+/// `0` for every finite score and NaN only for the NaN score itself. The NaN still reaches the caller through `dQ` and `dK`.
+/// This pins what FA2 does today, not what torch does; if the vendored kernel changes, the pin fails and says so. The bespoke
+/// backward gives all-NaN `dV` (alpha.210). Fuel binds no flash backward; a consumer that does must check it against the union vector
+/// table.
 #[test]
 fn nan_key_fa2_backward_dv_is_nan_only_for_the_poisoned_key() {
     let (q, mut k, v) = base();
