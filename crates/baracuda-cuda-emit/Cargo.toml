@@ -60,6 +60,9 @@ fishstringer-slang-parse = "~0.10.0"
 baracuda-driver = { workspace = true, features = ["test-support"] }
 # The CUDA `Frontend` for `tests/convert.rs` (unpopped 0.30 removed it from `unpopped::convert`).
 baracuda-cuda-parse = { workspace = true }
+# One checker-valid kernel or module per `Stmt` variant (`unpopped::fixtures`, unpopped 0.58.5), for the decline tests: the checker passes each, so the
+# refusal a test sees is the EMITTER's own text (`tests/fixtures_decline.rs`).
+unpopped = { workspace = true, features = ["fixtures"] }
 
 [lints]
 workspace = true
