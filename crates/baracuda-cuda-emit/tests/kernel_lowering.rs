@@ -533,7 +533,8 @@ fn subgroup_collectives_lower_to_warp_intrinsics_and_the_rest_declines_by_name()
         let g = Cuda.lower_kernel(&k).expect("lowers");
         assert!(g.source.contains(want), "missing `{want}`:\n{}", g.source);
     }
-    // Declined by name: a block-scope collective, a block that is not whole warps, a float Max, a signed shuffle distance.
+    // Declined by name: a block-scope collective, a block that is not whole warps, a signed shuffle distance. (A float Max lowered
+    // as a refusal until ROADMAP S13: it now lowers with a NaN-propagating fold, see `exclusive_scans.rs`.)
     let k = warp_sum(CollectiveKind::Reduce(ReduceOp::Sum), Scope::Block, 32);
     check_kernel(&k).expect("well-formed");
     assert!(detail(Cuda.lower_kernel(&k)).contains("Block-scope `Collective`"));
@@ -542,7 +543,8 @@ fn subgroup_collectives_lower_to_warp_intrinsics_and_the_rest_declines_by_name()
     assert!(detail(Cuda.lower_kernel(&k)).contains("multiple of 32"));
     let k = warp_sum(CollectiveKind::Reduce(ReduceOp::Max), Scope::Subgroup, 32);
     check_kernel(&k).expect("well-formed");
-    assert!(detail(Cuda.lower_kernel(&k)).contains("float `Max` collective"));
+    let g = Cuda.lower_kernel(&k).expect("a float Max reduce lowers");
+    assert!(g.source.contains("(_v) != (_v)"), "{}", g.source);
     let k = warp_sum(
         CollectiveKind::Shuffle {
             mode: ShuffleMode::Up,
