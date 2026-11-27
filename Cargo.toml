@@ -70,9 +70,9 @@ baracuda-cuda-vocab = { version = "0.1.0-alpha.221", path = "crates/baracuda-cud
 # as the standalone vendor-neutral `unpopped` / `unpopped-vocab` (crates.io). Baracuda
 # is now a CONSUMER of the published crates, not their host — the local
 # `baracuda-kernelgen` / `baracuda-kernel-vocab` are retired.
-unpopped = "~0.60.1"
-unpopped-vocab = "~0.60.1"
-unpopped-convert = "~0.60.1"
+unpopped = "~0.60.32"
+unpopped-vocab = "~0.60.32"
+unpopped-convert = "~0.60.32"
 baracuda-seam = { version = "0.1.0-alpha.221", path = "crates/baracuda-seam" }
 baracuda-cuda-sys = { version = "0.1.0-alpha.221", path = "crates/baracuda-cuda-sys" }
 baracuda-driver = { version = "0.1.0-alpha.221", path = "crates/baracuda-driver" }
