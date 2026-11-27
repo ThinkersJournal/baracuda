@@ -40,7 +40,7 @@
 //! # `mbarrier` (ROADMAP S12a-2)
 //!
 //! `MbarInit`, `MbarArrive` (no transaction count) and `MbarWait` lower to the plain sm_80 spellings of `mbarrier.init`,
-//! `mbarrier.arrive` and a `mbarrier.test_wait.parity` loop on a `Shared` allocation of 64-bit elements (`I64` here); `#error` guard
+//! `mbarrier.arrive` and a `mbarrier.test_wait.parity` loop on a `Shared` allocation of 64-bit elements (`U64`, as the published fixtures declare it, or `I64`); `#error` guard
 //! below sm_80. An `MbarArrive` with a transaction count and `MbarCompleteTx` are refused by name.
 //!
 //! # Tensor memory (ROADMAP S12a-1; runtime unverified, ptxas for `sm_100a` only)
@@ -48,8 +48,10 @@
 //! A `Tensor` allocation is the 32-bit tensor-memory address that `tcgen05.alloc` writes, kept in one `__shared__` word (it is not an
 //! array: an ordinary access is refused). `Tcgen05Alloc`, `Tcgen05RelinquishPermit` and `Tcgen05Dealloc` lower to the `.cta_group::1`
 //! forms with `.sync.aligned` (a whole warp issues them, which the kernel arranges); the source carries an `#error` guard for an
-//! older `__CUDA_ARCH__` and the interface requires `sm_100a` or newer. `Tcgen05Commit` (one barrier, no multicast, no mask) lowers to
-//! `tcgen05.commit.cta_group::1.mbarrier::arrive::one`; `Tcgen05Mma` and `Tcgen05Ld` are not lowered yet (S12a-4 and S12a-5), and the forms ROADMAP S12 holds (a commit multicast with a `ctaMask`, an `mbarrier` arrive with a count or a
+//! older `__CUDA_ARCH__` and the interface requires `sm_100a` or newer. A `Private` allocation is a per-thread register array (`pv<i>`), a
+//! subgroup launch is lowered when its range contains 32 (the warp) on whole warps, and `Tcgen05Ld` (32x32b, a power of two of columns up to
+//! 128) lowers to `tcgen05.ld.sync.aligned.32x32b.x<N>.b32` followed by `tcgen05.wait::ld` (S12a-4). `Tcgen05Commit` (one barrier, no multicast, no mask) lowers to
+//! `tcgen05.commit.cta_group::1.mbarrier::arrive::one`; `Tcgen05Mma` is not lowered yet (S12a-5), and the forms ROADMAP S12 holds (a commit multicast with a `ctaMask`, an `mbarrier` arrive with a count or a
 //! mask, an `expect_tx` multicast) are not built.
 //!
 //! # Stage 3: the four statements ruled by board 434 C (NVIDIA only)
@@ -476,11 +478,22 @@ impl Cx<'_> {
                         self.k.name, decl.name
                     )));
                 };
+                let prefix = match decl.space {
+                    MemorySpace::Shared => "sh",
+                    // A per-thread register array (ROADMAP S12a-4).
+                    MemorySpace::Private => "pv",
+                    other => {
+                        return Err(refuse(format!(
+                            "kernel `{}`: an ordinary access to allocation `{}` ({other:?}) is not lowered",
+                            self.k.name, decl.name
+                        )));
+                    }
+                };
                 let v = self.ex(index)?;
                 let o = self.tmp("i");
                 self.line(&format!("long long {o} = (long long)({v});"));
                 self.line(&format!("if ({o} < 0 || {o} >= {n}) __trap();"));
-                Ok(format!("sh{alloc}[{o}]"))
+                Ok(format!("{prefix}{alloc}[{o}]"))
             }
             other => Err(refuse(format!(
                 "kernel `{}`: place `{}` is not lowered yet",
@@ -1096,6 +1109,18 @@ impl Cx<'_> {
                 self.tcgen05_used = true;
                 self.line("asm volatile(\"tcgen05.relinquish_alloc_permit.cta_group::1.sync.aligned;\" ::: \"memory\");");
             }
+            // ROADMAP S12a-4: `tcgen05.ld.32x32b`: each thread reads `count` consecutive columns of ITS lane of the tensor memory into elements
+            // `0..count` of its `Private` allocation; warp `w` of the block reaches lanes `32 * (w % 4)`.. (PTX ISA 9.5 9.7.18.8.3: the tensor-memory
+            // address carries the lane in bits 31:16 and the column in bits 15:0). The load is asynchronous, so `tcgen05.wait::ld` follows it
+            // before the registers are read. Runtime UNVERIFIED on hardware, ptxas for `sm_100a` only.
+            Stmt::Tcgen05Ld {
+                src,
+                col,
+                count,
+                dst,
+            } => {
+                self.tmem_load(*src, col, *count, *dst)?;
+            }
             // ROADMAP S12a-3: `tcgen05.commit` as the IR spells it: ONE `bar`, an `mbarrier::arrive::one` completion mechanism, no multicast and no
             // `ctaMask` (the multicast form, which names the destination CTAs, is HELD by ROADMAP S12 (b) and is not built). `.cta_group::1` like the
             // allocation statements; the barrier is a `Shared` allocation of 64-bit elements, addressed as a `shared::cluster` address (a CTA's own
@@ -1118,6 +1143,76 @@ impl Cx<'_> {
         Ok(())
     }
 
+    /// `Tcgen05Ld` (ROADMAP S12a-4), see the statement arm.
+    fn tmem_load(
+        &mut self,
+        src: u32,
+        col: &ScalarExpr,
+        count: u32,
+        dst: u32,
+    ) -> Result<(), LowerError> {
+        let name = self.k.name.clone();
+        let (Some(sd), Some(dd)) = (
+            self.k.allocs.get(src as usize),
+            self.k.allocs.get(dst as usize),
+        ) else {
+            return Err(refuse(format!(
+                "kernel `{name}`: `Tcgen05Ld` names an allocation that is not declared"
+            )));
+        };
+        if !matches!(sd.space, MemorySpace::Tensor) || !matches!(dd.space, MemorySpace::Private) {
+            return Err(refuse(format!(
+                "kernel `{name}`: `Tcgen05Ld` reads a `Tensor` allocation into a `Private` one, got {:?} into {:?}",
+                sd.space, dd.space
+            )));
+        }
+        if !(1..=128).contains(&count) || !count.is_power_of_two() {
+            return Err(refuse(format!(
+                "kernel `{name}`: `Tcgen05Ld` of {count} columns: a power of two from 1 to 128 is required"
+            )));
+        }
+        if !matches!(dd.extent, Extent::Static(n) if n >= count) || dd.elem != sd.elem {
+            return Err(refuse(format!(
+                "kernel `{name}`: `Tcgen05Ld` into `{}` ({:?} of {:?}): at least {count} elements of the tensor element type {:?} are required",
+                dd.name, dd.extent, dd.elem, sd.elem
+            )));
+        }
+        let to_val = match sd.elem {
+            ElementKind::F32 => "__uint_as_float",
+            ElementKind::I32 => "(int)",
+            _ => "(unsigned int)",
+        };
+        let c = self.ex(col)?;
+        self.tcgen05_used = true;
+        self.line("{");
+        self.depth += 1;
+        self.line(&format!(
+            "unsigned int _t = *(volatile unsigned int*)&tm{src};"
+        ));
+        self.line(
+            "unsigned int _w = ((threadIdx.x + threadIdx.y * blockDim.x + threadIdx.z * blockDim.x * blockDim.y) >> 5) & 3u;",
+        );
+        // Lane `32 * (w % 4)` is `w << 5`, in bits 31:16 of the address: `w << 21`.
+        self.line(&format!(
+            "unsigned int _a = _t + (_w << 21) + (unsigned int)({c});"
+        ));
+        self.line(&format!("unsigned int _r[{count}];"));
+        let regs: Vec<String> = (0..count).map(|i| format!("%{i}")).collect();
+        let outs: Vec<String> = (0..count).map(|i| format!("\"=r\"(_r[{i}])")).collect();
+        self.line(&format!(
+            "asm volatile(\"tcgen05.ld.sync.aligned.32x32b.x{count}.b32 {{{}}}, [%{count}];\" : {} : \"r\"(_a) : \"memory\");",
+            regs.join(", "),
+            outs.join(", ")
+        ));
+        self.line("asm volatile(\"tcgen05.wait::ld.sync.aligned;\" ::: \"memory\");");
+        for i in 0..count {
+            self.line(&format!("pv{dst}[{i}] = {to_val}(_r[{i}]);"));
+        }
+        self.depth -= 1;
+        self.line("}");
+        Ok(())
+    }
+
     /// The shared-memory address of the `mbarrier` object at `bar`: a place of a `Shared` allocation of 64-bit elements.
     fn mbar_addr(&mut self, bar: &Place, what: &str) -> Result<String, LowerError> {
         let name = self.k.name.clone();
@@ -1127,9 +1222,11 @@ impl Cx<'_> {
             )));
         };
         let decl = &self.k.allocs[*alloc as usize];
-        if !matches!(decl.space, MemorySpace::Shared) || !matches!(decl.elem, ElementKind::I64) {
+        if !matches!(decl.space, MemorySpace::Shared)
+            || !matches!(decl.elem, ElementKind::I64 | ElementKind::U64)
+        {
             return Err(refuse(format!(
-                "kernel `{name}`: `{what}` on `{}` ({:?} of {:?}): the barrier must be a `Shared` allocation of 64-bit elements (`I64` in this emitter's table)",
+                "kernel `{name}`: `{what}` on `{}` ({:?} of {:?}): the barrier must be a `Shared` allocation of 64-bit elements (`U64` or `I64`)",
                 decl.name, decl.space, decl.elem
             )));
         }
@@ -1165,6 +1262,15 @@ impl Cx<'_> {
             )));
         }
         Ok(())
+    }
+}
+
+/// The C type of an allocation's element: the typed table, plus `U64` (an `mbarrier` object is a 64-bit word, and the published
+/// `unpopped::fixtures` declare it `U64`; it is spelled only for allocations, never loaded or stored as a value).
+fn alloc_ctype(elem: ElementKind) -> Option<String> {
+    match elem {
+        ElementKind::U64 => Some("unsigned long long".to_string()),
+        other => type_name(other),
     }
 }
 
@@ -1231,11 +1337,22 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     }
     let mut bounds = None;
     if let Some(l) = &k.launch {
-        if l.subgroup.is_some() || l.cluster.is_some() || l.devices != 1 {
+        if l.cluster.is_some() || l.devices != 1 {
             return Err(refuse(format!(
-                "kernel `{}`: a subgroup, cluster or multi-device launch is not lowered yet (stage 2 lowers a block and a grid)",
+                "kernel `{}`: a cluster or multi-device launch is not lowered yet (stage 2 lowers a block and a grid)",
                 k.name
             )));
+        }
+        // ROADMAP S12a-4: a subgroup launch is lowered when the requested range contains 32, the size of an NVIDIA warp, and the block is
+        // whole warps (the subgroup is the warp: the collectives and `Tcgen05Ld` already assume it).
+        if let Some(sg) = l.subgroup {
+            let block: u64 = l.block.iter().map(|b| u64::from(*b)).product();
+            if !(sg.min..=sg.max).contains(&32) || !block.is_multiple_of(32) {
+                return Err(refuse(format!(
+                    "kernel `{}`: a subgroup launch of {}..={} lanes on a block of {block} threads is not lowered (an NVIDIA subgroup is a warp of 32, and the block must be whole warps)",
+                    k.name, sg.min, sg.max
+                )));
+            }
         }
         let threads = l.block.iter().try_fold(1u32, |a, b| a.checked_mul(*b));
         bounds = threads.filter(|t| (1..=1024).contains(t));
@@ -1249,7 +1366,16 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     for a in &k.allocs {
         match (a.space, a.extent) {
             (MemorySpace::Shared, Extent::Static(_)) => {
-                if type_name(a.elem).is_none() {
+                if alloc_ctype(a.elem).is_none() {
+                    return Err(refuse(format!(
+                        "kernel `{}`: allocation `{}` of element type {:?} has no CUDA spelling",
+                        k.name, a.name, a.elem
+                    )));
+                }
+            }
+            // A `Private` allocation is a per-thread register array (`pv<i>`), declared at the top of the kernel (ROADMAP S12a-4).
+            (MemorySpace::Private, Extent::Static(_)) => {
+                if alloc_ctype(a.elem).is_none() {
                     return Err(refuse(format!(
                         "kernel `{}`: allocation `{}` of element type {:?} has no CUDA spelling",
                         k.name, a.name, a.elem
@@ -1271,7 +1397,7 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
             }
             (space, extent) => {
                 return Err(refuse(format!(
-                    "kernel `{}`: allocation `{}` ({space:?}, {extent:?}) is not lowered yet (static `Shared` arrays and `Tensor` allocations only)",
+                    "kernel `{}`: allocation `{}` ({space:?}, {extent:?}) is not lowered yet (static `Shared` and `Private` arrays and `Tensor` allocations only)",
                     k.name, a.name
                 )));
             }
@@ -1333,8 +1459,11 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
             if matches!(a.space, MemorySpace::Tensor) {
                 // The tensor-memory address `tcgen05.alloc` writes (one word per block); an ordinary access to it is refused.
                 cx.line(&format!("__shared__ unsigned int tm{i};"));
+            } else if matches!(a.space, MemorySpace::Private) {
+                let t = alloc_ctype(a.elem).unwrap_or_default();
+                cx.line(&format!("{t} pv{i}[{n}];"));
             } else {
-                let t = type_name(a.elem).unwrap_or_default();
+                let t = alloc_ctype(a.elem).unwrap_or_default();
                 cx.line(&format!("__shared__ {t} sh{i}[{n}];"));
             }
         }

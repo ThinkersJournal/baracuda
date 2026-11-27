@@ -6,7 +6,6 @@
 use baracuda_cuda_emit::Cuda;
 use unpopped::backend::Backend;
 use unpopped::exec::{AllocDecl, Extent, LaunchShape, MemorySpace, SubgroupSize};
-use unpopped::ir::ScalarExpr;
 use unpopped::kernel::{Block, KernelFn, LocalDecl, Stmt, check_kernel};
 use unpopped_vocab::ElementKind;
 
@@ -91,46 +90,42 @@ fn the_tensor_memory_management_statements_are_lowered() {
     }
 }
 
-/// `Tcgen05Ld` (and `Tcgen05Mma`, `Tcgen05Commit`) are not lowered yet (S12a-3 to S12a-5). The fixture passes `check_kernel`, so the refusal asserted is
-/// the emitter's, not an `ill-formed` one.
+/// ROADMAP S12a-4: `Tcgen05Ld` lowers (see `tcgen05_alloc.rs`), on a launch of 32-lane subgroups. The emitter still refuses a subgroup range
+/// that does not contain 32 (an NVIDIA subgroup is a warp) and a cluster launch, by name; the fixtures pass `check_kernel`, so the text
+/// asserted is the emitter's, not an `ill-formed` one.
 #[test]
-fn the_other_tcgen05_statements_are_refused_by_the_emitter_and_named() {
-    let k = kernel_with_tmem(vec![Stmt::Tcgen05Ld {
-        src: 0,
-        col: ScalarExpr::ConstInt(0, ElementKind::U32),
-        count: 4,
-        dst: 1,
-    }])
-    .with_allocs(vec![
-        AllocDecl::new(
-            "tmem",
-            MemorySpace::Tensor,
-            ElementKind::F32,
-            Extent::Static(128 * 32),
-        ),
-        AllocDecl::new(
-            "regs",
-            MemorySpace::Private,
-            ElementKind::F32,
-            Extent::Static(4),
-        ),
-    ])
-    .with_launch({
-        // A tensor-memory load needs a one-dimensional launch of 32-lane subgroups (the checker's rule).
+fn a_subgroup_launch_without_32_and_a_cluster_launch_are_refused_by_the_emitter() {
+    let k = kernel(vec![Stmt::Return]).with_launch({
+        let mut l = LaunchShape::new([128, 1, 1], [1, 1, 1]);
+        l.subgroup = Some(SubgroupSize::new(64, 64));
+        l
+    });
+    check_kernel(&k).expect("well-formed");
+    let d = format!(
+        "{:?}",
+        Cuda.lower_kernel(&k).expect_err("a 64-lane subgroup")
+    );
+    assert!(
+        d.contains("subgroup launch of 64..=64") && !d.contains("ill-formed"),
+        "{d}"
+    );
+    // Control: a subgroup range that contains 32 lowers.
+    let k = kernel(vec![Stmt::Return]).with_launch({
         let mut l = LaunchShape::new([128, 1, 1], [1, 1, 1]);
         l.subgroup = Some(SubgroupSize::new(32, 32));
         l
     });
-    check_kernel(&k)
-        .unwrap_or_else(|e| panic!("Tcgen05Ld: the fixture must pass the checker: {e:?}"));
-    let e = Cuda
-        .lower_kernel(&k)
-        .expect_err("Tcgen05Ld is not lowered yet");
-    let d = format!("{e:?}");
-    // The emitter refuses it, by name, before the statement: the checker's rule makes a tensor-memory load need a launch of 32-lane
-    // subgroups, and the emitter does not lower a subgroup launch yet (a prerequisite of S12a-4, with the `Private` allocation `regs`).
-    assert!(
-        !d.contains("ill-formed") && d.contains("subgroup"),
-        "refusal does not come from the emitter: {d}"
-    );
+    check_kernel(&k).expect("well-formed");
+    Cuda.lower_kernel(&k)
+        .expect("a 32-lane subgroup launch lowers");
+    // A cluster launch is still refused.
+    let k = kernel(vec![Stmt::Return]).with_launch({
+        let mut l = LaunchShape::new([128, 1, 1], [2, 1, 1]);
+        l.cluster = Some([2, 1, 1]);
+        l
+    });
+    if check_kernel(&k).is_ok() {
+        let d = format!("{:?}", Cuda.lower_kernel(&k).expect_err("a cluster launch"));
+        assert!(d.contains("cluster") && !d.contains("ill-formed"), "{d}");
+    }
 }

@@ -189,6 +189,33 @@ fn the_plain_mbarrier_statements_lower_to_sm80_spellings() {
     );
 }
 
+/// The published `unpopped::fixtures` declare the barrier `U64`: it lowers too (spelled `unsigned long long`, for an allocation only).
+#[test]
+fn a_u64_barrier_lowers_like_an_i64_one() {
+    let k = good().with_allocs(vec![
+        AllocDecl::new(
+            "data",
+            MemorySpace::Shared,
+            ElementKind::U32,
+            Extent::Static(HALF),
+        ),
+        AllocDecl::new(
+            "bar",
+            MemorySpace::Shared,
+            ElementKind::U64,
+            Extent::Static(1),
+        ),
+    ]);
+    check_kernel(&k).expect("well-formed");
+    let g = Cuda.lower_kernel(&k).expect("a U64 barrier lowers");
+    assert!(
+        g.source.contains("__shared__ unsigned long long sh1[1];")
+            && g.source.contains("mbarrier.init.shared::cta.b64"),
+        "{}",
+        g.source
+    );
+}
+
 /// Controls: an arrival that carries a transaction count, and a barrier that is not a 64-bit shared element, are refused by name, and the same
 /// kernel without those lowers (the test above).
 #[test]

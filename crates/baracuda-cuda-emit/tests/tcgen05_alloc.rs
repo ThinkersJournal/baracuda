@@ -240,6 +240,93 @@ fn tcgen05_commit_lowers_to_the_one_barrier_form_without_a_mask() {
     );
 }
 
+/// S12a-4: alloc, a block barrier (publishing the address), `Tcgen05Ld` of `count` columns into a `Private` array on a launch of 32-lane
+/// subgroups (four warps: the four lane quadrants), then the permit and the dealloc.
+fn ld_kernel(count: u32) -> KernelFn {
+    use unpopped::exec::SubgroupSize;
+    KernelFn::new(
+        "ld",
+        ElementKind::F32,
+        vec![Param::buffer(
+            "out",
+            ElementKind::F32,
+            BufferRole::Write,
+            Some(1),
+        )],
+        vec![],
+        Block(vec![
+            Stmt::Tcgen05Alloc { d: 0, ncols: NCOLS },
+            Stmt::Barrier {
+                scope: Scope::Block,
+                kind: BarrierKind::Full,
+            },
+            Stmt::Tcgen05Ld {
+                src: 0,
+                col: ScalarExpr::ConstInt(0, ElementKind::U32),
+                count,
+                dst: 1,
+            },
+            Stmt::Barrier {
+                scope: Scope::Block,
+                kind: BarrierKind::Full,
+            },
+            Stmt::Tcgen05RelinquishPermit,
+            Stmt::Tcgen05Dealloc { d: 0, ncols: NCOLS },
+        ]),
+    )
+    .with_allocs(vec![
+        AllocDecl::new(
+            "tmem",
+            MemorySpace::Tensor,
+            ElementKind::F32,
+            Extent::Static(128 * NCOLS),
+        ),
+        AllocDecl::new(
+            "regs",
+            MemorySpace::Private,
+            ElementKind::F32,
+            Extent::Static(count),
+        ),
+    ])
+    .with_launch({
+        let mut l = LaunchShape::new([128, 1, 1], [1, 1, 1]);
+        l.subgroup = Some(SubgroupSize::new(32, 32));
+        l
+    })
+}
+
+#[test]
+fn tcgen05_ld_lowers_to_the_32x32b_load_and_the_wait() {
+    for count in [1u32, 4, 32] {
+        let k = ld_kernel(count);
+        check_kernel(&k).unwrap_or_else(|e| panic!("x{count}: well-formed: {e:?}"));
+        let g = Cuda
+            .lower_kernel(&k)
+            .unwrap_or_else(|e| panic!("x{count}: {e:?}"));
+        let s = &g.source;
+        for want in [
+            format!("tcgen05.ld.sync.aligned.32x32b.x{count}.b32 {{"),
+            "tcgen05.wait::ld.sync.aligned;".to_string(),
+            format!("float pv1[{count}];"),
+            format!("pv1[{}] = __uint_as_float(_r[{}]);", count - 1, count - 1),
+            "_w << 21".to_string(),
+        ] {
+            assert!(s.contains(&want), "x{count}: missing `{want}`:\n{s}");
+        }
+        // The wait follows the load (the registers are read only after it).
+        assert!(
+            s.find("tcgen05.ld.sync").unwrap() < s.find("tcgen05.wait::ld").unwrap(),
+            "{s}"
+        );
+    }
+    // A column count that is not a power of two is refused (by the checker or the emitter's backstop).
+    let k = ld_kernel(3);
+    assert!(
+        check_kernel(&k).is_err() || Cuda.lower_kernel(&k).is_err(),
+        "x3 must be refused"
+    );
+}
+
 #[cfg(all(feature = "nvrtc", feature = "device-tests"))]
 mod nvrtc {
     use super::*;
@@ -247,6 +334,57 @@ mod nvrtc {
     use baracuda_driver::require_optional;
     use unpopped::jit::Compiler;
     use unpopped_vocab::TargetId;
+
+    /// The same kernel with a 128-column allocation, for a 128-column load.
+    fn ld_kernel_wide(count: u32) -> KernelFn {
+        let mut k = ld_kernel(count);
+        k = KernelFn::new(
+            "ld",
+            ElementKind::F32,
+            vec![Param::buffer(
+                "out",
+                ElementKind::F32,
+                BufferRole::Write,
+                Some(1),
+            )],
+            vec![],
+            Block(vec![
+                Stmt::Tcgen05Alloc { d: 0, ncols: 128 },
+                Stmt::Barrier {
+                    scope: Scope::Block,
+                    kind: BarrierKind::Full,
+                },
+                Stmt::Tcgen05Ld {
+                    src: 0,
+                    col: ScalarExpr::ConstInt(0, ElementKind::U32),
+                    count,
+                    dst: 1,
+                },
+                Stmt::Barrier {
+                    scope: Scope::Block,
+                    kind: BarrierKind::Full,
+                },
+                Stmt::Tcgen05RelinquishPermit,
+                Stmt::Tcgen05Dealloc { d: 0, ncols: 128 },
+            ]),
+        )
+        .with_allocs(vec![
+            AllocDecl::new(
+                "tmem",
+                MemorySpace::Tensor,
+                ElementKind::F32,
+                Extent::Static(128 * 128),
+            ),
+            AllocDecl::new(
+                "regs",
+                MemorySpace::Private,
+                ElementKind::F32,
+                Extent::Static(count),
+            ),
+        ])
+        .with_launch(k.launch.expect("a launch"));
+        k
+    }
 
     fn ptxas() -> Option<std::path::PathBuf> {
         let exe = if cfg!(windows) { "ptxas.exe" } else { "ptxas" };
@@ -319,6 +457,46 @@ mod nvrtc {
             String::from_utf8_lossy(&r.stderr),
             g.source
         );
+    }
+
+    /// S12a-4: the load kernels (1, 4, 32 and 128 columns) are accepted by NVRTC and `ptxas -arch=sm_100a`.
+    #[test]
+    fn the_ld_kernels_are_accepted_by_nvrtc_and_ptxas_for_sm_100a() {
+        let exe = require_optional!(ptxas(), "ptxas from the CUDA toolkit (CUDA_PATH or PATH)");
+        let c = NvrtcCompiler::new(TargetId::parse("cuda:sm100a").expect("token"))
+            .expect("nvrtc target sm_100a");
+        for count in [1u32, 4, 32, 128] {
+            let mut k = ld_kernel(count);
+            if count > NCOLS {
+                // 128 columns need the whole 512-column allocation's worth of columns: read at column 0 of a 128-column allocation.
+                k = ld_kernel_wide(count);
+            }
+            let g = Cuda
+                .lower_kernel(&k)
+                .unwrap_or_else(|e| panic!("x{count}: {e:?}"));
+            let ptx = c
+                .compile(&g.source, &g.name, 10_000)
+                .unwrap_or_else(|e| panic!("x{count}: nvrtc sm_100a: {e}\n{}", g.source));
+            let dir =
+                std::env::temp_dir().join(format!("baracuda-tc4-{}-{count}", std::process::id()));
+            std::fs::create_dir_all(&dir).expect("temp dir");
+            let (src, out) = (dir.join("k.ptx"), dir.join("k.cubin"));
+            std::fs::write(&src, &ptx).expect("write ptx");
+            let r = std::process::Command::new(&exe)
+                .args(["-arch=sm_100a", "-o"])
+                .arg(&out)
+                .arg(&src)
+                .output()
+                .expect("ptxas runs");
+            let _ = std::fs::remove_dir_all(&dir);
+            assert!(
+                r.status.success(),
+                "x{count}: ptxas -arch=sm_100a refused it:\nstdout: {}\nstderr: {}\n{}",
+                String::from_utf8_lossy(&r.stdout),
+                String::from_utf8_lossy(&r.stderr),
+                g.source
+            );
+        }
     }
 
     /// The control: the same source for `sm_89` is refused (by the arch guard), so the acceptance above is about the target.

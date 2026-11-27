@@ -19,10 +19,13 @@ use unpopped::kernel::KernelFn;
 /// proves the STATEMENT's arm; the other two refuse earlier (the published fixture of a warpgroup / tensor-memory / barrier statement carries the
 /// launch or allocation that statement needs), so for those the statement arm is covered by the hand-built kernels of `unlowered_statements.rs`.
 const STATEMENT: &str = "is not lowered by the CUDA backend yet";
-const LAUNCH: &str = "a subgroup, cluster or multi-device launch is not lowered yet";
+const LAUNCH: &str = "a cluster or multi-device launch is not lowered yet";
 const ALLOC: &str = "has no CUDA spelling";
 
-/// Variants the CUDA backend refuses today, with where it stops them (fixtures-list order).
+/// Variants the CUDA backend refuses today, with where it stops them (fixtures-list order). Since ROADMAP S12a: `Collective`,
+/// `MbarInit`, `MbarArrive`, `MbarWait`, `Tcgen05Commit`, `Tcgen05Alloc`, `Tcgen05Dealloc`, `Tcgen05RelinquishPermit` and `Tcgen05Ld`
+/// LOWER (a subgroup launch of 32 lanes, a `Private` array and a `U64` barrier are spelled now), `MbarCompleteTx` and `CopyBulk` are refused at
+/// their own statement arm, and the warpgroup / matrix statements stop at an element type with no CUDA spelling (the fixtures' half tiles).
 const REFUSED: &[(&str, &str)] = &[
     ("MaskedLoad", STATEMENT),
     ("MaskedStore", STATEMENT),
@@ -32,24 +35,15 @@ const REFUSED: &[(&str, &str)] = &[
     ("GridDepWait", STATEMENT),
     ("GridDepLaunchDependents", STATEMENT),
     ("Fence", STATEMENT),
-    ("Collective", LAUNCH),
-    ("Mma", LAUNCH),
-    ("MatrixLoad", LAUNCH),
-    ("MbarInit", ALLOC),
-    ("MbarArrive", ALLOC),
-    ("MbarCompleteTx", ALLOC),
-    ("MbarWait", ALLOC),
-    ("MatrixStore", LAUNCH),
-    ("Wgmma", LAUNCH),
-    ("WgmmaCommit", LAUNCH),
-    ("WgmmaWait", LAUNCH),
-    ("Tcgen05Mma", LAUNCH),
-    ("Tcgen05Commit", LAUNCH),
-    ("Tcgen05Alloc", LAUNCH),
-    ("Tcgen05Dealloc", LAUNCH),
-    ("Tcgen05RelinquishPermit", LAUNCH),
-    ("Tcgen05Ld", LAUNCH),
-    ("CopyBulk", ALLOC),
+    ("Mma", ALLOC),
+    ("MatrixLoad", ALLOC),
+    ("MbarCompleteTx", STATEMENT),
+    ("MatrixStore", ALLOC),
+    ("Wgmma", ALLOC),
+    ("WgmmaCommit", STATEMENT),
+    ("WgmmaWait", STATEMENT),
+    ("Tcgen05Mma", ALLOC),
+    ("CopyBulk", STATEMENT),
     ("CopyUnpack", ALLOC),
 ];
 
