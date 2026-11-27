@@ -48,8 +48,8 @@
 //! A `Tensor` allocation is the 32-bit tensor-memory address that `tcgen05.alloc` writes, kept in one `__shared__` word (it is not an
 //! array: an ordinary access is refused). `Tcgen05Alloc`, `Tcgen05RelinquishPermit` and `Tcgen05Dealloc` lower to the `.cta_group::1`
 //! forms with `.sync.aligned` (a whole warp issues them, which the kernel arranges); the source carries an `#error` guard for an
-//! older `__CUDA_ARCH__` and the interface requires `sm_100a` or newer. `Tcgen05Mma`, `Tcgen05Ld` and `Tcgen05Commit` are not lowered
-//! yet (S12a-3 to S12a-5), and the forms ROADMAP S12 holds (a commit multicast with a `ctaMask`, an `mbarrier` arrive with a count or a
+//! older `__CUDA_ARCH__` and the interface requires `sm_100a` or newer. `Tcgen05Commit` (one barrier, no multicast, no mask) lowers to
+//! `tcgen05.commit.cta_group::1.mbarrier::arrive::one`; `Tcgen05Mma` and `Tcgen05Ld` are not lowered yet (S12a-4 and S12a-5), and the forms ROADMAP S12 holds (a commit multicast with a `ctaMask`, an `mbarrier` arrive with a count or a
 //! mask, an `expect_tx` multicast) are not built.
 //!
 //! # Stage 3: the four statements ruled by board 434 C (NVIDIA only)
@@ -1095,6 +1095,17 @@ impl Cx<'_> {
             Stmt::Tcgen05RelinquishPermit => {
                 self.tcgen05_used = true;
                 self.line("asm volatile(\"tcgen05.relinquish_alloc_permit.cta_group::1.sync.aligned;\" ::: \"memory\");");
+            }
+            // ROADMAP S12a-3: `tcgen05.commit` as the IR spells it: ONE `bar`, an `mbarrier::arrive::one` completion mechanism, no multicast and no
+            // `ctaMask` (the multicast form, which names the destination CTAs, is HELD by ROADMAP S12 (b) and is not built). `.cta_group::1` like the
+            // allocation statements; the barrier is a `Shared` allocation of 64-bit elements, addressed as a `shared::cluster` address (a CTA's own
+            // shared window is part of it). Runtime UNVERIFIED on hardware, ptxas for `sm_100a` only.
+            Stmt::Tcgen05Commit { bar } => {
+                let addr = self.mbar_addr(bar, "Tcgen05Commit")?;
+                self.tcgen05_used = true;
+                self.line(&format!(
+                    "asm volatile(\"tcgen05.commit.cta_group::1.mbarrier::arrive::one.shared::cluster.b64 [%0];\" :: \"r\"({addr}) : \"memory\");"
+                ));
             }
             other => {
                 return Err(refuse(format!(

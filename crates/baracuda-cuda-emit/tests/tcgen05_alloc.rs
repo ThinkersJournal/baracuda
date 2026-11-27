@@ -13,7 +13,9 @@ use baracuda_cuda_emit::Cuda;
 use unpopped::backend::{Backend, LowerError};
 use unpopped::exec::{AllocDecl, ExecId, Extent, LaunchShape, MemorySpace, Scope};
 use unpopped::ir::ScalarExpr;
-use unpopped::kernel::{BarrierKind, Block, BufferRole, KernelFn, Param, Stmt, check_kernel};
+use unpopped::kernel::{
+    BarrierKind, Block, BufferRole, KernelFn, Param, Place, Stmt, check_kernel,
+};
 use unpopped_vocab::ElementKind;
 
 const NCOLS: u32 = 32;
@@ -170,6 +172,74 @@ fn a_tensor_allocation_is_not_an_array() {
     );
 }
 
+/// S12a-3: `tcgen05.commit` on a `Shared` 64-bit barrier, after the barrier was initialised and the allocation made.
+fn commit_kernel() -> KernelFn {
+    let bar = || Place::Alloc {
+        alloc: 1,
+        index: ScalarExpr::ConstInt(0, ElementKind::U32),
+    };
+    KernelFn::new(
+        "commit",
+        ElementKind::F32,
+        vec![Param::buffer(
+            "out",
+            ElementKind::F32,
+            BufferRole::Write,
+            Some(1),
+        )],
+        vec![],
+        Block(vec![
+            Stmt::Tcgen05Alloc { d: 0, ncols: NCOLS },
+            Stmt::MbarInit {
+                bar: bar(),
+                count: ScalarExpr::ConstInt(1, ElementKind::U32),
+            },
+            Stmt::Barrier {
+                scope: Scope::Block,
+                kind: BarrierKind::Full,
+            },
+            Stmt::Tcgen05Commit { bar: bar() },
+            Stmt::Tcgen05RelinquishPermit,
+            Stmt::Tcgen05Dealloc { d: 0, ncols: NCOLS },
+        ]),
+    )
+    .with_allocs(vec![
+        AllocDecl::new(
+            "tmem",
+            MemorySpace::Tensor,
+            ElementKind::F32,
+            Extent::Static(128 * NCOLS),
+        ),
+        AllocDecl::new(
+            "bar",
+            MemorySpace::Shared,
+            ElementKind::I64,
+            Extent::Static(1),
+        ),
+    ])
+    .with_launch(LaunchShape::new([32, 1, 1], [1, 1, 1]))
+}
+
+#[test]
+fn tcgen05_commit_lowers_to_the_one_barrier_form_without_a_mask() {
+    let k = commit_kernel();
+    check_kernel(&k).expect("well-formed");
+    let g = Cuda.lower_kernel(&k).expect("lowers");
+    let s = &g.source;
+    for want in [
+        "tcgen05.commit.cta_group::1.mbarrier::arrive::one.shared::cluster.b64 [%0];",
+        "mbarrier.init.shared::cta.b64",
+        "#error \"tcgen05 needs sm_100a or newer\"",
+    ] {
+        assert!(s.contains(want), "missing `{want}`:\n{s}");
+    }
+    // The HELD forms are not built: no multicast qualifier and no mask operand anywhere in the source.
+    assert!(
+        !s.contains("multicast") && !s.contains("ctaMask"),
+        "a held form leaked in:\n{s}"
+    );
+}
+
 #[cfg(all(feature = "nvrtc", feature = "device-tests"))]
 mod nvrtc {
     use super::*;
@@ -202,6 +272,36 @@ mod nvrtc {
             .compile(&g.source, &g.name, 10_000)
             .unwrap_or_else(|e| panic!("nvrtc sm_100a: {e}\n{}", g.source));
         let dir = std::env::temp_dir().join(format!("baracuda-tc1-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).expect("temp dir");
+        let (src, out) = (dir.join("k.ptx"), dir.join("k.cubin"));
+        std::fs::write(&src, &ptx).expect("write ptx");
+        let r = std::process::Command::new(&exe)
+            .args(["-arch=sm_100a", "-o"])
+            .arg(&out)
+            .arg(&src)
+            .output()
+            .expect("ptxas runs");
+        let _ = std::fs::remove_dir_all(&dir);
+        assert!(
+            r.status.success(),
+            "ptxas -arch=sm_100a refused it:\nstdout: {}\nstderr: {}\n{}",
+            String::from_utf8_lossy(&r.stdout),
+            String::from_utf8_lossy(&r.stderr),
+            g.source
+        );
+    }
+
+    /// S12a-3: the commit kernel (alloc, barrier init, commit, relinquish, dealloc) is accepted by NVRTC and `ptxas -arch=sm_100a`.
+    #[test]
+    fn the_commit_kernel_is_accepted_by_nvrtc_and_ptxas_for_sm_100a() {
+        let exe = require_optional!(ptxas(), "ptxas from the CUDA toolkit (CUDA_PATH or PATH)");
+        let g = Cuda.lower_kernel(&commit_kernel()).expect("lowers");
+        let c = NvrtcCompiler::new(TargetId::parse("cuda:sm100a").expect("token"))
+            .expect("nvrtc target sm_100a");
+        let ptx = c
+            .compile(&g.source, &g.name, 10_000)
+            .unwrap_or_else(|e| panic!("nvrtc sm_100a: {e}\n{}", g.source));
+        let dir = std::env::temp_dir().join(format!("baracuda-tc3-{}", std::process::id()));
         std::fs::create_dir_all(&dir).expect("temp dir");
         let (src, out) = (dir.join("k.ptx"), dir.join("k.cubin"));
         std::fs::write(&src, &ptx).expect("write ptx");
