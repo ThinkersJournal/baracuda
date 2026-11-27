@@ -81,8 +81,11 @@ namespace baracuda { namespace flash_sdpa {
 // The process-wide mutex of the SMEM-attribute critical section. A launcher takes it BEFORE `cudaFuncSetAttribute` and holds it
 // through its own `<<<>>>` launch and the `cudaGetLastError()` after it. Observed: with the lock around the set only,
 // `fa2_hdim_fanout_smoke` failed 8 of 40 runs at the default test threads (0 of 40 single-threaded, 0 of 60 one test per process),
-// every failure `2001` (the launch check, `cudaErrorMissingConfiguration`) in an hdim96 fp16 test. HYPOTHESIS for the cause: another
-// thread's re-set of the same kernel (causal and non-causal share one template) landing between this thread's set and launch.
+// every failure `2001` (the launch check, `cudaErrorMissingConfiguration`) in an hdim96 fp16 test. MEASURED by a mutant that
+// moves the launch outside the lock (the set stays inside): 13 of 60 runs failed with `2001`, the unfixed binary 9 of 60 on the
+// same clock, and the fixed one 0 of 60 on an earlier clock. So the lock must span the launch. The mechanism (another thread's
+// re-set of the same kernel, shared by causal and non-causal, landing between this thread's set and launch) is the reading that
+// fits, not isolated further.
 inline std::mutex& smem_attr_mutex() {
     static std::mutex s_attr_mutex;
     return s_attr_mutex;
