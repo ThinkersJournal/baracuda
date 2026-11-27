@@ -16,6 +16,13 @@ on:
 permissions:
   contents: read
 
+# One feature-set run at a time, newest waiting run kept; `cancel-in-progress: false` so a started run (hours long) always finishes. Its own
+# group, NOT the `device-tests` group of device-tests.yml: sharing one group would let a waiting run of one workflow replace a waiting run of
+# the other, and each covers different tests.
+concurrency:
+  group: device-tests-kernel-features
+  cancel-in-progress: false
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1

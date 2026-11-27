@@ -67,7 +67,7 @@ pub struct ScatterAddArgs<'a, T: Element, const N: usize, I: IndexElement = i32>
 /// `ScatterAddBackwardPlan` because `scatter_add`'s BW is exactly
 /// `gather`.
 ///
-/// **Dtypes**: `{f32, f64}`. Integer scatter-add is hardware-supported
+/// **Dtypes**: `{f32, f64, f16, bf16}` (half adds by compare-and-swap; with duplicate target indices the order of the additions into a cell is not defined, so a half result is only as reproducible as the rounding of its partial sums. torch's CUDA `scatter_add_` / `index_add_` atomics are order-nondeterministic in the same way). Integer scatter-add is hardware-supported
 /// but kept out-of-scope for the trailblazer.
 ///
 /// **Shape limits**: rank in `[1, 8]`; `scatter_dim ∈ [0, N)`;
@@ -84,7 +84,8 @@ pub struct ScatterAddArgs<'a, T: Element, const N: usize, I: IndexElement = i32>
 /// DIVERGES FROM TORCH: torch raises on an out-of-range index; a kernel cannot, so such an index is
 /// skipped and the output cell is left untouched (it may hold stale data, for `index_select` /
 /// `gather` the buffer's previous contents). This holds for every element type, f32 and half alike
-/// (ROADMAP E4 tracks a device error flag that turns it into a typed error).
+/// To detect it, run [`crate::IndexBoundsPlan`] on the index buffer (it raises `Error::IndexOutOfRange`);
+/// ROADMAP E4 tracks fusing that check into these launches.
 #[derive(Debug)]
 pub struct ScatterAddPlan<T: Element, const N: usize> {
     desc: ScatterAddDescriptor<N>,
@@ -128,7 +129,10 @@ impl<T: Element, const N: usize> ScatterAddPlan<T, N> {
             }
         }
 
-        let supported = matches!(T::KIND, ElementKind::F32 | ElementKind::F64);
+        let supported = matches!(
+            T::KIND,
+            ElementKind::F32 | ElementKind::F64 | ElementKind::F16 | ElementKind::Bf16
+        );
         if !supported {
             return Err(Error::Unsupported(
                 "baracuda-kernels::ScatterAddPlan: today only `f32`, `f64` wired",
@@ -248,6 +252,78 @@ impl<T: Element, const N: usize> ScatterAddPlan<T, N> {
         let status = match (T::KIND, I::KIND) {
             (ElementKind::F32, IndexElementKind::I32) => unsafe {
                 baracuda_kernels_sys::baracuda_kernels_scatter_add_f32_run(
+                    upd_numel,
+                    rank,
+                    self.desc.scatter_dim,
+                    self.desc.out_dim_size,
+                    upd_shape.as_ptr(),
+                    stride_upd.as_ptr(),
+                    stride_index.as_ptr(),
+                    stride_out.as_ptr(),
+                    upd_ptr,
+                    idx_ptr,
+                    out_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            (ElementKind::F16, IndexElementKind::I32) => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_scatter_add_f16_run(
+                    upd_numel,
+                    rank,
+                    self.desc.scatter_dim,
+                    self.desc.out_dim_size,
+                    upd_shape.as_ptr(),
+                    stride_upd.as_ptr(),
+                    stride_index.as_ptr(),
+                    stride_out.as_ptr(),
+                    upd_ptr,
+                    idx_ptr,
+                    out_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            (ElementKind::Bf16, IndexElementKind::I32) => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_scatter_add_bf16_run(
+                    upd_numel,
+                    rank,
+                    self.desc.scatter_dim,
+                    self.desc.out_dim_size,
+                    upd_shape.as_ptr(),
+                    stride_upd.as_ptr(),
+                    stride_index.as_ptr(),
+                    stride_out.as_ptr(),
+                    upd_ptr,
+                    idx_ptr,
+                    out_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            (ElementKind::F16, IndexElementKind::I64) => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_scatter_add_i64idx_f16_run(
+                    upd_numel,
+                    rank,
+                    self.desc.scatter_dim,
+                    self.desc.out_dim_size,
+                    upd_shape.as_ptr(),
+                    stride_upd.as_ptr(),
+                    stride_index.as_ptr(),
+                    stride_out.as_ptr(),
+                    upd_ptr,
+                    idx_ptr,
+                    out_ptr,
+                    core::ptr::null_mut(),
+                    0,
+                    stream_ptr,
+                )
+            },
+            (ElementKind::Bf16, IndexElementKind::I64) => unsafe {
+                baracuda_kernels_sys::baracuda_kernels_scatter_add_i64idx_bf16_run(
                     upd_numel,
                     rank,
                     self.desc.scatter_dim,

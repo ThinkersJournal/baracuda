@@ -56981,6 +56981,74 @@ unsafe extern "C" {
         workspace_bytes: usize,
         stream: *mut c_void,
     ) -> i32;
+    /// `gather_backward` for half (f16): atomic add by compare-and-swap (order of additions into one cell undefined).
+    pub fn baracuda_kernels_gather_backward_f16_run(
+        out_numel: i64,
+        rank: i32,
+        gather_dim: i32,
+        src_dim_size: i32,
+        out_shape: *const i32,
+        stride_dout: *const i64,
+        stride_index: *const i64,
+        stride_dsrc: *const i64,
+        dout: *const c_void,
+        index: *const c_void,
+        dsrc: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// `gather_backward` for half (bf16): atomic add by compare-and-swap (order of additions into one cell undefined).
+    pub fn baracuda_kernels_gather_backward_bf16_run(
+        out_numel: i64,
+        rank: i32,
+        gather_dim: i32,
+        src_dim_size: i32,
+        out_shape: *const i32,
+        stride_dout: *const i64,
+        stride_index: *const i64,
+        stride_dsrc: *const i64,
+        dout: *const c_void,
+        index: *const c_void,
+        dsrc: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// `gather_backward` for half (i64idx_f16): atomic add by compare-and-swap (order of additions into one cell undefined).
+    pub fn baracuda_kernels_gather_backward_i64idx_f16_run(
+        out_numel: i64,
+        rank: i32,
+        gather_dim: i32,
+        src_dim_size: i32,
+        out_shape: *const i32,
+        stride_dout: *const i64,
+        stride_index: *const i64,
+        stride_dsrc: *const i64,
+        dout: *const c_void,
+        index: *const c_void,
+        dsrc: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// `gather_backward` for half (i64idx_bf16): atomic add by compare-and-swap (order of additions into one cell undefined).
+    pub fn baracuda_kernels_gather_backward_i64idx_bf16_run(
+        out_numel: i64,
+        rank: i32,
+        gather_dim: i32,
+        src_dim_size: i32,
+        out_shape: *const i32,
+        stride_dout: *const i64,
+        stride_index: *const i64,
+        stride_dsrc: *const i64,
+        dout: *const c_void,
+        index: *const c_void,
+        dsrc: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
     /// Implementability check for `gather_backward_f32`.
     pub fn baracuda_kernels_gather_backward_f32_can_implement(
         out_numel: i64,
@@ -57030,6 +57098,74 @@ unsafe extern "C" {
 
     // ---------- scatter_add ----------
 
+    /// `scatter_add` for f16: atomic add by compare-and-swap on the containing 32-bit word (the order of additions into one cell is not defined).
+    pub fn baracuda_kernels_scatter_add_f16_run(
+        upd_numel: i64,
+        rank: i32,
+        scatter_dim: i32,
+        out_dim_size: i32,
+        upd_shape: *const i32,
+        stride_upd: *const i64,
+        stride_index: *const i64,
+        stride_out: *const i64,
+        updates: *const c_void,
+        index: *const c_void,
+        out: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// `scatter_add` for bf16: atomic add by compare-and-swap on the containing 32-bit word (the order of additions into one cell is not defined).
+    pub fn baracuda_kernels_scatter_add_bf16_run(
+        upd_numel: i64,
+        rank: i32,
+        scatter_dim: i32,
+        out_dim_size: i32,
+        upd_shape: *const i32,
+        stride_upd: *const i64,
+        stride_index: *const i64,
+        stride_out: *const i64,
+        updates: *const c_void,
+        index: *const c_void,
+        out: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// `scatter_add` for f16, i64 index: atomic add by compare-and-swap on the containing 32-bit word (the order of additions into one cell is not defined).
+    pub fn baracuda_kernels_scatter_add_i64idx_f16_run(
+        upd_numel: i64,
+        rank: i32,
+        scatter_dim: i32,
+        out_dim_size: i32,
+        upd_shape: *const i32,
+        stride_upd: *const i64,
+        stride_index: *const i64,
+        stride_out: *const i64,
+        updates: *const c_void,
+        index: *const c_void,
+        out: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// `scatter_add` for bf16, i64 index: atomic add by compare-and-swap on the containing 32-bit word (the order of additions into one cell is not defined).
+    pub fn baracuda_kernels_scatter_add_i64idx_bf16_run(
+        upd_numel: i64,
+        rank: i32,
+        scatter_dim: i32,
+        out_dim_size: i32,
+        upd_shape: *const i32,
+        stride_upd: *const i64,
+        stride_index: *const i64,
+        stride_out: *const i64,
+        updates: *const c_void,
+        index: *const c_void,
+        out: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
     /// `out[..., index[..., j, ...], ...] += updates[..., j, ...]`
     /// along `scatter_dim`. f32 (atomicAdd).
     pub fn baracuda_kernels_scatter_add_f32_run(
@@ -57207,6 +57343,70 @@ unsafe extern "C" {
         workspace_bytes: usize,
         stream: *mut c_void,
     ) -> i32;
+    /// `index_select_backward` for half (f16): atomic add by compare-and-swap (order of additions into one cell undefined).
+    pub fn baracuda_kernels_index_select_backward_f16_run(
+        out_numel: i64,
+        rank: i32,
+        select_dim: i32,
+        src_dim_size: i32,
+        out_shape: *const i32,
+        stride_dout: *const i64,
+        stride_dsrc: *const i64,
+        dout: *const c_void,
+        idx: *const c_void,
+        dsrc: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// `index_select_backward` for half (bf16): atomic add by compare-and-swap (order of additions into one cell undefined).
+    pub fn baracuda_kernels_index_select_backward_bf16_run(
+        out_numel: i64,
+        rank: i32,
+        select_dim: i32,
+        src_dim_size: i32,
+        out_shape: *const i32,
+        stride_dout: *const i64,
+        stride_dsrc: *const i64,
+        dout: *const c_void,
+        idx: *const c_void,
+        dsrc: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// `index_select_backward` for half (i64idx_f16): atomic add by compare-and-swap (order of additions into one cell undefined).
+    pub fn baracuda_kernels_index_select_backward_i64idx_f16_run(
+        out_numel: i64,
+        rank: i32,
+        select_dim: i32,
+        src_dim_size: i32,
+        out_shape: *const i32,
+        stride_dout: *const i64,
+        stride_dsrc: *const i64,
+        dout: *const c_void,
+        idx: *const c_void,
+        dsrc: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// `index_select_backward` for half (i64idx_bf16): atomic add by compare-and-swap (order of additions into one cell undefined).
+    pub fn baracuda_kernels_index_select_backward_i64idx_bf16_run(
+        out_numel: i64,
+        rank: i32,
+        select_dim: i32,
+        src_dim_size: i32,
+        out_shape: *const i32,
+        stride_dout: *const i64,
+        stride_dsrc: *const i64,
+        dout: *const c_void,
+        idx: *const c_void,
+        dsrc: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
     /// Implementability check for `index_select_backward_f32`.
     pub fn baracuda_kernels_index_select_backward_f32_can_implement(
         out_numel: i64,
@@ -57296,6 +57496,44 @@ unsafe extern "C" {
         mask: *const c_void,
         out: *const c_void,
         fill_bits: i64,
+    ) -> i32;
+
+    /// `masked_fill` — 2-byte element (f16 / bf16 as raw bits; the fill value is the bit pattern in the low 16 bits of `fill_bits`).
+    pub fn baracuda_kernels_masked_fill_u16_run(
+        numel: i64,
+        src: *const c_void,
+        mask: *const c_void,
+        out: *mut c_void,
+        fill_bits: i64,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// Implementability check for `masked_fill_u16`.
+    pub fn baracuda_kernels_masked_fill_u16_can_implement(
+        numel: i64,
+        src: *const c_void,
+        mask: *const c_void,
+        out: *const c_void,
+        fill_bits: i64,
+    ) -> i32;
+
+    /// `masked_fill_backward` — 2-byte element (f16 / bf16 as raw bits).
+    pub fn baracuda_kernels_masked_fill_backward_u16_run(
+        numel: i64,
+        dout: *const c_void,
+        mask: *const c_void,
+        dsrc: *mut c_void,
+        workspace: *mut c_void,
+        workspace_bytes: usize,
+        stream: *mut c_void,
+    ) -> i32;
+    /// Implementability check for `masked_fill_backward_u16`.
+    pub fn baracuda_kernels_masked_fill_backward_u16_can_implement(
+        numel: i64,
+        dout: *const c_void,
+        mask: *const c_void,
+        dsrc: *const c_void,
     ) -> i32;
 
     /// `masked_fill` — i32.
@@ -57410,6 +57648,28 @@ unsafe extern "C" {
         dout: *const c_void,
         mask: *const c_void,
         dsrc: *const c_void,
+    ) -> i32;
+
+    // ---------- index_bounds (ROADMAP E4) ----------
+
+    /// Counts the values of a contiguous i32 index buffer outside `[0, bound)` into the device
+    /// `uint32` word `flag` (zeroed first when `clear != 0`).
+    pub fn baracuda_kernels_index_bounds_i32_run(
+        n: i64,
+        bound: i64,
+        index: *const c_void,
+        flag: *mut c_void,
+        clear: i32,
+        stream: *mut c_void,
+    ) -> i32;
+    /// As `index_bounds_i32`, for an i64 index buffer.
+    pub fn baracuda_kernels_index_bounds_i64_run(
+        n: i64,
+        bound: i64,
+        index: *const c_void,
+        flag: *mut c_void,
+        clear: i32,
+        stream: *mut c_void,
     ) -> i32;
 
     // ---------- one_hot (FW) ----------

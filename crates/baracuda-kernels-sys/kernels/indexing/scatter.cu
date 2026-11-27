@@ -11,9 +11,13 @@
 
 BARACUDA_KERNELS_SCATTER_ADD_INSTANTIATE(scatter_add_f32, float,  int32_t)
 BARACUDA_KERNELS_SCATTER_ADD_INSTANTIATE(scatter_add_f64, double, int32_t)
+BARACUDA_KERNELS_SCATTER_ADD_INSTANTIATE(scatter_add_f16, __half,        int32_t)
+BARACUDA_KERNELS_SCATTER_ADD_INSTANTIATE(scatter_add_bf16, __nv_bfloat16, int32_t)
 
 BARACUDA_KERNELS_SCATTER_ADD_INSTANTIATE(scatter_add_i64idx_f32, float,  int64_t)
 BARACUDA_KERNELS_SCATTER_ADD_INSTANTIATE(scatter_add_i64idx_f64, double, int64_t)
+BARACUDA_KERNELS_SCATTER_ADD_INSTANTIATE(scatter_add_i64idx_f16, __half,        int64_t)
+BARACUDA_KERNELS_SCATTER_ADD_INSTANTIATE(scatter_add_i64idx_bf16, __nv_bfloat16, int64_t)
 
 // Phase 39 — pure-assign scatter (no accumulation).
 BARACUDA_KERNELS_SCATTER_INSTANTIATE(scatter_f32,  float,          int32_t)

@@ -46,7 +46,7 @@
 //! the IR does not promise (the whole run in bounds, a unit innermost source stride, natural alignment of both addresses)
 //! are checked and trap. `Collective` lowers at `Subgroup` scope only, as a warp of 32 with the full mask: `Shuffle`
 //! (`Idx` any integer, `Up`/`Down`/`Xor` with a `u32` distance or mask, since a signed one means something else off the
-//! ends of the warp), `Vote`, `Broadcast`, `Reduce` and `Scan` (inclusive, and exclusive for `Sum`/`And`/`Or`/`Xor`) with
+//! ends of the warp), `Vote`, `Broadcast`, `Reduce` and `Scan` (inclusive, and exclusive for `Sum`/`And`/`Or`/`Xor` and the integer `Max`/`Min`) with
 //! `Sum` (wrapping), `Max`, `Min` on integers, `Sum` on floats (the order differs from the oracle's left-to-right fold, so
 //! compare within a tolerance), and the integer bit ops. A float `Max`/`Min`, a `Block`-scope collective, a block that is
 //! not whole warps, `CollectiveTuple`, `ReduceWith` and `ScanWith` decline by name. The emitted source says it lowers a
@@ -126,6 +126,28 @@ fn is_float(t: ElementKind) -> bool {
 
 fn is_signed_int(t: ElementKind) -> bool {
     matches!(t, ElementKind::I32 | ElementKind::I64)
+}
+
+/// The least (`greatest == false`) or greatest value of an integer type, as a C expression of type `tn`; `None` for a type that is not an
+/// integer of the CUDA table. The identity an exclusive integer `Max` / `Min` scan hands lane 0.
+fn int_extreme(t: ElementKind, greatest: bool, tn: &str) -> Option<String> {
+    let lit = match (t, greatest) {
+        (ElementKind::I8, false) => "-128",
+        (ElementKind::I8, true) => "127",
+        (ElementKind::I16, false) => "-32768",
+        (ElementKind::I16, true) => "32767",
+        (ElementKind::I32, false) => "(-2147483647 - 1)",
+        (ElementKind::I32, true) => "2147483647",
+        (ElementKind::I64, false) => "(-9223372036854775807ll - 1)",
+        (ElementKind::I64, true) => "9223372036854775807ll",
+        (ElementKind::U8 | ElementKind::U16 | ElementKind::U32 | ElementKind::U64, false) => "0",
+        (ElementKind::U8, true) => "255",
+        (ElementKind::U16, true) => "65535",
+        (ElementKind::U32, true) => "4294967295u",
+        (ElementKind::U64, true) => "18446744073709551615ull",
+        _ => return None,
+    };
+    Some(format!("(({tn}){lit})"))
 }
 
 /// The unsigned C type of the same width, for wrapping signed arithmetic.
@@ -734,9 +756,18 @@ impl Cx<'_> {
                     fold(*op, "_v", "_n")?
                 ));
                 if *exclusive {
+                    // Lane 0 of an exclusive scan is the fold's identity (the oracle's rule, unpopped 0.58.4): 0 for Sum/Or/Xor, all ones for
+                    // And, the type's minimum for an integer Max and its maximum for an integer Min. A float Max/Min and a Prod never reach
+                    // here: the fold above has already refused them by name.
                     let ident = match op {
                         ReduceOp::Sum | ReduceOp::Or | ReduceOp::Xor => format!("({tn})0"),
                         ReduceOp::And => format!("({tn})(~({tn})0)"),
+                        ReduceOp::Max | ReduceOp::Min => int_extreme(t, matches!(op, ReduceOp::Min), &tn)
+                            .ok_or_else(|| {
+                                refuse(format!(
+                                    "kernel `{name}`: an exclusive `{op:?}` scan of {t:?} has no lowered identity"
+                                ))
+                            })?,
                         _ => {
                             return Err(refuse(format!(
                                 "kernel `{name}`: an exclusive `{op:?}` scan has no identity"
