@@ -105,6 +105,9 @@ fn pitched_2d_roundtrip() {
 }
 
 static HOST_CALLBACK_FIRED: AtomicU32 = AtomicU32::new(0);
+// Its own counter: sharing `HOST_CALLBACK_FIRED` let the two host-callback tests (run on parallel threads) add to each
+// other's count, so `explicit_graph_kernel_and_host_nodes` read 2 where it expected 1.
+static GRAPH_HOST_NODE_FIRED: AtomicU32 = AtomicU32::new(0);
 
 #[test]
 fn stream_launch_host_func() {
@@ -214,7 +217,7 @@ fn func_attributes_returns_kernel_metadata() {
 }
 
 unsafe extern "C" fn bump_counter(_: *mut c_void) {
-    HOST_CALLBACK_FIRED.fetch_add(1, Ordering::SeqCst);
+    GRAPH_HOST_NODE_FIRED.fetch_add(1, Ordering::SeqCst);
 }
 
 #[test]
@@ -264,7 +267,7 @@ fn explicit_graph_kernel_and_host_nodes() {
             .unwrap()
     };
 
-    HOST_CALLBACK_FIRED.store(0, Ordering::SeqCst);
+    GRAPH_HOST_NODE_FIRED.store(0, Ordering::SeqCst);
     let _host_node = unsafe {
         graph
             .add_host_node(&[kernel_node], bump_counter, core::ptr::null_mut())
@@ -277,7 +280,7 @@ fn explicit_graph_kernel_and_host_nodes() {
     exec.launch(&stream).unwrap();
     stream.synchronize().unwrap();
 
-    assert_eq!(HOST_CALLBACK_FIRED.load(Ordering::SeqCst), 1);
+    assert_eq!(GRAPH_HOST_NODE_FIRED.load(Ordering::SeqCst), 1);
     let mut got = vec![0.0f32; n as usize];
     d_c.copy_to_host(&mut got).unwrap();
     assert_eq!(expected, got);
@@ -347,7 +350,7 @@ fn graph_exec_update_retargets_output() {
 fn capture_mode_enum_also_works() {
     let device = Device::from_ordinal(0);
     device.set_current().unwrap();
-    let stream = Stream::new().unwrap();
+    let stream = Stream::non_blocking().unwrap();
     let graph = stream
         .capture(CaptureMode::ThreadLocal, |_| Ok(()))
         .unwrap();
