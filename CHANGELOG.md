@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.223 - 2026-11-27
+
+CI script only, no Rust change. `xtask test-gpu` stops at the first failing test binary unless `--no-fail-fast` is passed (`xtask/src/main.rs:190`, the `keep_going` flag), and none of the 44 `cargo gpu-test` commands in `.github/workflows/device-tests.yml` (34) and `device-tests-kernel-features.yml` (10) passed it. Device run 45928213378 (main 09d5431d, `workflow_dispatch`) ended `failure`: its kernels step exited 101 at `fa2_hdim_fanout_smoke` (`fa2_fanout_hdim96_f16_causal`, `KernelInternal(2001)`), so the 413 ok results of that run were not the whole suite; the test binaries after it did not run in that step. Every step now keeps going after a failing binary and still ends red (the first non-zero exit code is the result), so a red step names every failing binary, not just the first. Verified: `cargo test --no-run --no-fail-fast` is accepted by cargo (the xtask build phase passes the same arguments), both workflow files still parse as YAML, and a count over the two files finds 44 `cargo gpu-test` commands and 0 without the flag. Not verified: a device run with the flag (CI device run queued, not claimed).
+
 ## 0.1.0-alpha.222 - 2026-11-27
 
 The `unpopped`, `unpopped-vocab`, `unpopped-convert` and `unpopped-cpu-c` requirements move from `~0.60.1` to `~0.60.32` (root `Cargo.toml`, `baracuda-cuda-emit`, `tools/kiss-ref-diff`), and both lockfiles resolve 0.60.32 (was 0.60.8). One copy of `unpopped-vocab` in each (`cargo tree --locked -i unpopped-vocab` prints one line). Unpopped 0.60.32 makes its oracle trap `DataRace` for a kernel whose named-barrier phases raced, where it previously ran with wrong values; a baracuda differential or oracle test that newly traps names a racy kernel to fix. Measured: the driver-free suite (`baracuda-cuda-emit`, `-vocab`, `-parse`, `-bench-stats`, no GPU) passes unchanged on 0.60.32, none trapping. No Rust source changes. The CI device run is queued, not claimed.
