@@ -1327,11 +1327,26 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
             k.name
         )));
     }
+    // The kernel's compute type with no CUDA spelling (the wide integers, `F128`, ...) is refused by name before anything is emitted.
+    if type_name(k.compute).is_none() {
+        return Err(refuse(format!(
+            "kernel `{}`: compute type {:?} has no CUDA spelling",
+            k.name, k.compute
+        )));
+    }
     for (i, d) in k.locals.iter().enumerate() {
         if d.lanes != 1 {
             return Err(refuse(format!(
                 "kernel `{}`: local {i} is packed ({} lanes)",
                 k.name, d.lanes
+            )));
+        }
+        // A local of an element type the emitter does not compute (the wide integers `I128`/`U128`/`I256`/`U256` the 0.62 checker admits:
+        // their carry-flag lowering is held, ROADMAP S14) is refused HERE, by name, even when nothing reads it.
+        if !computed(d.elem) {
+            return Err(refuse(format!(
+                "kernel `{}`: local {i} of element type {:?} is not lowered (no CUDA spelling; stage 2 computes in f32, f64, i32, u32 and i64)",
+                k.name, d.elem
             )));
         }
     }

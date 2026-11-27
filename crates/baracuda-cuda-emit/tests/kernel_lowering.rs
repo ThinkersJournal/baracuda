@@ -669,6 +669,114 @@ fn the_seven_new_element_rows_are_each_declined_by_name() {
     );
 }
 
+/// Unpopped 0.61.3+ (so 0.62): `check_kernel` COMPUTES `I128`/`U128`/`I256`/`U256`. The carry-flag lowering is held (ROADMAP S14), so the emitter
+/// must REFUSE them BY NAME before emitting, wherever the type can appear on the kernel surface: a buffer, a scalar parameter, a local
+/// declaration, the kernel's compute type and a constant. CPU-only (nothing is compiled or run). Positive control: the same shapes with `I32` lower.
+#[test]
+fn wide_integers_are_refused_by_name_on_every_kernel_surface() {
+    use unpopped::kernel::LocalDecl;
+    // The shapes, each parameterised by the element type.
+    type Shape = (&'static str, fn(ElementKind) -> KernelFn);
+    let shapes: [Shape; 5] = [
+        ("buffer", |t| {
+            KernelFn::new(
+                "w",
+                I32,
+                vec![Param::buffer("x", t, BufferRole::ReadWrite, Some(1))],
+                vec![],
+                Block(Vec::new()),
+            )
+        }),
+        ("scalar parameter", |t| {
+            KernelFn::new(
+                "w",
+                I32,
+                vec![Param::scalar("x", t, 0)],
+                vec![LocalDecl::scalar(t)],
+                Block(Vec::new()),
+            )
+        }),
+        ("local", |t| {
+            KernelFn::new(
+                "w",
+                I32,
+                vec![Param::scalar("n", U32, 0)],
+                vec![LocalDecl::scalar(U32), LocalDecl::scalar(t)],
+                Block(Vec::new()),
+            )
+        }),
+        ("constant", |t| {
+            KernelFn::new(
+                "w",
+                I32,
+                vec![Param::scalar("n", U32, 0)],
+                vec![LocalDecl::scalar(U32), LocalDecl::scalar(t)],
+                Block(vec![Stmt::Let {
+                    local: 1,
+                    init: ScalarExpr::ConstInt(1, t),
+                }]),
+            )
+        }),
+        ("compute type", |t| {
+            KernelFn::new(
+                "w",
+                t,
+                vec![Param::scalar("n", U32, 0)],
+                vec![LocalDecl::scalar(U32)],
+                Block(Vec::new()),
+            )
+        }),
+    ];
+    let mut checker_admits = 0;
+    for kind in [
+        ElementKind::I128,
+        ElementKind::U128,
+        ElementKind::I256,
+        ElementKind::U256,
+    ] {
+        let name = format!("{kind:?}");
+        for (what, make) in &shapes {
+            let k = make(kind);
+            // Whatever the checker says, the emitter must not emit and must not panic.
+            let r = std::panic::catch_unwind(|| Cuda.lower_kernel(&k));
+            let r = r.unwrap_or_else(|_| panic!("{name} {what}: the emitter PANICKED"));
+            let d = match r {
+                Err(LowerError::UnsupportedKernel { detail }) => detail,
+                Err(other) => panic!("{name} {what}: expected UnsupportedKernel, got {other:?}"),
+                Ok(g) => panic!(
+                    "{name} {what}: the emitter EMITTED:
+{}",
+                    g.source
+                ),
+            };
+            if check_kernel(&k).is_ok() {
+                checker_admits += 1;
+                assert!(
+                    !d.contains("ill-formed"),
+                    "{name} {what}: the checker admits it, so this must be the emitter's own refusal: {d}"
+                );
+            }
+            assert!(
+                d.contains(&name) || d.contains("no CUDA spelling"),
+                "{name} {what}: the refusal must name the dtype: {d}"
+            );
+        }
+    }
+    // The census must not be vacuous: the checker admits at least the buffer shape of some wide row.
+    assert!(
+        checker_admits > 0,
+        "the checker admitted none of the wide-integer shapes, so only its own refusal was exercised"
+    );
+    // Positive control: the same five shapes with `I32` lower, so the refusals above are about the type.
+    for (what, make) in &shapes {
+        let k = make(I32);
+        check_kernel(&k)
+            .unwrap_or_else(|e| panic!("control {what}: the shape must be well-formed: {e:?}"));
+        Cuda.lower_kernel(&k)
+            .unwrap_or_else(|e| panic!("control {what}: an I32 kernel must lower: {e:?}"));
+    }
+}
+
 /// The emitted source must be real CUDA: compile it with NVRTC (PTX only, nothing runs). `sm_89` always; `sm_61` when the
 /// installed NVRTC accepts it (CUDA 13.x does not: set `BARACUDA_NVRTC_PATH` to a 12.x one, see `docs/sm61-p40-design.md`).
 #[cfg(all(feature = "nvrtc", feature = "device-tests"))]
