@@ -15,8 +15,12 @@ BARACUDA_KERNELS_MASKED_FILL_INSTANTIATE(masked_fill_f32, float, int64_t)
 BARACUDA_KERNELS_MASKED_FILL_INSTANTIATE(masked_fill_f64, double, int64_t)
 BARACUDA_KERNELS_MASKED_FILL_INSTANTIATE(masked_fill_i32, int32_t, int64_t)
 BARACUDA_KERNELS_MASKED_FILL_INSTANTIATE(masked_fill_bool, uint8_t, int64_t)
+// f16 and bf16 (2 bytes, no arithmetic): the fill value is a BIT PATTERN in the low 16 bits of `fill_bits`, so every half value fills
+// exactly (-inf, -65504, NaN payloads, -0) and a select between `src` and the fill never converts through f32.
+BARACUDA_KERNELS_MASKED_FILL_INSTANTIATE(masked_fill_u16, uint16_t, int64_t)
 
 BARACUDA_KERNELS_MASKED_FILL_BACKWARD_INSTANTIATE(masked_fill_backward_f32, float)
 BARACUDA_KERNELS_MASKED_FILL_BACKWARD_INSTANTIATE(masked_fill_backward_f64, double)
 BARACUDA_KERNELS_MASKED_FILL_BACKWARD_INSTANTIATE(masked_fill_backward_i32, int32_t)
 BARACUDA_KERNELS_MASKED_FILL_BACKWARD_INSTANTIATE(masked_fill_backward_bool, uint8_t)
+BARACUDA_KERNELS_MASKED_FILL_BACKWARD_INSTANTIATE(masked_fill_backward_u16, uint16_t)
