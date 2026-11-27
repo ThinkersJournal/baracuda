@@ -295,57 +295,6 @@ fn ld_kernel(count: u32) -> KernelFn {
     })
 }
 
-/// The same kernel with a 128-column allocation, for a 128-column load.
-fn ld_kernel_wide(count: u32) -> KernelFn {
-    let mut k = ld_kernel(count);
-    k = KernelFn::new(
-        "ld",
-        ElementKind::F32,
-        vec![Param::buffer(
-            "out",
-            ElementKind::F32,
-            BufferRole::Write,
-            Some(1),
-        )],
-        vec![],
-        Block(vec![
-            Stmt::Tcgen05Alloc { d: 0, ncols: 128 },
-            Stmt::Barrier {
-                scope: Scope::Block,
-                kind: BarrierKind::Full,
-            },
-            Stmt::Tcgen05Ld {
-                src: 0,
-                col: ScalarExpr::ConstInt(0, ElementKind::U32),
-                count,
-                dst: 1,
-            },
-            Stmt::Barrier {
-                scope: Scope::Block,
-                kind: BarrierKind::Full,
-            },
-            Stmt::Tcgen05RelinquishPermit,
-            Stmt::Tcgen05Dealloc { d: 0, ncols: 128 },
-        ]),
-    )
-    .with_allocs(vec![
-        AllocDecl::new(
-            "tmem",
-            MemorySpace::Tensor,
-            ElementKind::F32,
-            Extent::Static(128 * 128),
-        ),
-        AllocDecl::new(
-            "regs",
-            MemorySpace::Private,
-            ElementKind::F32,
-            Extent::Static(count),
-        ),
-    ])
-    .with_launch(k.launch.expect("a launch"));
-    k
-}
-
 #[test]
 fn tcgen05_ld_lowers_to_the_32x32b_load_and_the_wait() {
     for count in [1u32, 4, 32] {
@@ -385,6 +334,57 @@ mod nvrtc {
     use baracuda_driver::require_optional;
     use unpopped::jit::Compiler;
     use unpopped_vocab::TargetId;
+
+    /// The same kernel with a 128-column allocation, for a 128-column load.
+    fn ld_kernel_wide(count: u32) -> KernelFn {
+        let mut k = ld_kernel(count);
+        k = KernelFn::new(
+            "ld",
+            ElementKind::F32,
+            vec![Param::buffer(
+                "out",
+                ElementKind::F32,
+                BufferRole::Write,
+                Some(1),
+            )],
+            vec![],
+            Block(vec![
+                Stmt::Tcgen05Alloc { d: 0, ncols: 128 },
+                Stmt::Barrier {
+                    scope: Scope::Block,
+                    kind: BarrierKind::Full,
+                },
+                Stmt::Tcgen05Ld {
+                    src: 0,
+                    col: ScalarExpr::ConstInt(0, ElementKind::U32),
+                    count,
+                    dst: 1,
+                },
+                Stmt::Barrier {
+                    scope: Scope::Block,
+                    kind: BarrierKind::Full,
+                },
+                Stmt::Tcgen05RelinquishPermit,
+                Stmt::Tcgen05Dealloc { d: 0, ncols: 128 },
+            ]),
+        )
+        .with_allocs(vec![
+            AllocDecl::new(
+                "tmem",
+                MemorySpace::Tensor,
+                ElementKind::F32,
+                Extent::Static(128 * 128),
+            ),
+            AllocDecl::new(
+                "regs",
+                MemorySpace::Private,
+                ElementKind::F32,
+                Extent::Static(count),
+            ),
+        ])
+        .with_launch(k.launch.expect("a launch"));
+        k
+    }
 
     fn ptxas() -> Option<std::path::PathBuf> {
         let exe = if cfg!(windows) { "ptxas.exe" } else { "ptxas" };
