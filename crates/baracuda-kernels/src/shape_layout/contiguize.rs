@@ -405,7 +405,18 @@ fn type_size_matches_kind<T>(kind: ElementKind) -> bool {
         ElementKind::F32 | ElementKind::F32Strict | ElementKind::I32 | ElementKind::U32 => 4,
         ElementKind::F64 | ElementKind::I64 | ElementKind::U64 | ElementKind::Complex64 => 8,
         ElementKind::Complex128 => 16,
-        ElementKind::B1 | ElementKind::F4E2M1 | ElementKind::F6E2M3 | ElementKind::F6E3M2 => {
+        ElementKind::B1
+        | ElementKind::F4E2M1
+        | ElementKind::F6E2M3
+        | ElementKind::F6E3M2
+        // KISS 0.24.0 rows (unpopped 0.60): no kernel moves them yet (declined by name until lowered).
+        | ElementKind::F128
+        | ElementKind::I128
+        | ElementKind::U128
+        | ElementKind::I256
+        | ElementKind::U256
+        | ElementKind::F8E3M4
+        | ElementKind::F8UE4M3 => {
             return false;
         } // out of scope
     };
