@@ -37,6 +37,15 @@
 //! but only the five above are loaded or stored. An out-of-bounds coordinate or `Shared` index, or a zero `For`
 //! step, executes `__trap()`, as the IR's semantics trap.
 //!
+//! # Tensor memory (ROADMAP S12a-1; runtime unverified, ptxas for `sm_100a` only)
+//!
+//! A `Tensor` allocation is the 32-bit tensor-memory address that `tcgen05.alloc` writes, kept in one `__shared__` word (it is not an
+//! array: an ordinary access is refused). `Tcgen05Alloc`, `Tcgen05RelinquishPermit` and `Tcgen05Dealloc` lower to the `.cta_group::1`
+//! forms with `.sync.aligned` (a whole warp issues them, which the kernel arranges); the source carries an `#error` guard for an
+//! older `__CUDA_ARCH__` and the interface requires `sm_100a` or newer. `Tcgen05Mma`, `Tcgen05Ld` and `Tcgen05Commit` are not lowered
+//! yet (S12a-3 to S12a-5), and the forms ROADMAP S12 holds (a commit multicast with a `ctaMask`, an `mbarrier` arrive with a count or a
+//! mask, an `expect_tx` multicast) are not built.
+//!
 //! # Stage 3: the four statements ruled by board 434 C (NVIDIA only)
 //!
 //! `CopyAsync`, `AsyncCommit` and `AsyncWait` lower to `cp.async.ca.shared.global`, `cp.async.commit_group` and
@@ -282,6 +291,8 @@ struct Cx<'a> {
     fresh: u32,
     /// The kernel uses `cp.async` (needs sm_80 or newer).
     async_used: bool,
+    /// The kernel uses a `tcgen05` statement (needs sm_100a or newer; ROADMAP S12a).
+    tcgen05_used: bool,
     /// The kernel lowers a statement under a patent risk note (board 434 C).
     flagged: bool,
 }
@@ -995,6 +1006,42 @@ impl Cx<'_> {
                 }
                 self.line("asm volatile(\"fence.proxy.async.shared::cta;\" ::: \"memory\");");
             }
+            // ROADMAP S12a-1: tensor-memory management. `.cta_group::1` only (the IR does not model a CTA pair); issued by a whole warp
+            // (`.sync.aligned`), which the kernel arranges, as the oracle acts on the warp's first lane. Runtime UNVERIFIED on hardware (no
+            // sm_100 device on the lane's box): the emitted text is checked by ptxas for `sm_100a` only.
+            Stmt::Tcgen05Alloc { d, ncols } => {
+                self.tmem_columns(*d, *ncols, "Tcgen05Alloc")?;
+                self.tcgen05_used = true;
+                self.line("{");
+                self.depth += 1;
+                self.line(&format!(
+                    "unsigned int _s = (unsigned int)__cvta_generic_to_shared(&tm{d});"
+                ));
+                self.line(&format!(
+                    "asm volatile(\"tcgen05.alloc.cta_group::1.sync.aligned.shared::cta.b32 [%0], %1;\" :: \"r\"(_s), \"r\"({ncols}u) : \"memory\");"
+                ));
+                self.depth -= 1;
+                self.line("}");
+            }
+            Stmt::Tcgen05Dealloc { d, ncols } => {
+                self.tmem_columns(*d, *ncols, "Tcgen05Dealloc")?;
+                self.tcgen05_used = true;
+                self.line("{");
+                self.depth += 1;
+                // The address was written by the alloc and published by the kernel's own barrier; read it ordered with the asm.
+                self.line(&format!(
+                    "unsigned int _t = *(volatile unsigned int*)&tm{d};"
+                ));
+                self.line(&format!(
+                    "asm volatile(\"tcgen05.dealloc.cta_group::1.sync.aligned.b32 %0, %1;\" :: \"r\"(_t), \"r\"({ncols}u) : \"memory\");"
+                ));
+                self.depth -= 1;
+                self.line("}");
+            }
+            Stmt::Tcgen05RelinquishPermit => {
+                self.tcgen05_used = true;
+                self.line("asm volatile(\"tcgen05.relinquish_alloc_permit.cta_group::1.sync.aligned;\" ::: \"memory\");");
+            }
             other => {
                 return Err(refuse(format!(
                     "kernel `{}`: statement `{}` is not lowered by the CUDA backend yet",
@@ -1002,6 +1049,36 @@ impl Cx<'_> {
                     stmt_name(other)
                 )));
             }
+        }
+        Ok(())
+    }
+
+    /// The backstop for a tensor-memory allocation statement: `d` names a declared `Tensor` allocation, `ncols` is a power of two in
+    /// 32..=512 (PTX ISA 9.5 9.7.18.7.1: the unit is 32 columns and, without `.exclusive`, a power of two) and the allocation holds
+    /// `128 * ncols` elements. The checker enforces the same; this refuses by name if a caller skipped it.
+    fn tmem_columns(&self, d: u32, ncols: u32, what: &str) -> Result<(), LowerError> {
+        let name = &self.k.name;
+        let Some(decl) = self.k.allocs.get(d as usize) else {
+            return Err(refuse(format!(
+                "kernel `{name}`: `{what}` names allocation {d}, which is not declared"
+            )));
+        };
+        if !matches!(decl.space, MemorySpace::Tensor) {
+            return Err(refuse(format!(
+                "kernel `{name}`: `{what}` on `{}` ({:?}): not a `Tensor` allocation",
+                decl.name, decl.space
+            )));
+        }
+        if !(32..=512).contains(&ncols) || !ncols.is_power_of_two() {
+            return Err(refuse(format!(
+                "kernel `{name}`: `{what}` of {ncols} columns: a power of two from 32 to 512 is required"
+            )));
+        }
+        if !matches!(decl.extent, Extent::Static(n) if u64::from(n) == 128 * u64::from(ncols)) {
+            return Err(refuse(format!(
+                "kernel `{name}`: `{what}` of {ncols} columns on `{}`: the allocation must hold exactly 128 * {ncols} elements, has {:?}",
+                decl.name, decl.extent
+            )));
         }
         Ok(())
     }
@@ -1095,9 +1172,22 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
                     )));
                 }
             }
+            // A `Tensor` allocation (tensor memory, `tcgen05`) is not an array here: it is the 32-bit tensor-memory ADDRESS that
+            // `tcgen05.alloc` writes, kept in one `__shared__` word. Its element type is the tensor element type (F32, I32 or U32).
+            (MemorySpace::Tensor, Extent::Static(_)) => {
+                if !matches!(
+                    a.elem,
+                    ElementKind::F32 | ElementKind::I32 | ElementKind::U32
+                ) {
+                    return Err(refuse(format!(
+                        "kernel `{}`: `Tensor` allocation `{}` of element type {:?} is not lowered (F32, I32 or U32)",
+                        k.name, a.name, a.elem
+                    )));
+                }
+            }
             (space, extent) => {
                 return Err(refuse(format!(
-                    "kernel `{}`: allocation `{}` ({space:?}, {extent:?}) is not lowered yet (stage 2 lowers static `Shared` arrays)",
+                    "kernel `{}`: allocation `{}` ({space:?}, {extent:?}) is not lowered yet (static `Shared` arrays and `Tensor` allocations only)",
                     k.name, a.name
                 )));
             }
@@ -1145,6 +1235,7 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
         depth: 1,
         fresh: 0,
         async_used: false,
+        tcgen05_used: false,
         flagged: false,
     };
     for (i, p) in k.params.iter().enumerate() {
@@ -1154,8 +1245,13 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     }
     for (i, a) in k.allocs.iter().enumerate() {
         if let Extent::Static(n) = a.extent {
-            let t = type_name(a.elem).unwrap_or_default();
-            cx.line(&format!("__shared__ {t} sh{i}[{n}];"));
+            if matches!(a.space, MemorySpace::Tensor) {
+                // The tensor-memory address `tcgen05.alloc` writes (one word per block); an ordinary access to it is refused.
+                cx.line(&format!("__shared__ unsigned int tm{i};"));
+            } else {
+                let t = type_name(a.elem).unwrap_or_default();
+                cx.line(&format!("__shared__ {t} sh{i}[{n}];"));
+            }
         }
     }
     if k.launch.is_none() {
@@ -1181,6 +1277,9 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     ));
     if cx.async_used {
         src.push_str("#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 800\n#error \"cp.async needs sm_80 or newer\"\n#endif\n");
+    }
+    if cx.tcgen05_used {
+        src.push_str("#if defined(__CUDA_ARCH__) && __CUDA_ARCH__ < 1000\n#error \"tcgen05 needs sm_100a or newer\"\n#endif\n");
     }
     if cx.flagged {
         src.push_str("// Lowers an asynchronous-copy or collective statement under a patent risk note (board 434 C, docs/PATENT-SWEEP.md hits 22 and 23). Not a clearance.\n");
@@ -1209,6 +1308,9 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     }
     if cx.async_used {
         iface = iface.with_requires("cp.async (sm_80 or newer)");
+    }
+    if cx.tcgen05_used {
+        iface = iface.with_requires("tcgen05 (sm_100a or newer)");
     }
     Ok(GeneratedKernel::new(name, src).with_interface(iface))
 }
