@@ -41,6 +41,15 @@ pub enum Error {
     #[error("baracuda-cutlass: misaligned operand")]
     MisalignedOperand,
 
+    /// An index tensor held `count` values outside `[0, bound)`, found by the
+    /// device-side bounds check (`IndexBoundsPlan`). torch raises on such an index;
+    /// the indexing kernels themselves skip it.
+    #[error("baracuda-kernels: {count} index value(s) out of range")]
+    IndexOutOfRange {
+        /// Number of out-of-range index values the check counted.
+        count: u32,
+    },
+
     /// The provided workspace is too small for the selected plan or
     /// `Workspace::None` was passed when scratch was required.
     #[error("baracuda-cutlass: workspace too small (need {needed} bytes, got {got})")]

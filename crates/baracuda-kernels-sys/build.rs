@@ -1222,6 +1222,7 @@ fn collect_kernel_files() -> Vec<&'static str> {
             "indexing/gather_rows.cu",
             "indexing/masked_fill.cu",
             "indexing/one_hot.cu",
+            "indexing/index_bounds.cu",
             "indexing/nonzero.cu",
             // Phase 39 (Fuel 6c.4 Gap 5) — index_add (algorithmically the
             // same as `index_select_backward`, exposed under a fresh
