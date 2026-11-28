@@ -963,3 +963,45 @@ fn the_integer_bit_ops_on_the_kernel_surface_are_refused_by_name_or_declined() {
         );
     }
 }
+
+/// `Stmt::Assume` (unpopped 0.64) is a value fact an emitter may ignore: the emitted source is byte-equal with and without it,
+/// at the start, in the middle and at the end of a body. Control: a statement that does lower (`Barrier`) DOES change the source,
+/// so the comparison can tell two sources apart.
+#[test]
+fn an_assume_never_changes_the_emitted_source_of_the_rest_of_the_kernel() {
+    let base = scale();
+    check_kernel(&base).expect("well-formed");
+    let want = Cuda.lower_kernel(&base).expect("the base lowers").source;
+    let fact = || Stmt::Assume {
+        cond: ScalarExpr::ConstInt(1, I32),
+    };
+    let n = base.body.0.len();
+    assert!(n >= 1, "control: the base kernel has statements");
+    for at in [0, n / 2, n] {
+        let mut k = base.clone();
+        k.body.0.insert(at, fact());
+        check_kernel(&k).expect("a kernel with an Assume is well-formed");
+        let got = Cuda
+            .lower_kernel(&k)
+            .expect("an Assume lowers (omitted)")
+            .source;
+        assert_eq!(got, want, "an Assume at {at} changed the emitted source");
+    }
+    let mut k = base.clone();
+    k.body.0.insert(
+        0,
+        Stmt::Barrier {
+            scope: unpopped::exec::Scope::Block,
+            kind: unpopped::kernel::BarrierKind::Full,
+        },
+    );
+    check_kernel(&k).expect("well-formed");
+    let with_barrier = Cuda
+        .lower_kernel(&k)
+        .expect("a block barrier lowers")
+        .source;
+    assert_ne!(
+        with_barrier, want,
+        "control: a barrier must change the source"
+    );
+}

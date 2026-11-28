@@ -17,7 +17,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-cuda-emit"
-version = "0.63.0"
+version = "0.64.0"
 dependencies = [
  "unpopped",
  "unpopped-vocab",
@@ -277,9 +277,9 @@ checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
 
 [[package]]
 name = "unpopped"
-version = "0.63.5"
+version = "0.64.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f46be42e8cda65b2b865baf22803455d340e074bf94bbce79fd0bb2eaafbe2b1"
+checksum = "c409e3ec3d8bf7cbc4c643136f233a6e735692a6be53937350cc8b8dc3f9854f"
 dependencies = [
  "libm",
  "serde",
@@ -289,9 +289,9 @@ dependencies = [
 
 [[package]]
 name = "unpopped-vocab"
-version = "0.63.5"
+version = "0.64.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c21865c528aabf00798d2014964dbe2a28e9fe8d42851f86d4e4a49eb1a79575"
+checksum = "0d548fe854c16badb1e007d1a702d326174a1494cff9a61b4292beb0e0656764"
 dependencies = [
  "float8",
  "half",

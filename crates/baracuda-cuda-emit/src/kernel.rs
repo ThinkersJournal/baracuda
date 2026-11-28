@@ -993,6 +993,9 @@ impl Cx<'_> {
             Stmt::Break => self.line("break;"),
             Stmt::Continue => self.line("continue;"),
             Stmt::Return => self.line("return;"),
+            // A value fact (unpopped 0.64, U50): the IR lets an emitter use it as an optimiser hint and forbids relying on it for anything else,
+            // so it is OMITTED: the emitted source of the rest of the kernel is byte-for-byte the same with or without it (a test pins that).
+            Stmt::Assume { .. } => {}
             Stmt::Barrier { scope, kind } => {
                 // The kind decides the PTX. A named barrier waits for `count` threads, not the block, so it is never a
                 // `__syncthreads()`; a kind this crate does not lower is refused, never approximated.
