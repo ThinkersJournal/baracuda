@@ -17,8 +17,8 @@ use unpopped::backend::{
     Variant, VariantFidelity, lower_dag, lower_dag_all, lower_dag_multi, lower_expr,
 };
 use unpopped::cfamily::{
-    assert_no_int_div_or_const, binary_f32, binary_f64, binary_int, dtype_tag, param_args,
-    params_used, select_f32, select_f64,
+    SpellError, assert_no_int_div_or_const, binary_f32, binary_f64, binary_int, dtype_tag,
+    param_args, params_used, select_f32, select_f64,
 };
 use unpopped::ir::{
     Access, ArithOp, AxisRole, BinaryOp, ExprDag, ReduceOp, ScalarExpr, SortOrder, SortOut,
@@ -39,19 +39,33 @@ use unpopped_vocab::{AxisMask, Contiguity, ElementKind, OperandKey};
 /// `cfamily` change to `1.0/sqrt` cannot silently move `RmsNorm`/`LayerNorm` off the
 /// intrinsic (slower, and a shift in the declared `max_ulp` FKC contract). Changing the
 /// spelling to `1.0/sqrt` would be a deliberate contract decision, not a dep side effect.
-fn unary_f32(op: UnaryOp, x: String) -> String {
+fn unary_f32(op: UnaryOp, x: String) -> Result<String, SpellError> {
     match op {
-        UnaryOp::Rsqrt => format!("rsqrtf({x})"),
+        UnaryOp::Rsqrt => Ok(format!("rsqrtf({x})")),
         other => unpopped::cfamily::unary_f32(other, x),
     }
 }
 
 /// f64 sibling of [`unary_f32`]: `Rsqrt` → the CUDA `rsqrt` (double) intrinsic; every
 /// other op delegates to [`unpopped::cfamily::unary_f64`] unchanged.
-fn unary_f64(op: UnaryOp, x: String) -> String {
+fn unary_f64(op: UnaryOp, x: String) -> Result<String, SpellError> {
     match op {
-        UnaryOp::Rsqrt => format!("rsqrt({x})"),
+        UnaryOp::Rsqrt => Ok(format!("rsqrt({x})")),
         other => unpopped::cfamily::unary_f64(other, x),
+    }
+}
+
+/// A float unary spelling as a [`Spelling`]: the spelled text, or (unpopped 0.65) the typed [`SpellError`] `cfamily` returns for an integer
+/// bit operation (`Popc`, `Clz`, `Brev`) on a float, as a dtype decline naming the op. Before 0.65 `cfamily` panicked there; the typing gate
+/// and [`first_bit_op`] still refuse such a plan first, so this is the backstop at every spelling site, never a path real plans take.
+fn spelled_unary(op: UnaryOp, dtype: ElementKind, r: Result<String, SpellError>) -> Spelling {
+    match r {
+        Ok(text) => Spelling::Spelled(text),
+        Err(e) => Spelling::Declined(Decline::UnsupportedDtypeForOp {
+            op: DeclinedOp::Unary(op),
+            dtype,
+            why: format!("cuda backend: {e}"),
+        }),
     }
 }
 
@@ -2818,9 +2832,9 @@ fn emit_reduction(
                     if bit_move {
                         cuda_unary(op, x, plan.dtype, true)
                     } else if dbl {
-                        Ok(Spelling::Spelled(unary_f64(op, x)))
+                        Ok(spelled_unary(op, plan.dtype, unary_f64(op, x)))
                     } else {
-                        Ok(Spelling::Spelled(unary_f32(op, x)))
+                        Ok(spelled_unary(op, plan.dtype, unary_f32(op, x)))
                     }
                 },
                 &|op, a, b| {
@@ -2961,9 +2975,9 @@ fn emit_reduction(
                         if bit_move {
                             cuda_unary(op, x, plan.dtype, true)
                         } else if dbl {
-                            Ok(Spelling::Spelled(unary_f64(op, x)))
+                            Ok(spelled_unary(op, plan.dtype, unary_f64(op, x)))
                         } else {
-                            Ok(Spelling::Spelled(unary_f32(op, x)))
+                            Ok(spelled_unary(op, plan.dtype, unary_f32(op, x)))
                         }
                     },
                     &|op, a, b| {
@@ -3619,11 +3633,15 @@ fn reduction_splitk_variant(plan: &KernelPlan<'_>) -> Option<Variant> {
                 }))
             },
             &|op, x| {
-                Ok(Spelling::Spelled(if dbl {
-                    unary_f64(op, x)
-                } else {
-                    unary_f32(op, x)
-                }))
+                Ok(spelled_unary(
+                    op,
+                    plan.dtype,
+                    if dbl {
+                        unary_f64(op, x)
+                    } else {
+                        unary_f32(op, x)
+                    },
+                ))
             },
             &|op, a, b| {
                 Ok(Spelling::Spelled(if dbl {
@@ -3977,11 +3995,15 @@ fn emit_contraction(plan: &KernelPlan<'_>, ctype: &str) -> Result<GeneratedKerne
                 }))
             },
             &|op, x| {
-                Ok(Spelling::Spelled(if dbl {
-                    unary_f64(op, x)
-                } else {
-                    unary_f32(op, x)
-                }))
+                Ok(spelled_unary(
+                    op,
+                    plan.dtype,
+                    if dbl {
+                        unary_f64(op, x)
+                    } else {
+                        unary_f32(op, x)
+                    },
+                ))
             },
             &|op, a, b| {
                 Ok(Spelling::Spelled(if dbl {
@@ -4224,11 +4246,15 @@ fn contraction_splitk_variant(plan: &KernelPlan<'_>) -> Option<Variant> {
                 }))
             },
             &|op, x| {
-                Ok(Spelling::Spelled(if dbl {
-                    unary_f64(op, x)
-                } else {
-                    unary_f32(op, x)
-                }))
+                Ok(spelled_unary(
+                    op,
+                    plan.dtype,
+                    if dbl {
+                        unary_f64(op, x)
+                    } else {
+                        unary_f32(op, x)
+                    },
+                ))
             },
             &|op, a, b| {
                 Ok(Spelling::Spelled(if dbl {
@@ -4395,9 +4421,10 @@ fn row_reduce_materialize_variant(plan: &KernelPlan<'_>) -> Option<Variant> {
 }
 
 /// The first integer bit operation (`Popc`, `Clz`, `Brev`, unpopped 0.61) in `e`, if any. They have no float spelling:
-/// `unpopped::cfamily::unary_f32` / `unary_f64` PANIC on them (the typing gate refuses them first with
-/// `TypeError::IntegerOnlyOperand`), and this emitter reaches those spellers from a dozen sites, so [`Cuda::lower`] declines the
-/// plan by name once, up front, instead of guarding each site.
+/// `unpopped::cfamily::unary_f32` / `unary_f64` return `SpellError::IntegerBitOp` for them (unpopped 0.65; they PANICKED before, and the
+/// typing gate refuses them first with `TypeError::IntegerOnlyOperand`). This emitter reaches those spellers from a dozen sites: each
+/// maps the error to a dtype decline naming the op (`spelled_unary`, `cuda_unary`), and [`Cuda::lower`] still declines the plan by name
+/// once, up front, so the per-site mapping is a backstop a real plan does not reach.
 fn first_bit_op(e: &ScalarExpr) -> Option<UnaryOp> {
     match e {
         ScalarExpr::Input(_)
@@ -4710,11 +4737,15 @@ fn emit_row_reduce_impl(
                     if bit_move {
                         return cuda_unary(op, x, plan.dtype, true);
                     }
-                    Ok(Spelling::Spelled(if dbl {
-                        unary_f64(op, x)
-                    } else {
-                        unary_f32(op, x)
-                    }))
+                    Ok(spelled_unary(
+                        op,
+                        plan.dtype,
+                        if dbl {
+                            unary_f64(op, x)
+                        } else {
+                            unary_f32(op, x)
+                        },
+                    ))
                 },
                 &|op, a, b| {
                     if bit_move {
@@ -5450,9 +5481,9 @@ fn emit_scan_impl(
                 if bit_move {
                     cuda_unary(op, x, plan.dtype, true)
                 } else if dbl {
-                    Ok(Spelling::Spelled(unary_f64(op, x)))
+                    Ok(spelled_unary(op, plan.dtype, unary_f64(op, x)))
                 } else {
-                    Ok(Spelling::Spelled(unary_f32(op, x)))
+                    Ok(spelled_unary(op, plan.dtype, unary_f32(op, x)))
                 }
             },
             &|op, a, b| {
@@ -5521,9 +5552,9 @@ fn emit_scan_impl(
                 if bit_move {
                     cuda_unary(op, x, plan.dtype, true)
                 } else if dbl {
-                    Ok(Spelling::Spelled(unary_f64(op, x)))
+                    Ok(spelled_unary(op, plan.dtype, unary_f64(op, x)))
                 } else {
-                    Ok(Spelling::Spelled(unary_f32(op, x)))
+                    Ok(spelled_unary(op, plan.dtype, unary_f32(op, x)))
                 }
             },
             &|op, a, b| {
@@ -6112,9 +6143,9 @@ fn emit_window(plan: &KernelPlan<'_>, ctype: &str) -> Result<GeneratedKernel, Lo
                 if bit_move {
                     cuda_unary(op, x, plan.dtype, true)
                 } else if dbl {
-                    Ok(Spelling::Spelled(unary_f64(op, x)))
+                    Ok(spelled_unary(op, plan.dtype, unary_f64(op, x)))
                 } else {
-                    Ok(Spelling::Spelled(unary_f32(op, x)))
+                    Ok(spelled_unary(op, plan.dtype, unary_f32(op, x)))
                 }
             },
             &|op, a, b| {
@@ -6182,9 +6213,9 @@ fn emit_window(plan: &KernelPlan<'_>, ctype: &str) -> Result<GeneratedKernel, Lo
                 if bit_move {
                     cuda_unary(op, x, plan.dtype, true)
                 } else if dbl {
-                    Ok(Spelling::Spelled(unary_f64(op, x)))
+                    Ok(spelled_unary(op, plan.dtype, unary_f64(op, x)))
                 } else {
-                    Ok(Spelling::Spelled(unary_f32(op, x)))
+                    Ok(spelled_unary(op, plan.dtype, unary_f32(op, x)))
                 }
             },
             &|op, a, b| {
@@ -7979,19 +8010,28 @@ fn cuda_unary(
             "{from_bits}((unsigned short)({to_bits}({x}) {sym} {mask}))"
         )));
     }
+    // unpopped 0.65: `cfamily`'s float spellers return a typed error for an integer bit operation (they panicked); it is a dtype decline.
+    macro_rules! spell {
+        ($r:expr) => {
+            match $r {
+                Ok(text) => text,
+                Err(e) => return Ok(spelled_unary(op, dtype, Err(e))),
+            }
+        };
+    }
     Ok(Spelling::Spelled(match dtype {
-        ElementKind::F32 | ElementKind::F32Strict => unary_f32(op, x),
-        ElementKind::F64 => unary_f64(op, x),
+        ElementKind::F32 | ElementKind::F32Strict => spell!(unary_f32(op, x)),
+        ElementKind::F64 => spell!(unary_f64(op, x)),
         ElementKind::F16 => {
             format!(
                 "__float2half({})",
-                unary_f32(op, format!("__half2float({x})"))
+                spell!(unary_f32(op, format!("__half2float({x})")))
             )
         }
         ElementKind::Bf16 => {
             format!(
                 "__float2bfloat16({})",
-                unary_f32(op, format!("__bfloat162float({x})"))
+                spell!(unary_f32(op, format!("__bfloat162float({x})")))
             )
         }
         // DTYPE decline (was a panic): this op has no lowering at this dtype. An
@@ -8366,6 +8406,160 @@ mod tests {
 
     fn add_op(dtypes: &[ElementKind]) -> OpDef {
         OpDef::elementwise("add", 2, dtypes, input(0) + input(1))
+    }
+
+    // ---- unpopped 0.65: `cfamily::unary_f32`/`unary_f64` return `Result<String, SpellError>` (they panicked on Popc/Clz/Brev) ----
+
+    use super::{cuda_unary, spelled_unary};
+    use unpopped::backend::{Decline, DeclinedOp, Spelling};
+    use unpopped::cfamily::SpellError;
+    use unpopped::ir::UnaryOp;
+
+    /// Every `UnaryOp` a float can carry (the three integer bit operations are pinned apart below).
+    const FLOAT_UNARY: &[UnaryOp] = &[
+        UnaryOp::Neg,
+        UnaryOp::Abs,
+        UnaryOp::Sqr,
+        UnaryOp::Sqrt,
+        UnaryOp::Rsqrt,
+        UnaryOp::Recip,
+        UnaryOp::Exp,
+        UnaryOp::Log,
+        UnaryOp::Tanh,
+        UnaryOp::Sigmoid,
+        UnaryOp::Relu,
+        UnaryOp::Erf,
+        UnaryOp::Gelu,
+        UnaryOp::Silu,
+        UnaryOp::Sin,
+        UnaryOp::Cos,
+        UnaryOp::Floor,
+        UnaryOp::Ceil,
+        UnaryOp::Round,
+        UnaryOp::Sign,
+        UnaryOp::Step,
+        UnaryOp::Erfc,
+        UnaryOp::Trunc,
+        UnaryOp::Exp2,
+        UnaryOp::Expm1,
+        UnaryOp::Log2,
+        UnaryOp::Log10,
+        UnaryOp::Log1p,
+        UnaryOp::Sinh,
+        UnaryOp::Cosh,
+        UnaryOp::Tan,
+        UnaryOp::Asin,
+        UnaryOp::Acos,
+        UnaryOp::Atan,
+        UnaryOp::Asinh,
+        UnaryOp::Acosh,
+        UnaryOp::Atanh,
+        UnaryOp::Cbrt,
+        UnaryOp::Lgamma,
+    ];
+
+    const FLOAT_DTYPES: &[ElementKind] = &[
+        ElementKind::F32,
+        ElementKind::F32Strict,
+        ElementKind::F64,
+        ElementKind::F16,
+        ElementKind::Bf16,
+    ];
+
+    /// One line per (op, dtype, bit_move): the whole `Result<Spelling, LowerError>` of `cuda_unary`, in `Debug` form.
+    fn unary_corpus() -> String {
+        let mut out = String::new();
+        for &op in FLOAT_UNARY {
+            for &dt in FLOAT_DTYPES {
+                for bit_move in [false, true] {
+                    out.push_str(&format!(
+                        "{op:?} {dt:?} bit_move={bit_move}: {:?}\n",
+                        cuda_unary(op, "x".to_string(), dt, bit_move)
+                    ));
+                }
+            }
+        }
+        out
+    }
+
+    /// Every other op spells exactly as before the 0.65 take: the corpus (39 ops x 5 dtypes x 2 bit-move flags = 390 lines) was generated
+    /// by the SAME function against the pre-take tree (origin/main edb26d45, unpopped 0.64) and is compared byte for byte.
+    /// `BARACUDA_WRITE_UNARY_GOLDEN=<path>` writes the corpus instead of comparing (how the golden was produced).
+    #[test]
+    fn every_float_unary_spelling_is_byte_equal_to_the_pre_0_65_corpus() {
+        let got = unary_corpus();
+        if let Some(path) = std::env::var_os("BARACUDA_WRITE_UNARY_GOLDEN") {
+            std::fs::write(path, &got).expect("write the golden");
+            return;
+        }
+        let want = include_str!("../tests/golden/cuda_unary_spelling.txt");
+        assert_eq!(got.lines().count(), 390, "the corpus changed shape");
+        assert!(
+            got.lines().filter(|l| l.contains("Spelled(")).count() > 300,
+            "control: most of the corpus is spelled, not declined"
+        );
+        for (i, (g, w)) in got.lines().zip(want.lines()).enumerate() {
+            assert_eq!(g, w, "line {} differs from the pre-0.65 corpus", i + 1);
+        }
+        assert_eq!(got.lines().count(), want.lines().count());
+    }
+
+    /// An integer bit operation on a float is a typed decline naming the op and the dtype, at every float dtype and both bit-move flags
+    /// (it panicked inside `cfamily` before 0.65).
+    #[test]
+    fn an_integer_bit_op_on_a_float_is_a_typed_decline_naming_it() {
+        for op in [UnaryOp::Popc, UnaryOp::Clz, UnaryOp::Brev] {
+            for &dt in FLOAT_DTYPES {
+                for bit_move in [false, true] {
+                    match cuda_unary(op, "x".to_string(), dt, bit_move) {
+                        Ok(Spelling::Declined(Decline::UnsupportedDtypeForOp {
+                            op: DeclinedOp::Unary(o),
+                            dtype,
+                            why,
+                        })) => {
+                            assert_eq!(o, op);
+                            assert!(
+                                why.contains(&format!("{op:?}")),
+                                "{op:?} {dt:?}: the reason must name the op: {why}"
+                            );
+                            // The narrow-float bit-move path keeps its own meaning for Neg/Abs only; these ops never take it.
+                            assert!(matches!(
+                                dtype,
+                                ElementKind::F32
+                                    | ElementKind::F32Strict
+                                    | ElementKind::F64
+                                    | ElementKind::F16
+                                    | ElementKind::Bf16
+                            ));
+                        }
+                        other => panic!(
+                            "{op:?} {dt:?} bit_move={bit_move}: expected a typed decline, got {other:?}"
+                        ),
+                    }
+                }
+            }
+        }
+    }
+
+    /// The backstop itself: an `Err(SpellError)` becomes the decline, an `Ok` stays the spelling.
+    #[test]
+    fn spelled_unary_maps_the_error_and_keeps_the_text() {
+        assert!(matches!(
+            spelled_unary(UnaryOp::Exp, ElementKind::F32, Ok("expf(x)".to_string())),
+            Spelling::Spelled(t) if t == "expf(x)"
+        ));
+        assert!(matches!(
+            spelled_unary(
+                UnaryOp::Popc,
+                ElementKind::F64,
+                Err(SpellError::IntegerBitOp(UnaryOp::Popc))
+            ),
+            Spelling::Declined(Decline::UnsupportedDtypeForOp {
+                op: DeclinedOp::Unary(UnaryOp::Popc),
+                dtype: ElementKind::F64,
+                ..
+            })
+        ));
     }
 
     fn binary_key(dt: ElementKind) -> unpopped_vocab::StructureKey {
