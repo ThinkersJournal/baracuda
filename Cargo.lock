@@ -113,7 +113,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-cuda-emit"
-version = "0.62.0"
+version = "0.63.0"
 dependencies = [
  "baracuda-cuda-parse",
  "baracuda-driver",
@@ -128,7 +128,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-cuda-parse"
-version = "0.62.0"
+version = "0.63.0"
 dependencies = [
  "fishstringer-slang-parse",
  "tree-sitter",
@@ -140,7 +140,7 @@ dependencies = [
 
 [[package]]
 name = "baracuda-cuda-seam"
-version = "0.62.0"
+version = "0.63.0"
 dependencies = [
  "baracuda-cuda-emit",
  "fireline-grammar",
@@ -1140,21 +1140,21 @@ checksum = "3e44f110d1777dc6559a51e7d45083945ded4f1bf3305494350f693b6d20b9c8"
 
 [[package]]
 name = "fireline-announce"
-version = "0.13.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bbe33bf9e0ce5f566ec00c20e8f0a55a1a0c72aa603d3ad04e94433b3fb1500"
+checksum = "da9878b9823a813bfb0c80b28514d6c49fe4f5f1cbd62d7f4e032f0185fc36f8"
 
 [[package]]
 name = "fireline-grammar"
-version = "0.13.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66411097a325588f8a62a911ef75bccf73de449129694b4a63ab66529fc46250"
+checksum = "fc00b33385a6ece56c2797d2565dd8d2fddb3e089235b464deb6aa57b0ad3697"
 
 [[package]]
 name = "fireline-synth"
-version = "0.13.0"
+version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b97ccef9e5740e09cd883c475d96346a03044123fcdcb374fc5c5d279a70f3a"
+checksum = "f197cbc0f2771e3f6860a53e6cace28a67eba5b0122e60939b8f2819f711551b"
 dependencies = [
  "fireline-grammar",
  "unpopped-vocab",
@@ -1162,9 +1162,9 @@ dependencies = [
 
 [[package]]
 name = "fishstringer-slang-emit"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c3f4efcefb0f0da69c03d88954661a586e4e153ebfc1421397bb735a6257ddf"
+checksum = "565b65e53e38f36dc8614decaccfb16ffe97e74e7bca5d3a61b40d113f788849"
 dependencies = [
  "kiss-vulkan-vocab",
  "unpopped",
@@ -1173,9 +1173,9 @@ dependencies = [
 
 [[package]]
 name = "fishstringer-slang-parse"
-version = "0.12.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc474d5b88cb6d185d500bfd46c5c16648f7006dfac127f47728917d532d04c8"
+checksum = "3a8298d1e974b51ac960fa3a408ebb49b96e9d8d226a1d856ecb62e3d47599d5"
 dependencies = [
  "tree-sitter",
  "tree-sitter-slang",
@@ -1642,9 +1642,9 @@ checksum = "a2c754d6c33795a1c324727428e5a7dedb5b06195f9890bdbcba760d3e246563"
 
 [[package]]
 name = "unpopped"
-version = "0.62.0"
+version = "0.63.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57bb9b99e9b0410c04d39925a50ffdf7787ae9abbf1ecd4315a11dfeaa277632"
+checksum = "f46be42e8cda65b2b865baf22803455d340e074bf94bbce79fd0bb2eaafbe2b1"
 dependencies = [
  "libm",
  "serde",
@@ -1654,9 +1654,9 @@ dependencies = [
 
 [[package]]
 name = "unpopped-convert"
-version = "0.62.0"
+version = "0.63.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "494a7ecbf683ac958d9f03b629bd04f41e47d031326feedf76572aef613156ee"
+checksum = "86d20207bcb751baa0d8addbadeb192cac42fb097eb91f58512bbe5c091aaef6"
 dependencies = [
  "tree-sitter",
  "unpopped",
@@ -1665,9 +1665,9 @@ dependencies = [
 
 [[package]]
 name = "unpopped-cpu-c"
-version = "0.62.0"
+version = "0.63.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93f81a3c6cfd6b50d97dc967c3cb41b9eab629f7a7edc644c99da5e624d28559"
+checksum = "d3e34c2bd1b2159142eefc676fb382c23bb048b7bd5ba782b3c2b30e3fff5e4f"
 dependencies = [
  "unpopped",
  "unpopped-vocab",
@@ -1675,9 +1675,9 @@ dependencies = [
 
 [[package]]
 name = "unpopped-vocab"
-version = "0.62.0"
+version = "0.63.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6452e9f22495bf0e1567e729d4670e31fbcd5fdb368e15434e367e85cc755d3"
+checksum = "c21865c528aabf00798d2014964dbe2a28e9fe8d42851f86d4e4a49eb1a79575"
 dependencies = [
  "float8",
  "half",
