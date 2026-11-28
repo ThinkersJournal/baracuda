@@ -19,12 +19,18 @@ on:
 permissions:
   contents: read
 
-# One device run at a time, and only the NEWEST waiting run is kept. The runner is a single machine and a run takes hours (a kernels build and
-# the device suites), so without a group every push to main queued another run (19 deep on 2026-11-26). `cancel-in-progress: false` is
-# deliberate: a run that has started always finishes; only a run that has not started yet is replaced by a newer one. A run replaced this way is
-# reported as cancelled by GitHub, never as failed; the newest main commit is the one that gets tested.
+# One device run at a time (the runner is one machine and a run takes hours), but a push to main is NEVER replaced by a later push. The
+# earlier shape (one group, `cancel-in-progress: false`) kept only the NEWEST WAITING run: a run that had started always finished, but a run
+# that had not started was cancelled by the next push. While the ~6 h scheduled run held the runner, every merge to main cancelled the previous
+# merge's pending run, so no merge's run ever STARTED (46164992865 for 314d3f7a and 46161949716 for 49e4fdbc were cancelled that way on
+# 2026-11-28; so were 12 of the 14 push runs of 2026-11-27). Now each push is its own group (its commit), so GitHub keeps every one of them
+# queued for the runner and the oldest starts first when the runner frees; the nightly schedule has one group of its own (a new nightly
+# replaces a still-waiting nightly, never a push); a manual dispatch is its own group (its run id). `cancel-in-progress: false` stays: a run
+# that has started always finishes. The queue's depth is the pushes since the last run started: it was 19 deep on 2026-11-26 when there was no
+# group at all, so a lane that wants a run to start merges one change at a time and lets a run start before the next. A run GitHub leaves
+# queued for 24 h is cancelled by GitHub itself.
 concurrency:
-  group: device-tests
+  group: device-tests-${{ github.event_name == 'push' && github.sha || github.event_name == 'schedule' && 'nightly' || github.run_id }}
   cancel-in-progress: false
 
 env:
