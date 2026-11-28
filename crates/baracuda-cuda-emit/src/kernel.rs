@@ -51,7 +51,7 @@
 //! older `__CUDA_ARCH__` and the interface requires `sm_100a` or newer. A `Private` allocation is a per-thread register array (`pv<i>`), a
 //! subgroup launch is lowered when its range contains 32 (the warp) on whole warps, and `Tcgen05Ld` (32x32b, a power of two of columns up to
 //! 128) lowers to `tcgen05.ld.sync.aligned.32x32b.x<N>.b32` followed by `tcgen05.wait::ld` (S12a-4). `Tcgen05Commit` (one barrier, no multicast, no mask) lowers to
-//! `tcgen05.commit.cta_group::1.mbarrier::arrive::one`; `Tcgen05Mma` is not lowered yet (S12a-5), and the forms ROADMAP S12 holds (a commit multicast with a `ctaMask`, an `mbarrier` arrive with a count or a
+//! `tcgen05.commit.cta_group::1.mbarrier::arrive::one`; `Tcgen05Mma` lowers to `tcgen05.mma.cta_group::1.kind::f16` for K-major unswizzled `Canonical` operands of `F16`/`Bf16`, an `F32` accumulator and `m = 128` (S12a-5; the rest is refused by name), and the forms ROADMAP S12 holds (a commit multicast with a `ctaMask`, an `mbarrier` arrive with a count or a
 //! mask, an `expect_tx` multicast) are not built.
 //!
 //! # Stage 3: the four statements ruled by board 434 C (NVIDIA only)
@@ -81,8 +81,8 @@ use unpopped::backend::{GeneratedKernel, LowerError, Spelling};
 use unpopped::exec::{ExecId, Extent, MemorySpace, Scope};
 use unpopped::ir::{BinaryOp, ReduceOp, ScalarExpr};
 use unpopped::kernel::{
-    BarrierKind, Block, BufferRole, CacheHint, CollectiveKind, KernelFn, ParamKind, Place,
-    ShuffleMode, Stmt, VoteKind, check_kernel,
+    BarrierKind, Block, BufferRole, CacheHint, CollectiveKind, KernelFn, Major, OperandLayout,
+    ParamKind, Place, ShuffleMode, Stmt, Swizzle, VoteKind, check_kernel,
 };
 use unpopped::kernel_interface::{KernelInterface, LaunchBounds, ParamsBlock, ParamsBlockField};
 use unpopped::types::{Ty, infer_ty_in};
@@ -1135,6 +1135,34 @@ impl Cx<'_> {
                     "asm volatile(\"tcgen05.commit.cta_group::1.mbarrier::arrive::one.shared::cluster.b64 [%0];\" :: \"r\"({addr}) : \"memory\");"
                 ));
             }
+            // ROADMAP S12a-5: `tcgen05.mma.cta_group::1.kind::f16`, one thread issues `D = A.B (+ D)`: `K = 16` per instruction, `M = 128`, `N` a
+            // multiple of 16 up to 256 (PTX ISA 9.5 Table 50), `A` and `B` from `Shared` through 64-bit matrix descriptors (9.7.18.4.1) and the
+            // 32-bit instruction descriptor (9.7.18.4.2, Table 53), `D` in tensor memory at the allocation's address plus `d_col`. Built: K-major
+            // `Canonical` operands without swizzle, `F16`/`Bf16` inputs, an `F32` accumulator, `m = 128`. Everything else is refused by name
+            // (`M = 64`, a swizzle, MN-major, an `F16` accumulator, mixed `B`): not built, never guessed. Completion is signalled by a later
+            // `Tcgen05Commit`. Runtime UNVERIFIED on hardware (no sm_100 device on the lane's box): ptxas for `sm_100a` only.
+            Stmt::Tcgen05Mma {
+                n,
+                ab,
+                acc,
+                a,
+                b,
+                d,
+                d_col,
+                scale_d,
+                a_layout,
+                b_layout,
+                m,
+                d_lane,
+                b_ty,
+                negate_a,
+                negate_b,
+            } => {
+                self.tcgen05_mma(
+                    *n, *ab, *acc, a, b, *d, d_col, scale_d, *a_layout, *b_layout, *m, *d_lane,
+                    *b_ty, *negate_a, *negate_b,
+                )?;
+            }
             other => {
                 return Err(refuse(format!(
                     "kernel `{}`: statement `{}` is not lowered by the CUDA backend yet",
@@ -1211,6 +1239,136 @@ impl Cx<'_> {
         for i in 0..count {
             self.line(&format!("pv{dst}[{i}] = {to_val}(_r[{i}]);"));
         }
+        self.depth -= 1;
+        self.line("}");
+        Ok(())
+    }
+
+    /// `Tcgen05Mma` (ROADMAP S12a-5), see the statement arm.
+    #[allow(clippy::too_many_arguments)]
+    fn tcgen05_mma(
+        &mut self,
+        n: u32,
+        ab: ElementKind,
+        acc: ElementKind,
+        a: &Place,
+        b: &Place,
+        d: u32,
+        d_col: &ScalarExpr,
+        scale_d: &ScalarExpr,
+        a_layout: OperandLayout,
+        b_layout: OperandLayout,
+        m: u32,
+        d_lane: u32,
+        b_ty: Option<ElementKind>,
+        negate_a: bool,
+        negate_b: bool,
+    ) -> Result<(), LowerError> {
+        let name = self.k.name.clone();
+        let not_built = |what: String| {
+            refuse(format!(
+                "kernel `{name}`: `Tcgen05Mma` with {what} is not lowered by the CUDA backend yet (only K-major, unswizzled `Canonical` operands of `F16` or `Bf16`, an `F32` accumulator and `m = 128` are built)"
+            ))
+        };
+        let atype = match ab {
+            ElementKind::F16 => 0u32,
+            ElementKind::Bf16 => 1u32,
+            other => return Err(not_built(format!("input type {other:?}"))),
+        };
+        if acc != ElementKind::F32 {
+            return Err(not_built(format!("accumulator {acc:?}")));
+        }
+        if m != 128 || d_lane != 0 {
+            return Err(not_built(format!("m = {m}, d_lane = {d_lane}")));
+        }
+        if let Some(t) = b_ty
+            && t != ab
+        {
+            return Err(not_built(format!("a `B` type {t:?} that differs from `A`")));
+        }
+        if !(16..=256).contains(&n) || !n.is_multiple_of(16) {
+            return Err(refuse(format!(
+                "kernel `{name}`: `Tcgen05Mma` with n = {n} is not lowered by the CUDA backend yet: a multiple of 16 from 16 to 256 is required for M = 128 (PTX ISA 9.5 Table 50)"
+            )));
+        }
+        match self.k.allocs.get(d as usize) {
+            Some(decl) if matches!(decl.space, MemorySpace::Tensor) => {}
+            _ => {
+                return Err(refuse(format!(
+                    "kernel `{name}`: `Tcgen05Mma` names a `D` allocation that is not a declared `Tensor` allocation"
+                )));
+            }
+        }
+        let desc_hi = |l: OperandLayout, which: &str| -> Result<u64, LowerError> {
+            match l {
+                OperandLayout::Canonical {
+                    major: Major::K,
+                    swizzle: Swizzle::None,
+                    lbo: Some(lbo),
+                    sbo,
+                } => {
+                    if !lbo.is_multiple_of(16)
+                        || !sbo.is_multiple_of(16)
+                        || (lbo >> 4) > 0x3FFF
+                        || (sbo >> 4) > 0x3FFF
+                    {
+                        return Err(refuse(format!(
+                            "kernel `{name}`: `Tcgen05Mma` {which} layout: lbo {lbo} and sbo {sbo} must be multiples of 16 bytes below 256 KiB (descriptor fields of 14 bits, in units of 16 bytes)"
+                        )));
+                    }
+                    // bits 16-29 LBO >> 4, bits 32-45 SBO >> 4, bits 46-48 the fixed pattern 0b001, base offset 0, swizzle 0.
+                    Ok((u64::from(lbo >> 4) << 16) | (u64::from(sbo >> 4) << 32) | (1u64 << 46))
+                }
+                other => Err(not_built(format!("the {which} layout {other:?}"))),
+            }
+        };
+        let a_hi = desc_hi(a_layout, "`A`")?;
+        let b_hi = desc_hi(b_layout, "`B`")?;
+        let smem_addr = |this: &mut Self, p: &Place, which: &str| -> Result<String, LowerError> {
+            let Place::Alloc { alloc, .. } = p else {
+                return Err(refuse(format!(
+                    "kernel `{name}`: `Tcgen05Mma` needs a `Shared` allocation place for {which}"
+                )));
+            };
+            let decl = &this.k.allocs[*alloc as usize];
+            if !matches!(decl.space, MemorySpace::Shared) || decl.elem != ab {
+                return Err(refuse(format!(
+                    "kernel `{name}`: `Tcgen05Mma` {which} on `{}` ({:?} of {:?}): a `Shared` allocation of {ab:?} is required",
+                    decl.name, decl.space, decl.elem
+                )));
+            }
+            let lv = this.place(p)?;
+            Ok(format!("(unsigned int)__cvta_generic_to_shared(&{lv})"))
+        };
+        let a_addr = smem_addr(self, a, "`A`")?;
+        let b_addr = smem_addr(self, b, "`B`")?;
+        // Instruction descriptor (PTX ISA 9.5 Table 53, `.kind::f16`): dtype F32 = 1 at bit 4, atype/btype at 7 and 10 (F16 = 0, BF16 = 1),
+        // negate A/B at 13/14, no transpose (K-major), N >> 3 at bit 17, M >> 4 at bit 24, dense, no saturate, K implied (16).
+        let idesc: u32 = (1 << 4)
+            | (atype << 7)
+            | (atype << 10)
+            | (u32::from(negate_a) << 13)
+            | (u32::from(negate_b) << 14)
+            | ((n >> 3) << 17)
+            | ((m >> 4) << 24);
+        let col = self.ex(d_col)?;
+        let sc = self.ex(scale_d)?;
+        self.tcgen05_used = true;
+        self.line("{");
+        self.depth += 1;
+        self.line(&format!(
+            "unsigned int _t = *(volatile unsigned int*)&tm{d} + (unsigned int)({col});"
+        ));
+        self.line(&format!(
+            "unsigned long long _ad = ((unsigned long long)(({a_addr}) >> 4) & 0x3FFFull) | {a_hi}ull;"
+        ));
+        self.line(&format!(
+            "unsigned long long _bd = ((unsigned long long)(({b_addr}) >> 4) & 0x3FFFull) | {b_hi}ull;"
+        ));
+        self.line(&format!("unsigned int _id = {idesc}u;"));
+        self.line(&format!(
+            "asm volatile(\"{{ .reg .pred p; setp.ne.b32 p, %4, 0; tcgen05.mma.cta_group::1.kind::f16 [%0], %1, %2, %3, p; }}\" :: \"r\"(_t), \"l\"(_ad), \"l\"(_bd), \"r\"(_id), \"r\"((unsigned int)({sc})) : \"memory\");"
+        ));
         self.depth -= 1;
         self.line("}");
         Ok(())
@@ -1321,6 +1479,11 @@ fn exec_id(id: ExecId, name: &str) -> Result<String, LowerError> {
     })
 }
 
+/// A 16-bit float element type, which a `Shared` allocation may hold as a `Tcgen05Mma` operand tile (see the declaration).
+fn is_half_tile(e: ElementKind) -> bool {
+    matches!(e, ElementKind::F16 | ElementKind::Bf16)
+}
+
 /// Lower `k` to a CUDA `__global__` function, or say why not. See the module docs for the contract.
 pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> {
     check_kernel(k).map_err(|e| refuse(format!("kernel `{}` is ill-formed: {e:?}", k.name)))?;
@@ -1384,7 +1547,7 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
     for a in &k.allocs {
         match (a.space, a.extent) {
             (MemorySpace::Shared, Extent::Static(_)) => {
-                if alloc_ctype(a.elem).is_none() {
+                if alloc_ctype(a.elem).is_none() && !is_half_tile(a.elem) {
                     return Err(refuse(format!(
                         "kernel `{}`: allocation `{}` of element type {:?} has no CUDA spelling",
                         k.name, a.name, a.elem
@@ -1487,6 +1650,12 @@ pub(crate) fn lower_kernel(k: &KernelFn) -> Result<GeneratedKernel, LowerError> 
             } else if matches!(a.space, MemorySpace::Private) {
                 let t = alloc_ctype(a.elem).unwrap_or_default();
                 cx.line(&format!("{t} pv{i}[{n}];"));
+            } else if is_half_tile(a.elem) && alloc_ctype(a.elem).is_none() {
+                // ROADMAP S12a-5: a 16-bit float tile is raw bits (`unsigned short`), 128-byte aligned so a matrix descriptor (which drops the
+                // low 4 address bits) can name it. An ordinary load or store of its elements stays refused (no compute type spells them).
+                cx.line(&format!(
+                    "__shared__ __align__(128) unsigned short sh{i}[{n}];"
+                ));
             } else {
                 let t = alloc_ctype(a.elem).unwrap_or_default();
                 cx.line(&format!("__shared__ {t} sh{i}[{n}];"));
