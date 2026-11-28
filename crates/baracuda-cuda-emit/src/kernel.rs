@@ -1245,7 +1245,10 @@ impl Cx<'_> {
     }
 
     /// `Tcgen05Mma` (ROADMAP S12a-5), see the statement arm.
-    #[allow(clippy::too_many_arguments)]
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "one parameter per field of the `Tcgen05Mma` statement the arm destructures"
+    )]
     fn tcgen05_mma(
         &mut self,
         n: u32,
