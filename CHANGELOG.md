@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.238 - 2026-11-28
+
+Supersedes the 0.62 and 0.63 takes above (neither was published): the pins move to `unpopped* ~0.64.0` (lock 0.64.3), `fireline-* ~0.14` (lock 0.14.1) and `fishstringer-slang-* ~0.14.0`, and the emit, parse and seam crates to 0.64.0 (the emitter version follows the Unpopped it works with). Breaking for consumers of those crates, as before. Unpopped 0.64 adds `Stmt::Assume` (a per-thread value fact, `tl.assume` / `multiple_of`): the emitter OMITS it, which the IR permits, and a test pins that the emitted source of the rest of the kernel is byte-equal with and without it (shown red first: with the arm removed the kernel is declined). No PTX lowering of the fact is claimed. One copy of `unpopped-vocab`: `cargo tree --locked -i unpopped-vocab` prints one line (0.64.3) in the workspace and in `tools/kiss-ref-diff`, and `cargo tree --locked -d` lists no `unpopped*` duplicate. CI device run queued, not claimed. Publishes: whole workspace.
+
 ## 0.1.0-alpha.237 - 2026-11-27
 
 Supersedes the 0.62 take above: before it published, unpopped 0.63.5, `fireline-*` 0.14 and `fishstringer-slang-*` 0.13 went live, so the pins move to `unpopped* ~0.63.0` (lock 0.63.5), `fireline-* ~0.14` and `fishstringer-slang-* ~0.13`, and the emit, parse and seam crates to 0.63.0 (the emitter version follows the Unpopped it works with). Breaking for consumers of those crates, as before. The Tile and wide-integer declines described above are in this take. Lock moves were targeted (`cargo update -p`), no unrelated bumps. One copy of `unpopped-vocab`: `cargo tree --locked -i unpopped-vocab` prints one line in the workspace and in `tools/kiss-ref-diff`. No `Numerics { .. }` struct literal in baracuda's crates (the field added in 0.63 does not reach us). CI device run queued, not claimed. Publishes: whole workspace.
