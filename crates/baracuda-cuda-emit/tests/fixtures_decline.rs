@@ -43,10 +43,10 @@ const REFUSED: &[(&str, &str)] = &[
     ("TileMma", ALLOC),
     ("TileFill", ALLOC),
     ("TileStore", ALLOC),
-    ("Wgmma", ALLOC),
+    ("Wgmma", STATEMENT),
     ("WgmmaCommit", STATEMENT),
     ("WgmmaWait", STATEMENT),
-    ("Tcgen05Mma", ALLOC),
+    ("Tcgen05Mma", STATEMENT),
     ("CopyBulk", STATEMENT),
     ("CopyUnpack", ALLOC),
 ];
