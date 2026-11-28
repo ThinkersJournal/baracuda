@@ -1948,8 +1948,8 @@ fn identity_copy_root_never_reaches_the_op_kind_line() {
 }
 
 /// unpopped 0.61 added the integer bit operations `Popc`, `Clz` and `Brev`. This emitter lowers none of them, at any dtype, and
-/// declines BY NAME: a float operand used to reach `unpopped::cfamily::unary_f32`/`unary_f64`, which PANIC on them ("refused by the
-/// typing gate"); an integer dtype misses at the plan gate. Both are a typed `Err` from `try_generate` naming the op, never a panic
+/// declines BY NAME: a float operand used to reach `unpopped::cfamily::unary_f32`/`unary_f64`, which PANICKED on them before unpopped 0.65
+/// (they now return `SpellError::IntegerBitOp`, mapped to a decline at each spelling site); an integer dtype misses at the plan gate. Both are a typed `Err` from `try_generate` naming the op, never a panic
 /// and never wrong math. Positive control: `Relu` at the same keys emits.
 #[test]
 fn the_integer_bit_ops_decline_by_name_at_every_dtype() {
