@@ -626,16 +626,25 @@ fn the_seven_new_element_rows_are_each_declined_by_name() {
             vec![],
             Block(Vec::new()),
         );
-        assert!(
-            matches!(check_kernel(&k), Err(KernelError::DtypeNotComputed { dtype }) if dtype == kind),
-            "{name}: the checker must refuse it by name: {:?}",
-            check_kernel(&k)
-        );
+        // Gate 1. Unpopped 0.62 admits some of these rows as buffers (I128 at least): then the EMITTER declines the buffer by name
+        // ("no CUDA spelling"); a row the checker still refuses is refused as an ill-formed kernel naming the dtype.
         let d = detail(Cuda.lower_kernel(&k));
-        assert!(
-            d.contains("ill-formed") && d.contains("DtypeNotComputed") && d.contains(name),
-            "{name}: {d}"
-        );
+        match check_kernel(&k) {
+            Err(KernelError::DtypeNotComputed { dtype }) => {
+                assert_eq!(dtype, kind, "{name}: the checker names another dtype");
+                assert!(
+                    d.contains("ill-formed") && d.contains("DtypeNotComputed") && d.contains(name),
+                    "{name}: {d}"
+                );
+            }
+            Ok(()) => assert!(
+                !d.contains("ill-formed")
+                    && d.contains("buffer `x`")
+                    && d.contains("no CUDA spelling"),
+                "{name}: the checker admits it, so the emitter must decline it by name: {d}"
+            ),
+            other => panic!("{name}: an unexpected checker answer: {other:?}"),
+        }
         // Gate 2: the emitter's own table, independent of the checker.
         let sm89 = TargetId::parse("cuda:sm89").expect("token");
         assert!(
@@ -658,6 +667,156 @@ fn the_seven_new_element_rows_are_each_declined_by_name() {
         baracuda_cuda_emit::cfamily_shadow::scalar_ctype(ElementKind::F32),
         Some("float")
     );
+}
+
+/// Unpopped 0.61.3+ (so 0.62): `check_kernel` COMPUTES `I128`/`U128`/`I256`/`U256`. The carry-flag lowering is held (ROADMAP S14), so the emitter
+/// must REFUSE them BY NAME before emitting, wherever the type can appear on the kernel surface: a buffer, a scalar parameter, a local
+/// declaration, the kernel's compute type and a constant. CPU-only (nothing is compiled or run). Positive control: the same shapes with `I32` lower.
+#[test]
+fn wide_integers_are_refused_by_name_on_every_kernel_surface() {
+    use unpopped::kernel::LocalDecl;
+    // The shapes, each parameterised by the element type.
+    type Shape = (&'static str, fn(ElementKind) -> KernelFn);
+    let shapes: [Shape; 5] = [
+        ("buffer", |t| {
+            KernelFn::new(
+                "w",
+                I32,
+                vec![Param::buffer("x", t, BufferRole::ReadWrite, Some(1))],
+                vec![],
+                Block(Vec::new()),
+            )
+        }),
+        ("scalar parameter", |t| {
+            KernelFn::new(
+                "w",
+                I32,
+                vec![Param::scalar("x", t, 0)],
+                vec![LocalDecl::scalar(t)],
+                Block(Vec::new()),
+            )
+        }),
+        ("local", |t| {
+            KernelFn::new(
+                "w",
+                I32,
+                vec![Param::scalar("n", U32, 0)],
+                vec![LocalDecl::scalar(U32), LocalDecl::scalar(t)],
+                Block(Vec::new()),
+            )
+        }),
+        ("constant", |t| {
+            KernelFn::new(
+                "w",
+                I32,
+                vec![Param::scalar("n", U32, 0)],
+                vec![LocalDecl::scalar(U32), LocalDecl::scalar(t)],
+                Block(vec![Stmt::Let {
+                    local: 1,
+                    init: ScalarExpr::ConstInt(1, t),
+                }]),
+            )
+        }),
+        ("compute type", |t| {
+            KernelFn::new(
+                "w",
+                t,
+                vec![Param::scalar("n", U32, 0)],
+                vec![LocalDecl::scalar(U32)],
+                Block(Vec::new()),
+            )
+        }),
+    ];
+    let mut checker_admits = 0;
+    for kind in [
+        ElementKind::I128,
+        ElementKind::U128,
+        ElementKind::I256,
+        ElementKind::U256,
+    ] {
+        let name = format!("{kind:?}");
+        for (what, make) in &shapes {
+            let k = make(kind);
+            // Whatever the checker says, the emitter must not emit and must not panic.
+            let r = std::panic::catch_unwind(|| Cuda.lower_kernel(&k));
+            let r = r.unwrap_or_else(|_| panic!("{name} {what}: the emitter PANICKED"));
+            let d = match r {
+                Err(LowerError::UnsupportedKernel { detail }) => detail,
+                Err(other) => panic!("{name} {what}: expected UnsupportedKernel, got {other:?}"),
+                Ok(g) => panic!(
+                    "{name} {what}: the emitter EMITTED:
+{}",
+                    g.source
+                ),
+            };
+            if check_kernel(&k).is_ok() {
+                checker_admits += 1;
+                assert!(
+                    !d.contains("ill-formed"),
+                    "{name} {what}: the checker admits it, so this must be the emitter's own refusal: {d}"
+                );
+            }
+            assert!(
+                d.contains(&name) || d.contains("no CUDA spelling"),
+                "{name} {what}: the refusal must name the dtype: {d}"
+            );
+        }
+    }
+    // The census must not be vacuous: the checker admits at least the buffer shape of some wide row.
+    assert!(
+        checker_admits > 0,
+        "the checker admitted none of the wide-integer shapes, so only its own refusal was exercised"
+    );
+    // Positive control: the same five shapes with `I32` lower, so the refusals above are about the type.
+    for (what, make) in &shapes {
+        let k = make(I32);
+        check_kernel(&k)
+            .unwrap_or_else(|e| panic!("control {what}: the shape must be well-formed: {e:?}"));
+        Cuda.lower_kernel(&k)
+            .unwrap_or_else(|e| panic!("control {what}: an I32 kernel must lower: {e:?}"));
+    }
+}
+
+/// The PLAN path (`try_generate` over `Cuda`) for the wide integers: an elementwise plan at `I128` / `U128` / `I256` / `U256` must come back
+/// as a typed `InadmissiblePlan` naming the dtype (Unpopped's plan admission, before the backend), never a panic and never source. Control: the
+/// same plan at `F32` emits (integer elementwise plans are declined by the bespoke surface at every width today).
+#[test]
+fn wide_integer_plans_are_declined_not_emitted_or_panicked() {
+    use unpopped::ir::BinaryOp;
+    use unpopped::{OpDef, input, try_generate};
+    use unpopped_vocab::{ArchSku, OpCategory, OperandDesc, structure_key};
+    let at = |dt: ElementKind| {
+        let op = OpDef::elementwise("max", 2, &[dt], input(0).binary(BinaryOp::Max, input(1)));
+        let a = OperandDesc::new(1, &[1 << 16], &[1], dt, 1);
+        let key = structure_key(OpCategory::BinaryElementwise, &[a, a, a], ArchSku::Sm89);
+        std::panic::catch_unwind(|| try_generate(&op, &key, &Cuda))
+    };
+    for dt in [
+        ElementKind::I128,
+        ElementKind::U128,
+        ElementKind::I256,
+        ElementKind::U256,
+    ] {
+        match at(dt).unwrap_or_else(|_| panic!("{dt:?}: the plan path PANICKED")) {
+            Err(e) => {
+                let t = format!("{e:?}");
+                assert!(
+                    t.contains("InadmissiblePlan") && t.contains(&format!("{dt:?}")),
+                    "{dt:?}: the decline must be the plan admission naming the dtype: {t}"
+                );
+            }
+            Ok(k) => panic!(
+                "{dt:?}: the plan path EMITTED:
+{}",
+                k.source
+            ),
+        }
+    }
+    // Control: the bespoke elementwise surface is float-only today (an `I32` plan is declined the same way), so the control is `F32`.
+    let k = at(F32)
+        .expect("no panic")
+        .expect("control: an F32 plan must emit");
+    assert!(k.source.contains("__global__"), "{}", k.source);
 }
 
 /// The emitted source must be real CUDA: compile it with NVRTC (PTX only, nothing runs). `sm_89` always; `sm_61` when the
@@ -803,4 +962,46 @@ fn the_integer_bit_ops_on_the_kernel_surface_are_refused_by_name_or_declined() {
             "{op:?} on I32: {d}"
         );
     }
+}
+
+/// `Stmt::Assume` (unpopped 0.64) is a value fact an emitter may ignore: the emitted source is byte-equal with and without it,
+/// at the start, in the middle and at the end of a body. Control: a statement that does lower (`Barrier`) DOES change the source,
+/// so the comparison can tell two sources apart.
+#[test]
+fn an_assume_never_changes_the_emitted_source_of_the_rest_of_the_kernel() {
+    let base = scale();
+    check_kernel(&base).expect("well-formed");
+    let want = Cuda.lower_kernel(&base).expect("the base lowers").source;
+    let fact = || Stmt::Assume {
+        cond: ScalarExpr::ConstInt(1, I32),
+    };
+    let n = base.body.0.len();
+    assert!(n >= 1, "control: the base kernel has statements");
+    for at in [0, n / 2, n] {
+        let mut k = base.clone();
+        k.body.0.insert(at, fact());
+        check_kernel(&k).expect("a kernel with an Assume is well-formed");
+        let got = Cuda
+            .lower_kernel(&k)
+            .expect("an Assume lowers (omitted)")
+            .source;
+        assert_eq!(got, want, "an Assume at {at} changed the emitted source");
+    }
+    let mut k = base.clone();
+    k.body.0.insert(
+        0,
+        Stmt::Barrier {
+            scope: unpopped::exec::Scope::Block,
+            kind: unpopped::kernel::BarrierKind::Full,
+        },
+    );
+    check_kernel(&k).expect("well-formed");
+    let with_barrier = Cuda
+        .lower_kernel(&k)
+        .expect("a block barrier lowers")
+        .source;
+    assert_ne!(
+        with_barrier, want,
+        "control: a barrier must change the source"
+    );
 }
