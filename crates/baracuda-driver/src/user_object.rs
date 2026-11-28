@@ -16,9 +16,16 @@ use baracuda_cuda_sys::{CUuserObject, driver};
 
 use crate::error::{Result, check};
 
-/// A refcounted user object. Drop releases one reference.
+/// One owned reference to a refcounted user object.
+///
+/// A `UserObject` value owns exactly ONE reference, and the type keeps it that way: [`release`](Self::release) takes `self`, so a
+/// reference can be given back once, and [`Drop`] gives back the one this value still owns (none, after `release`). Extra references come
+/// from [`duplicate`](Self::duplicate) (another owning value) or from a graph (`Graph::retain_user_object`, whose references belong to the
+/// graph, not to this value). The earlier shape (`release(&self, count)` plus a `Drop` that always released once more) let safe code
+/// release a reference it did not own, and release the same one twice.
 pub struct UserObject {
-    handle: CUuserObject,
+    /// The handle while this value still owns its reference; `None` once `release` has given it back.
+    handle: Option<CUuserObject>,
 }
 
 unsafe impl Send for UserObject {}
@@ -43,9 +50,8 @@ unsafe extern "C" fn destroy_trampoline(user_data: *mut c_void) {
 }
 
 impl UserObject {
-    /// Create a user object whose destructor is `destroy`. `initial_refcount`
-    /// is typically 1; the CUDA API requires at least 1.
-    pub fn new<F>(destroy: F, initial_refcount: u32) -> Result<Self>
+    /// Create a user object whose destructor is `destroy`; the returned value owns the one initial reference.
+    pub fn new<F>(destroy: F) -> Result<Self>
     where
         F: FnOnce() + Send + 'static,
     {
@@ -62,7 +68,7 @@ impl UserObject {
                 &mut object,
                 raw,
                 Some(destroy_trampoline),
-                initial_refcount,
+                1,
                 CU_USER_OBJECT_NO_DESTRUCTOR_SYNC,
             )
         };
@@ -71,60 +77,97 @@ impl UserObject {
             drop(unsafe { Box::from_raw(raw as *mut Box<dyn FnOnce() + Send>) });
             return Err(crate::error::Error::Status { status: rc });
         }
-        Ok(Self { handle: object })
+        Ok(Self {
+            handle: Some(object),
+        })
     }
 
-    /// Add `count` references to this user object's refcount.
-    pub fn retain(&self, count: u32) -> Result<()> {
+    /// Take one more reference and return it as its own owning value (`cuUserObjectRetain` with a count of 1). The destructor runs when
+    /// every owning value and every graph reference has been released.
+    pub fn duplicate(&self) -> Result<UserObject> {
+        let handle = self.owned_handle();
         let d = driver()?;
         let cu = d.cu_user_object_retain()?;
-        check(unsafe { cu(self.handle, count) })
+        check(unsafe { cu(handle, 1) })?;
+        Ok(UserObject {
+            handle: Some(handle),
+        })
     }
 
-    /// Drop `count` references (runs destructor if this was the last).
-    pub fn release(&self, count: u32) -> Result<()> {
+    /// Give this value's reference back now (`cuUserObjectRelease` with a count of 1); the destructor runs if it was the last one.
+    ///
+    /// Takes `self`, so the value cannot be used or released again, and `Drop` has nothing left to release. The reference is gone even
+    /// when the driver reports an error: there is no handle to retry on.
+    ///
+    /// Releasing twice does not compile:
+    ///
+    /// ```compile_fail
+    /// # use baracuda_driver::user_object::UserObject;
+    /// # fn f(uo: UserObject) {
+    /// let _ = uo.release();
+    /// let _ = uo.release(); // error[E0382]: use of moved value
+    /// # }
+    /// ```
+    pub fn release(mut self) -> Result<()> {
+        let handle = self.owned_handle();
+        // Taken before the call: whatever the driver answers, this value no longer owns a reference and `Drop` must not release one.
+        self.handle = None;
         let d = driver()?;
         let cu = d.cu_user_object_release()?;
-        check(unsafe { cu(self.handle, count) })
+        check(unsafe { cu(handle, 1) })
+    }
+
+    /// The handle this value still owns. Only `release` and `Drop` clear it, and both consume or end the value.
+    fn owned_handle(&self) -> CUuserObject {
+        self.handle
+            .expect("a UserObject owns its handle until `release` consumes it")
     }
 
     /// Raw `CUuserObject` handle. Use with care — owned by `self`.
     #[inline]
     pub fn as_raw(&self) -> CUuserObject {
-        self.handle
+        self.owned_handle()
     }
 }
 
 impl Drop for UserObject {
     fn drop(&mut self) {
-        if self.handle.is_null() {
+        // `take`: a value that was released (or is dropped) gives back its one reference exactly once.
+        let Some(handle) = self.handle.take() else {
+            return;
+        };
+        if handle.is_null() {
             return;
         }
         if let Ok(d) = driver()
             && let Ok(cu) = d.cu_user_object_release()
         {
-            let _ = unsafe { cu(self.handle, 1) };
+            let _ = unsafe { cu(handle, 1) };
         }
     }
 }
 
 // Extend Graph with user-object retention.
 impl crate::Graph {
-    /// Have this graph take `count` references to `object`. When the
-    /// graph is destroyed (or when [`release_user_object`](Self::release_user_object)
-    /// is called), those references are dropped.
+    /// Have this graph take `count` NEW references to `object` (the graph's own: they are not `object`'s reference, which it keeps). When
+    /// the graph is destroyed, those references are given back, and the destructor runs if they were the last.
     ///
-    /// `flags` is reserved (pass 0) in CUDA 12.x; CUDA 13 adds
-    /// `CU_GRAPH_USER_OBJECT_MOVE` = 1.
-    pub fn retain_user_object(&self, object: &UserObject, count: u32, flags: u32) -> Result<()> {
+    /// There is no `flags` argument: the driver's `CU_GRAPH_USER_OBJECT_MOVE` hands the caller's own references to the graph, which a
+    /// [`UserObject`] (one owned reference, given back by `Drop`) cannot express without a double release, so the call is always flags 0.
+    pub fn retain_user_object(&self, object: &UserObject, count: u32) -> Result<()> {
         let d = driver()?;
         let cu = d.cu_graph_retain_user_object()?;
-        check(unsafe { cu(self.as_raw(), object.as_raw(), count, flags) })
+        check(unsafe { cu(self.as_raw(), object.as_raw(), count, 0) })
     }
 
-    /// Safe wrapper for `cuGraphReleaseUserObject`. Drop `count`
-    /// references this graph holds on `object`.
-    pub fn release_user_object(&self, object: &UserObject, count: u32) -> Result<()> {
+    /// Give back `count` references this graph holds on `object` (`cuGraphReleaseUserObject`).
+    ///
+    /// # Safety
+    ///
+    /// The graph must hold at least `count` references to `object` taken with [`retain_user_object`](Self::retain_user_object) and not yet
+    /// given back: the graph's reference count is the driver's, and giving back more than it holds releases references that belong to
+    /// someone else (to a [`UserObject`] value, or to another graph), which is a use of a freed object once the count reaches zero.
+    pub unsafe fn release_user_object(&self, object: &UserObject, count: u32) -> Result<()> {
         let d = driver()?;
         let cu = d.cu_graph_release_user_object()?;
         check(unsafe { cu(self.as_raw(), object.as_raw(), count) })

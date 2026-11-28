@@ -23,17 +23,14 @@ fn user_object_destructor_fires() {
     Device::from_ordinal(0).set_current().unwrap();
     DESTRUCTOR_RAN.store(0, Ordering::SeqCst);
 
-    let uo = UserObject::new(
-        || {
-            DESTRUCTOR_RAN.fetch_add(1, Ordering::SeqCst);
-        },
-        1,
-    )
+    let uo = UserObject::new(|| {
+        DESTRUCTOR_RAN.fetch_add(1, Ordering::SeqCst);
+    })
     .unwrap();
 
     let graph = Graph::new().unwrap();
-    graph.retain_user_object(&uo, 1, 0).unwrap();
-    uo.release(1).unwrap();
+    graph.retain_user_object(&uo, 1).unwrap();
+    uo.release().unwrap();
 
     assert_eq!(DESTRUCTOR_RAN.load(Ordering::SeqCst), 0);
 
