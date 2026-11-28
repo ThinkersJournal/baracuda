@@ -16,6 +16,10 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.239 - 2026-11-28
+
+`require_optional!` returns early on an absent library, so cargo counts that test as passed: `skipped_declared` is a subset of `passed`, and run 46009378976's 3299 passed meant at most 3249 exercised. `xtask test-gpu` now writes `exercised` to the record (`passed` and `skipped_declared` stay) and prints `N passed = E exercised + S declared skips`; with `BARACUDA_PREVIOUS_RESULTS` set to an earlier record, a reason whose skip count rose is printed and added to the job summary. Tests pin the arithmetic (shown red with `exercised = passed`) and the rising flag (shown red with `>=`). ROADMAP S21 records the measurement and the open split question. CI device run queued, not claimed. Publishes: whole workspace.
+
 ## 0.1.0-alpha.238 - 2026-11-28
 
 Supersedes the 0.62 and 0.63 takes above (neither was published): the pins move to `unpopped* ~0.64.0` (lock 0.64.3), `fireline-* ~0.14` (lock 0.14.1) and `fishstringer-slang-* ~0.14.0`, and the emit, parse and seam crates to 0.64.0 (the emitter version follows the Unpopped it works with). Breaking for consumers of those crates, as before. Unpopped 0.64 adds `Stmt::Assume` (a per-thread value fact, `tl.assume` / `multiple_of`): the emitter OMITS it, which the IR permits, and a test pins that the emitted source of the rest of the kernel is byte-equal with and without it (shown red first: with the arm removed the kernel is declined). No PTX lowering of the fact is claimed. One copy of `unpopped-vocab`: `cargo tree --locked -i unpopped-vocab` prints one line (0.64.3) in the workspace and in `tools/kiss-ref-diff`, and `cargo tree --locked -d` lists no `unpopped*` duplicate. CI device run queued, not claimed. Publishes: whole workspace.

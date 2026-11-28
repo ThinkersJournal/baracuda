@@ -438,6 +438,71 @@ struct RunRecord {
     skips: Vec<(String, String)>,
 }
 
+/// A test that declined through `require_optional!` returns early, so cargo counts it as PASSED: `skipped_declared` is a subset of
+/// `passed`. What a run actually exercised is therefore `passed - skipped_declared` (saturating: a record with more skips than passes
+/// is not a negative count).
+fn exercised(passed: u64, skipped_declared: u64) -> u64 {
+    passed.saturating_sub(skipped_declared)
+}
+
+/// The `skips_by_reason` object of a record `to_json` wrote (`"reason": n` pairs, JSON-escaped keys), or empty when it is absent or
+/// malformed. Reads only this crate's own output, so it is a small scanner, not a JSON parser.
+fn parse_skips_by_reason(json: &str) -> std::collections::BTreeMap<String, u64> {
+    const HEAD: &str = "\"skips_by_reason\": {";
+    let mut out = std::collections::BTreeMap::new();
+    let Some(i) = json.find(HEAD) else {
+        return out;
+    };
+    let mut it = json[i + HEAD.len()..].chars().peekable();
+    loop {
+        while matches!(it.peek(), Some(c) if c.is_whitespace() || *c == ',') {
+            it.next();
+        }
+        if it.peek() != Some(&'"') {
+            return out;
+        }
+        it.next();
+        let mut key = String::new();
+        loop {
+            match it.next() {
+                Some('"') => break,
+                Some('\\') => match it.next() {
+                    Some('n') => key.push('\n'),
+                    Some('r') => key.push('\r'),
+                    Some('t') => key.push('\t'),
+                    Some(c) => key.push(c),
+                    None => return out,
+                },
+                Some(c) => key.push(c),
+                None => return out,
+            }
+        }
+        while matches!(it.peek(), Some(c) if c.is_whitespace() || *c == ':') {
+            it.next();
+        }
+        let mut n = String::new();
+        while matches!(it.peek(), Some(c) if c.is_ascii_digit()) {
+            n.push(it.next().unwrap());
+        }
+        let Ok(n) = n.parse::<u64>() else { return out };
+        out.insert(key, n);
+    }
+}
+
+/// Reasons whose skip count went UP from `prev` to `cur` (a reason absent from `prev` counts as 0): a library that used to be present
+/// went missing, or a test newly declines. `(reason, before, after)`.
+fn rising_skips(
+    prev: &std::collections::BTreeMap<String, u64>,
+    cur: &std::collections::BTreeMap<String, u64>,
+) -> Vec<(String, u64, u64)> {
+    cur.iter()
+        .filter_map(|(r, &n)| {
+            let before = prev.get(r).copied().unwrap_or(0);
+            (n > before).then(|| (r.clone(), before, n))
+        })
+        .collect()
+}
+
 fn json_str(s: &str) -> String {
     let mut o = String::from("\"");
     for c in s.chars() {
@@ -456,6 +521,18 @@ fn json_str(s: &str) -> String {
 }
 
 impl RunRecord {
+    fn exercised(&self) -> u64 {
+        exercised(self.summary.passed, self.skips.len() as u64)
+    }
+
+    fn skips_by_reason(&self) -> std::collections::BTreeMap<String, u64> {
+        let mut m: std::collections::BTreeMap<String, u64> = Default::default();
+        for (_, reason) in &self.skips {
+            *m.entry(reason.clone()).or_default() += 1;
+        }
+        m
+    }
+
     /// Hand-rolled JSON (xtask carries no serde): small, flat, stable keys.
     fn to_json(&self, commit: &str, host: &str) -> String {
         let mut by_reason: std::collections::BTreeMap<&str, u64> = Default::default();
@@ -477,7 +554,7 @@ impl RunRecord {
             "{{\n  \"schema\": \"baracuda-device-test-results-v1\",\n  \"status\": {},\n  \
              \"exit_code\": {},\n  \"started_unix\": {},\n  \"finished_unix\": {},\n  \
              \"commit\": {},\n  \"host\": {},\n  \"args\": {},\n  \"passed\": {},\n  \
-             \"failed\": {},\n  \"ignored\": {},\n  \"skipped_declared\": {},\n  \
+             \"exercised\": {},\n  \"failed\": {},\n  \"ignored\": {},\n  \"skipped_declared\": {},\n  \
              \"skips_by_reason\": {{{}}},\n  \"skips\": [{}]\n}}\n",
             json_str(if self.exit_code == 0 { "pass" } else { "fail" }),
             self.exit_code,
@@ -487,6 +564,7 @@ impl RunRecord {
             json_str(host),
             json_str(&self.args),
             self.summary.passed,
+            self.exercised(),
             self.summary.failed,
             self.summary.ignored,
             self.skips.len(),
@@ -510,13 +588,23 @@ fn write_results(path: &Path, rec: &RunRecord) {
     if let Some(dir) = path.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
+    // `BARACUDA_PREVIOUS_RESULTS`: a record of an earlier run (CI downloads the last artifact; a local rerun can point at its own
+    // file). A reason whose skip count ROSE since then is reported: a library that used to be present went missing.
+    let rising = std::env::var_os("BARACUDA_PREVIOUS_RESULTS")
+        .and_then(|p| std::fs::read_to_string(p).ok())
+        .map(|prev| rising_skips(&parse_skips_by_reason(&prev), &rec.skips_by_reason()))
+        .unwrap_or_default();
+    for (reason, before, after) in &rising {
+        eprintln!("xtask test-gpu: skips ROSE for `{reason}`: {before} -> {after}");
+    }
     match std::fs::write(path, rec.to_json(&commit, &host)) {
         Ok(()) => eprintln!(
-            "xtask test-gpu: results -> {} ({} passed, {} failed, {} declared skips)",
+            "xtask test-gpu: results -> {} ({} passed = {} exercised + {} declared skips, {} failed)",
             path.display(),
             rec.summary.passed,
-            rec.summary.failed,
-            rec.skips.len()
+            rec.exercised(),
+            rec.skips.len(),
+            rec.summary.failed
         ),
         Err(e) => eprintln!("xtask test-gpu: could not write {}: {e}", path.display()),
     }
@@ -529,12 +617,16 @@ fn write_results(path: &Path, rec: &RunRecord) {
         use std::io::Write as _;
         let _ = writeln!(
             f,
-            "### Device tests: {} passed, {} failed, {} declared skips (exit {})",
+            "### Device tests: {} passed = {} exercised + {} declared skips, {} failed (exit {})",
             rec.summary.passed,
-            rec.summary.failed,
+            rec.exercised(),
             rec.skips.len(),
+            rec.summary.failed,
             rec.exit_code
         );
+        for (reason, before, after) in &rising {
+            let _ = writeln!(f, "- skips ROSE for `{reason}`: {before} -> {after}");
+        }
     }
 }
 
@@ -694,6 +786,48 @@ mod tests {
     }
 
     #[test]
+    fn exercised_is_passed_minus_declared_skips_and_never_negative() {
+        assert_eq!(exercised(3299, 50), 3249);
+        assert_eq!(exercised(5, 0), 5);
+        assert_eq!(exercised(2, 3), 0, "saturates, never wraps");
+    }
+
+    #[test]
+    fn a_rising_skip_reason_is_flagged_and_a_steady_or_falling_one_is_not() {
+        let rec = |skips: &[(&str, &str)]| RunRecord {
+            started_unix: 1,
+            finished_unix: 2,
+            args: String::new(),
+            exit_code: 0,
+            summary: RunSummary {
+                passed: 9,
+                failed: 0,
+                ignored: 0,
+            },
+            skips: skips.iter().map(|(t, r)| (l(t), l(r))).collect(),
+        };
+        let prev = rec(&[("a", "no NCCL"), ("b", "no NCCL"), ("c", "no \"cuDNN\"")]);
+        // The previous record round-trips through `to_json` (escaped quotes in a reason included).
+        let prev_map = parse_skips_by_reason(&prev.to_json("abc", "h"));
+        assert_eq!(prev_map, prev.skips_by_reason());
+        assert_eq!(prev_map.get("no \"cuDNN\""), Some(&1));
+        let now = rec(&[
+            ("a", "no NCCL"),
+            ("b", "no NCCL"),
+            ("c", "no NCCL"),
+            ("d", "no nvCOMP"),
+        ]);
+        let rose = rising_skips(&prev_map, &now.skips_by_reason());
+        assert_eq!(
+            rose,
+            vec![(l("no NCCL"), 2, 3), (l("no nvCOMP"), 0, 1)],
+            "NCCL 2 -> 3 and a new reason rise; the dropped cuDNN skip is not flagged"
+        );
+        assert!(rising_skips(&prev_map, &prev.skips_by_reason()).is_empty());
+        assert!(parse_skips_by_reason("not json").is_empty());
+    }
+
+    #[test]
     fn summary_of_empty_output_is_zero() {
         assert_eq!(RunSummary::from_output(&[]), RunSummary::default());
     }
@@ -719,6 +853,9 @@ mod tests {
         let j = rec.to_json("abc", "host");
         assert!(j.contains("\"status\": \"pass\""));
         assert!(j.contains("\"skipped_declared\": 3"));
+        // 4 passed, 3 of them declined and returned early: one test exercised anything.
+        assert!(j.contains("\"passed\": 4"));
+        assert!(j.contains("\"exercised\": 1"));
         assert!(j.contains("\"no NVSHMEM\": 2"));
         assert!(j.contains("\"no sparse\": 1"));
         assert!(j.contains("\"args\": \"-p \\\"x\\\"\""));
