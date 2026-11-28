@@ -16,7 +16,13 @@ on this line since alpha.81 (`baracuda-cuda-emit 0.11.0` ships with
 `0.0.1-alpha.81` and goes with `unpopped 0.11`); `baracuda-cuda-parse` joined
 at alpha.82.
 
+## 0.1.0-alpha.237 - 2026-11-27
+
+Supersedes the 0.62 take above: before it published, unpopped 0.63.5, `fireline-*` 0.14 and `fishstringer-slang-*` 0.13 went live, so the pins move to `unpopped* ~0.63.0` (lock 0.63.5), `fireline-* ~0.14` and `fishstringer-slang-* ~0.13`, and the emit, parse and seam crates to 0.63.0 (the emitter version follows the Unpopped it works with). Breaking for consumers of those crates, as before. The Tile and wide-integer declines described above are in this take. Lock moves were targeted (`cargo update -p`), no unrelated bumps. One copy of `unpopped-vocab`: `cargo tree --locked -i unpopped-vocab` prints one line in the workspace and in `tools/kiss-ref-diff`. No `Numerics { .. }` struct literal in baracuda's crates (the field added in 0.63 does not reach us). CI device run queued, not claimed. Publishes: whole workspace.
+
 ## 0.1.0-alpha.236 - 2026-11-27
+
+**Superseded before publish by alpha.237** (the unpopped 0.63 take: unpopped ~0.63.0, fireline ~0.14, fishstringer ~0.13, emit/parse/seam 0.63.0).
 
 The unpopped family pins move to `~0.62.0`, `fireline-*` to `~0.13`, and the emit, parse and seam crates to 0.62.0 (the emitter version follows the Unpopped it works with). Unpopped 0.62 adds the opaque tile statements (`TileLoad`, `TileMma`, `TileFill`, `TileStore`) and `MemorySpace::Tile`; the CUDA backend declines a `Tile` allocation by name and the statements are not lowered (ROADMAP B1 hold; no clearance implied). The published-fixture census pins the four new refusals. Verified: `cargo test -p baracuda-cuda-emit` passes (the `the_seven_new_element_rows` test now also covers a row the 0.62 checker admits), MSRV 1.88 build of the emit crate, one `unpopped-vocab` in the workspace and in `tools/kiss-ref-diff`. CI device run queued, not claimed. Publishes: whole workspace. The emitter now also refuses, by name and before emitting, a kernel whose compute type has no CUDA spelling or that declares a local of a type it does not compute (the wide integers `I128`/`U128`/`I256`/`U256`, which the 0.62 checker computes; an unread wide local used to emit an empty kernel). Lowering wide integers stays held (ROADMAP S14).
 
