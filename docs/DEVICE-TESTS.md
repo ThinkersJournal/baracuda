@@ -36,8 +36,11 @@ A run that passes zero tests exits non-zero.
 
 Every `cargo gpu-test` writes `target/device-test-results.json` (override with
 `BARACUDA_RESULTS_FILE`): `status`, `exit_code`, `passed` / `failed` / `ignored`, `commit`, `host`,
-start/finish times, `skipped_declared`, and `skips_by_reason` (from `require_optional!`). The CI job
-uploads it as an artifact and prints the counts in the job summary.
+start/finish times, `skipped_declared`, and `skips_by_reason` (from `require_optional!`). A declined test returns early, so cargo
+counts it as PASSED: `skipped_declared` is a SUBSET of `passed`, and `exercised = passed - skipped_declared` is what a run actually ran
+(also written to the record; `passed` and `skipped_declared` stay for compatibility). The CI job uploads it as an artifact and prints
+`N passed = E exercised + S declared skips` in the job summary. Set `BARACUDA_PREVIOUS_RESULTS` to an earlier record and a reason whose
+skip count ROSE since then is printed (and added to the summary): a library that used to be present went missing.
 
 What cannot run even on that box is listed, by name, in [`UNVERIFIED-HARDWARE.md`](UNVERIFIED-HARDWARE.md).
 
