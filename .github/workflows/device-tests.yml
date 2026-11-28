@@ -23,7 +23,7 @@ permissions:
 # earlier shape (one group, `cancel-in-progress: false`) kept only the NEWEST WAITING run: a run that had started always finished, but a run
 # that had not started was cancelled by the next push. While the ~6 h scheduled run held the runner, every merge to main cancelled the previous
 # merge's pending run, so no merge's run ever STARTED (46164992865 for 314d3f7a and 46161949716 for 49e4fdbc were cancelled that way on
-# 2026-11-28; so were 12 of the 14 push runs of 2026-11-27). Now each push is its own group (its commit), so GitHub keeps every one of them
+# 2026-11-28; so were 17 of the 19 push runs of 2026-11-27). Now each push is its own group (its commit), so GitHub keeps every one of them
 # queued for the runner and the oldest starts first when the runner frees; the nightly schedule has one group of its own (a new nightly
 # replaces a still-waiting nightly, never a push); a manual dispatch is its own group (its run id). `cancel-in-progress: false` stays: a run
 # that has started always finishes. The queue's depth is the pushes since the last run started: it was 19 deep on 2026-11-26 when there was no
